@@ -17,6 +17,7 @@ interface Lead {
   source: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
   decidedAt?: string;
   salesVisitAt?: string;
   customer: {
@@ -592,23 +593,7 @@ export function LeadDetail() {
               />
             </div>
 
-            {/* Requested Amount */}
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Žádaná částka</label>
-              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                <div className="px-3 py-2 bg-gray-50">
-                  <BankIcon className="w-5 h-5 text-gray-400" />
-                </div>
-                <input 
-                  type="number" 
-                  value={formData.requestedAmount}
-                  onChange={(e) => handleInputChange('requestedAmount', e.target.value)}
-                  placeholder="Žádaná částka"
-                  className="flex-1 px-3 py-2 focus:outline-none" 
-                />
-              </div>
-            </div>
-            <p className="text-red-500 text-sm">Zadejte částku</p>
+
 
             {/* Latest Note */}
             <div className="text-sm">
@@ -653,25 +638,37 @@ export function LeadDetail() {
               />
             </div>
 
-            {/* Decided At */}
+            {/* Last Updated At */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Datum rozhodnutí leadu</label>
+              <label className="block text-xs text-gray-500 mb-1">Datum poslední úpravy leadu</label>
               <input 
                 type="text" 
-                value={formatDate(lead.decidedAt)}
+                value={formatDate(lead.updatedAt)}
                 readOnly
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
               />
             </div>
 
-            {/* Estimated Value */}
+            {/* Market Value */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Obvyklá cena z Cebia</label>
+              <label className="block text-xs text-gray-500 mb-1">Tržní cena auta</label>
               <input 
                 type="text" 
                 value={lead.estimatedValue?.toLocaleString('cs-CZ') || ''}
                 readOnly
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" 
+              />
+            </div>
+
+            {/* Requested Amount - moved from column 2 */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Žádaná částka</label>
+              <input 
+                type="number" 
+                value={formData.requestedAmount}
+                onChange={(e) => handleInputChange('requestedAmount', e.target.value)}
+                placeholder="Žádaná částka"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
               />
             </div>
 
