@@ -176,6 +176,48 @@ export function LeadDetail() {
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [selectedDocCategory, setSelectedDocCategory] = useState<string | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [isDragging, setIsDragging] = useState<string | null>(null); // Track which drop zone is active
+
+  // Drag & drop handler
+  const handleDrop = async (e: React.DragEvent, category: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(null);
+    
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    
+    setUploadingDoc(true);
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('category', category);
+        
+        await axiosClient.post(`/leads/${id}/documents`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+      alert(`${files.length > 1 ? 'Dokumenty byly' : 'Dokument byl'} úspěšně nahrán`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Chyba při nahrávání');
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, zone: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(zone);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(null);
+  };
 
   // Form states
   const [formData, setFormData] = useState({
@@ -954,7 +996,12 @@ export function LeadDetail() {
                 <h2 className="text-xl font-bold text-center text-blue-500 mb-6">Nájezd a VIN</h2>
                 
                 {/* Fotka palubní desky */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-4 mb-4 transition-colors ${isDragging === 'mileage' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                  onDrop={(e) => handleDrop(e, 'carMileage')}
+                  onDragOver={(e) => handleDragOver(e, 'mileage')}
+                  onDragLeave={handleDragLeave}
+                >
                   <p className="text-center text-blue-500 font-medium mb-3">Fotka palubní desky</p>
                   
                   {/* Hidden inputs for upload and capture */}
@@ -1058,10 +1105,18 @@ export function LeadDetail() {
                       Přidat
                     </button>
                   </div>
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    {isDragging === 'mileage' ? '📁 Pusťte soubor zde...' : 'nebo přetáhněte soubor sem'}
+                  </p>
                 </div>
 
                 {/* Fotka VIN */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-4 mb-4 transition-colors ${isDragging === 'vin' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                  onDrop={(e) => handleDrop(e, 'carVIN')}
+                  onDragOver={(e) => handleDragOver(e, 'vin')}
+                  onDragLeave={handleDragLeave}
+                >
                   <p className="text-center text-blue-500 font-medium mb-3">Fotka VIN</p>
                   
                   {/* Hidden inputs for upload and capture */}
@@ -1165,6 +1220,9 @@ export function LeadDetail() {
                       Přidat
                     </button>
                   </div>
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    {isDragging === 'vin' ? '📁 Pusťte soubor zde...' : 'nebo přetáhněte soubor sem'}
+                  </p>
                 </div>
 
                 <button
@@ -1206,7 +1264,12 @@ export function LeadDetail() {
                 </div>
 
                 {/* Upload Area */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-4">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 mb-4 transition-colors ${isDragging === 'general' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                  onDrop={(e) => handleDrop(e, selectedDocCategory || '')}
+                  onDragOver={(e) => handleDragOver(e, 'general')}
+                  onDragLeave={handleDragLeave}
+                >
                   {/* Hidden inputs */}
                   <input
                     type="file"
@@ -1308,7 +1371,7 @@ export function LeadDetail() {
                   </div>
 
                   <p className="text-xs text-gray-400 text-center">
-                    PDF, DOC, DOCX, obrázky
+                    {isDragging === 'general' ? '📁 Pusťte soubory zde...' : 'PDF, DOC, DOCX, obrázky • nebo přetáhněte soubory sem'}
                   </p>
                 </div>
 
