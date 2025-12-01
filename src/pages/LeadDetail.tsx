@@ -951,14 +951,42 @@ export function LeadDetail() {
               </>
             ) : selectedDocCategory === 'najezd_vin' ? (
               <>
-                <h2 className="text-xl font-bold text-center mb-6">Nájezd a VIN</h2>
+                <h2 className="text-xl font-bold text-center text-blue-500 mb-6">Nájezd a VIN</h2>
                 
                 {/* Fotka palubní desky */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
-                  <p className="text-center font-medium mb-3">Fotka palubní desky</p>
+                  <p className="text-center text-blue-500 font-medium mb-3">Fotka palubní desky</p>
+                  
+                  {/* Hidden inputs for upload and capture */}
                   <input
                     type="file"
-                    id="doc-mileage"
+                    id="doc-mileage-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingDoc(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('document', file);
+                        formData.append('category', 'carMileage');
+                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                          headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        alert('Fotka palubní desky nahrána');
+                      } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Chyba při nahrávání');
+                      } finally {
+                        setUploadingDoc(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <input
+                    type="file"
+                    id="doc-mileage-capture"
                     className="hidden"
                     accept="image/*"
                     capture="environment"
@@ -983,33 +1011,89 @@ export function LeadDetail() {
                       }
                     }}
                   />
-                  <label htmlFor="doc-mileage" className="cursor-pointer flex flex-col items-center">
+
+                  {/* Preview area */}
+                  <div className="flex justify-center mb-3">
                     {lead?.car?.mileagePhoto ? (
                       <img 
                         src={lead.car.mileagePhoto} 
                         alt="Palubní deska" 
-                        className="w-32 h-20 object-cover rounded mb-2"
+                        className="w-32 h-20 object-cover rounded"
                       />
                     ) : (
-                      <div className="w-32 h-20 bg-gray-800 rounded flex items-center justify-center mb-2">
+                      <div className="w-32 h-20 bg-gray-800 rounded flex items-center justify-center">
                         <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                       </div>
                     )}
-                    <span className="text-xs text-gray-500">
-                      {uploadingDoc ? 'Nahrávám...' : 'Klikněte pro nahrání nebo vyfocení'}
-                    </span>
-                  </label>
+                  </div>
+
+                  {/* Three buttons */}
+                  <div className="flex gap-2 justify-center">
+                    <label 
+                      htmlFor="doc-mileage-upload" 
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 cursor-pointer"
+                    >
+                      {uploadingDoc ? 'Nahrávám...' : 'Nahrát'}
+                    </label>
+                    <label 
+                      htmlFor="doc-mileage-capture" 
+                      className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-full hover:bg-green-700 cursor-pointer"
+                    >
+                      Vyfotit
+                    </label>
+                    <button 
+                      onClick={() => {
+                        const choice = window.confirm('Klikněte OK pro nahrání souboru nebo Cancel pro vyfocení');
+                        if (choice) {
+                          document.getElementById('doc-mileage-upload')?.click();
+                        } else {
+                          document.getElementById('doc-mileage-capture')?.click();
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded-full hover:bg-gray-700"
+                    >
+                      Přidat
+                    </button>
+                  </div>
                 </div>
 
                 {/* Fotka VIN */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
-                  <p className="text-center font-medium mb-3">Fotka VIN</p>
+                  <p className="text-center text-blue-500 font-medium mb-3">Fotka VIN</p>
+                  
+                  {/* Hidden inputs for upload and capture */}
                   <input
                     type="file"
-                    id="doc-vin"
+                    id="doc-vin-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingDoc(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('document', file);
+                        formData.append('category', 'carVIN');
+                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                          headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        alert('Fotka VIN nahrána');
+                      } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Chyba při nahrávání');
+                      } finally {
+                        setUploadingDoc(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <input
+                    type="file"
+                    id="doc-vin-capture"
                     className="hidden"
                     accept="image/*"
                     capture="environment"
@@ -1034,25 +1118,53 @@ export function LeadDetail() {
                       }
                     }}
                   />
-                  <label htmlFor="doc-vin" className="cursor-pointer flex flex-col items-center">
+
+                  {/* Preview area */}
+                  <div className="flex justify-center mb-3">
                     {lead?.car?.vinPhoto ? (
                       <img 
                         src={lead.car.vinPhoto} 
                         alt="VIN" 
-                        className="w-32 h-20 object-cover rounded mb-2"
+                        className="w-32 h-20 object-cover rounded"
                       />
                     ) : (
-                      <div className="w-32 h-20 bg-gray-800 rounded flex items-center justify-center mb-2">
+                      <div className="w-32 h-20 bg-gray-800 rounded flex items-center justify-center">
                         <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                       </div>
                     )}
-                    <span className="text-xs text-gray-500">
-                      {uploadingDoc ? 'Nahrávám...' : 'Klikněte pro nahrání nebo vyfocení'}
-                    </span>
-                  </label>
+                  </div>
+
+                  {/* Three buttons */}
+                  <div className="flex gap-2 justify-center">
+                    <label 
+                      htmlFor="doc-vin-upload" 
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 cursor-pointer"
+                    >
+                      {uploadingDoc ? 'Nahrávám...' : 'Nahrát'}
+                    </label>
+                    <label 
+                      htmlFor="doc-vin-capture" 
+                      className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-full hover:bg-green-700 cursor-pointer"
+                    >
+                      Vyfotit
+                    </label>
+                    <button 
+                      onClick={() => {
+                        const choice = window.confirm('Klikněte OK pro nahrání souboru nebo Cancel pro vyfocení');
+                        if (choice) {
+                          document.getElementById('doc-vin-upload')?.click();
+                        } else {
+                          document.getElementById('doc-vin-capture')?.click();
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded-full hover:bg-gray-700"
+                    >
+                      Přidat
+                    </button>
+                  </div>
                 </div>
 
                 <button
@@ -1079,7 +1191,7 @@ export function LeadDetail() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
-                  <h2 className="text-xl font-bold">
+                  <h2 className="text-xl font-bold text-blue-500">
                     {selectedDocCategory === 'evidencni_kontrola' && 'Evidenční kontrola'}
                     {selectedDocCategory === 'technicke_prukazy' && 'Technické průkazy'}
                     {selectedDocCategory === 'fyzicka_kontrola' && 'Fyzická kontrola'}
@@ -1094,7 +1206,8 @@ export function LeadDetail() {
                 </div>
 
                 {/* Upload Area */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-4">
+                  {/* Hidden inputs */}
                   <input
                     type="file"
                     id="doc-upload"
@@ -1126,20 +1239,77 @@ export function LeadDetail() {
                       }
                     }}
                   />
-                  <label
-                    htmlFor="doc-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span className="text-gray-600">
-                      {uploadingDoc ? 'Nahrávám...' : 'Klikněte pro nahrání nebo přetáhněte soubory'}
-                    </span>
-                    <span className="text-sm text-gray-400 mt-1">
-                      PDF, DOC, DOCX, obrázky
-                    </span>
-                  </label>
+                  <input
+                    type="file"
+                    id="doc-capture"
+                    className="hidden"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      setUploadingDoc(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('document', file);
+                        formData.append('category', selectedDocCategory || '');
+                        
+                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                          headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        alert('Dokument byl úspěšně nahrán');
+                      } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Chyba při nahrávání dokumentu');
+                      } finally {
+                        setUploadingDoc(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+
+                  {/* Icon */}
+                  <div className="flex justify-center mb-4">
+                    <div className="w-20 h-16 bg-gray-800 rounded flex items-center justify-center">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Three buttons */}
+                  <div className="flex gap-2 justify-center mb-2">
+                    <label 
+                      htmlFor="doc-upload" 
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 cursor-pointer"
+                    >
+                      {uploadingDoc ? 'Nahrávám...' : 'Nahrát'}
+                    </label>
+                    <label 
+                      htmlFor="doc-capture" 
+                      className="px-4 py-2 bg-green-600 text-white text-sm rounded-full hover:bg-green-700 cursor-pointer"
+                    >
+                      Vyfotit
+                    </label>
+                    <button 
+                      onClick={() => {
+                        const choice = window.confirm('Klikněte OK pro nahrání souboru nebo Cancel pro vyfocení');
+                        if (choice) {
+                          document.getElementById('doc-upload')?.click();
+                        } else {
+                          document.getElementById('doc-capture')?.click();
+                        }
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white text-sm rounded-full hover:bg-gray-700"
+                    >
+                      Přidat
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-400 text-center">
+                    PDF, DOC, DOCX, obrázky
+                  </p>
                 </div>
 
                 {/* Uploaded Documents List - placeholder */}
@@ -1149,9 +1319,15 @@ export function LeadDetail() {
 
                 <button
                   onClick={() => setSelectedDocCategory(null)}
-                  className="mt-4 w-full py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700"
+                  className="mt-4 w-full py-2 bg-red-600 text-white rounded-full hover:bg-red-700"
                 >
-                  Zpět
+                  Potvrdit
+                </button>
+                <button
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="mt-2 w-full py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700"
+                >
+                  Zavřít
                 </button>
               </>
             )}
