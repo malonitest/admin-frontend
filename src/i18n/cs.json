@@ -1,0 +1,68 @@
+{
+  "common": {
+    "loading": "Načítání...",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "delete": "Smazat",
+    "edit": "Upravit",
+    "create": "Vytvořit",
+    "search": "Hledat",
+    "actions": "Akce",
+    "back": "Zpět",
+    "yes": "Ano",
+    "no": "Ne",
+    "confirm": "Potvrdit",
+    "close": "Zavřít"
+  },
+  "auth": {
+    "login": "Přihlášení",
+    "logout": "Odhlásit se",
+    "email": "E-mail",
+    "password": "Heslo",
+    "loginButton": "Přihlásit se",
+    "loginError": "Neplatný e-mail nebo heslo",
+    "welcomeBack": "Vítejte zpět"
+  },
+  "nav": {
+    "dashboard": "Přehled",
+    "users": "Uživatelé",
+    "settings": "Nastavení",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "title": "Přehled",
+    "welcome": "Vítejte v administraci",
+    "totalUsers": "Celkem uživatelů",
+    "activeUsers": "Aktivní uživatelé",
+    "newToday": "Nových dnes",
+    "revenue": "Tržby"
+  },
+  "users": {
+    "title": "Uživatelé",
+    "list": "Seznam uživatelů",
+    "detail": "Detail uživatele",
+    "name": "Jméno",
+    "email": "E-mail",
+    "role": "Role",
+    "status": "Stav",
+    "active": "Aktivní",
+    "inactive": "Neaktivní",
+    "createdAt": "Vytvořeno",
+    "noUsers": "Žádní uživatelé"
+  },
+  "settings": {
+    "title": "Nastavení",
+    "general": "Obecné",
+    "notifications": "Notifikace",
+    "security": "Zabezpečení",
+    "language": "Jazyk",
+    "theme": "Vzhled",
+    "saveChanges": "Uložit změny"
+  },
+  "errors": {
+    "notFound": "Stránka nenalezena",
+    "serverError": "Chyba serveru",
+    "unauthorized": "Neoprávněný přístup",
+    "networkError": "Chyba připojení"
+  }
+}
