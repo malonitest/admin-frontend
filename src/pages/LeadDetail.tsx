@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { getBrandNames, getModelsForBrand } from '@/data/carBrands';
 
 interface INote {
@@ -446,18 +447,17 @@ export function LeadDetail() {
             {/* Address */}
             <div>
               <label className="block text-xs text-gray-500 mb-1">Ulice</label>
-              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                <div className="px-3 py-2 bg-gray-50">
-                  <HomeIcon className="w-5 h-5 text-gray-400" />
-                </div>
-                <input 
-                  type="text" 
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="Ulice"
-                  className="flex-1 px-3 py-2 focus:outline-none" 
-                />
-              </div>
+              <AddressAutocomplete
+                value={formData.address}
+                onChange={(value) => handleInputChange('address', value)}
+                onAddressSelect={(addr) => {
+                  handleInputChange('address', addr.street);
+                  handleInputChange('city', addr.city);
+                  handleInputChange('postalCode', addr.postalCode);
+                }}
+                placeholder="Zadejte adresu..."
+                icon={<HomeIcon className="w-5 h-5 text-gray-400" />}
+              />
             </div>
 
             {/* City */}
