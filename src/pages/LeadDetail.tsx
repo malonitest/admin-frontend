@@ -204,7 +204,7 @@ export function LeadDetail() {
     // Assignment
     assignedOZ: '',
     ozVisitDate: '',
-    ozAddress: '',
+    ozVisitTime: '',
   });
 
   useEffect(() => {
@@ -247,7 +247,7 @@ export function LeadDetail() {
           monthlyRent: '',
           assignedOZ: typeof leadData.assignedSalesManager === 'object' ? leadData.assignedSalesManager?.id : leadData.assignedSalesManager || '',
           ozVisitDate: '',
-          ozAddress: 'Praha\n10000 Praha',
+          ozVisitTime: '',
         });
       } catch (err) {
         console.error('Failed to fetch lead:', err);
@@ -788,26 +788,31 @@ export function LeadDetail() {
               />
             </div>
 
-            {/* Assigned OZ */}
+            {/* Assigned Technician */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Přiřazení OZ</label>
+              <label className="block text-xs text-gray-500 mb-1">Přiřazení technika</label>
               <select 
                 value={formData.assignedOZ}
                 onChange={(e) => handleInputChange('assignedOZ', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-blue-600 text-white"
               >
-                <option value="">Vyberte OZ</option>
-                {dealers.map((dealer, index) => (
-                  <option key={dealer.id || `dealer-${index}`} value={dealer.id}>
-                    {dealer.user?.name || 'Neznámý'}
-                  </option>
-                ))}
+                <option value="">Vyberte technika</option>
+                {dealers
+                  .filter((dealer) => {
+                    const name = dealer.user?.name || '';
+                    return name.includes('Martin Dyntár') || name.includes('Michal Dyntár');
+                  })
+                  .map((dealer, index) => (
+                    <option key={dealer.id || `dealer-${index}`} value={dealer.id}>
+                      {dealer.user?.name || 'Neznámý'}
+                    </option>
+                  ))}
               </select>
             </div>
 
-            {/* OZ Visit Date */}
+            {/* Technician Visit Date */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Datum návštevy OZ</label>
+              <label className="block text-xs text-gray-500 mb-1">Datum návštěvy technika</label>
               <input 
                 type="date" 
                 value={formData.ozVisitDate}
@@ -816,14 +821,14 @@ export function LeadDetail() {
               />
             </div>
 
-            {/* OZ Address */}
+            {/* Technician Visit Time */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Adresa obchodního zástupce</label>
-              <textarea 
-                value={formData.ozAddress}
-                onChange={(e) => handleInputChange('ozAddress', e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none resize-none" 
+              <label className="block text-xs text-gray-500 mb-1">Čas návštěvy technika</label>
+              <input 
+                type="time" 
+                value={formData.ozVisitTime}
+                onChange={(e) => handleInputChange('ozVisitTime', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
               />
             </div>
           </div>
