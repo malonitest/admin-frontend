@@ -68,7 +68,8 @@ interface Lead {
 
 interface Dealer {
   id: string;
-  user: {
+  name?: string;
+  user?: {
     name: string;
   };
 }
@@ -799,12 +800,12 @@ export function LeadDetail() {
                 <option value="">Vyberte technika</option>
                 {dealers
                   .filter((dealer) => {
-                    const name = dealer.user?.name || '';
-                    return name.includes('Martin Dyntár') || name.includes('Michal Dyntár');
+                    const name = dealer.name || dealer.user?.name || '';
+                    return name.includes('Martin Dyntar') || name.includes('Michael Dyntar');
                   })
                   .map((dealer, index) => (
                     <option key={dealer.id || `dealer-${index}`} value={dealer.id}>
-                      {dealer.user?.name || 'Neznámý'}
+                      {dealer.name || dealer.user?.name || 'Neznámý'}
                     </option>
                   ))}
               </select>
