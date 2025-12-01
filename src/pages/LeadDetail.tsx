@@ -835,8 +835,20 @@ export function LeadDetail() {
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="mt-4 flex justify-end">
+        {/* Action Buttons */}
+        <div className="mt-4 flex justify-end gap-3">
+          <button 
+            onClick={() => {/* TODO: Handle decline */}}
+            className="px-8 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
+          >
+            Zamítnout
+          </button>
+          <button 
+            onClick={() => {/* TODO: Handle assign to technician */}}
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          >
+            Předat technikovi
+          </button>
           <button 
             onClick={handleSave}
             disabled={saving}
