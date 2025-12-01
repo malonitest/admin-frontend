@@ -677,7 +677,7 @@ export function LeadDetail() {
               Generovat nabídku
             </button>
             <button className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-              Cebia report
+              CarDetect report
             </button>
             <button className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
               Dokumenty
