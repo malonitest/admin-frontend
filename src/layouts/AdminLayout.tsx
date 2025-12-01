@@ -2,7 +2,6 @@ import logoSvg from '@/assets/logo.svg';
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts';
-import { useTranslation } from '@/hooks';
 
 // Menu položky podle vzoru
 const navigation = [
@@ -125,7 +124,6 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
-  const { t } = useTranslation();
   const location = useLocation();
 
   const isActive = (href: string) => {
