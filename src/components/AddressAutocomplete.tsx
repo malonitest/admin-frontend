@@ -42,7 +42,7 @@ export const AddressAutocomplete = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch suggestions from Mapy.cz Suggest API
+  // Fetch suggestions from Nominatim (OpenStreetMap) API - free, no API key needed
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
       setSuggestions([]);
@@ -51,31 +51,51 @@ export const AddressAutocomplete = ({
 
     setIsLoading(true);
     try {
-      // Using Mapy.cz Suggest API (free, good coverage for Czech Republic)
+      // Using Nominatim API with Czech Republic filter (countrycodes=cz)
       const response = await fetch(
-        `https://api.mapy.cz/v1/suggest?lang=cs&limit=5&type=regional.address&apikey=&query=${encodeURIComponent(query)}`,
+        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=cz&limit=5&q=${encodeURIComponent(query)}`,
         {
           headers: {
-            'Accept': 'application/json',
+            'Accept-Language': 'cs',
           },
         }
       );
 
       if (!response.ok) {
-        // Fallback to a simpler approach if API fails
         throw new Error('API request failed');
       }
 
       const data = await response.json();
       
-      const formattedSuggestions: AddressSuggestion[] = (data.items || []).map((item: any) => {
-        const regionalStructure = item.regionalStructure || [];
-        const street = item.name || '';
-        const city = regionalStructure.find((r: any) => r.type === 'regional.municipality')?.name || '';
-        const postalCode = item.zip || '';
+      const formattedSuggestions: AddressSuggestion[] = data.map((item: any) => {
+        const addr = item.address || {};
+        
+        // Build street from road and house_number
+        let street = '';
+        if (addr.road) {
+          street = addr.road;
+          if (addr.house_number) {
+            street += ' ' + addr.house_number;
+          }
+        } else if (addr.pedestrian || addr.neighbourhood) {
+          street = addr.pedestrian || addr.neighbourhood;
+        }
+
+        // Get city - try multiple fields
+        const city = addr.city || addr.town || addr.village || addr.municipality || '';
+        
+        // Get postal code
+        const postalCode = (addr.postcode || '').replace(/\s/g, '');
+
+        // Create a nice label
+        const labelParts = [];
+        if (street) labelParts.push(street);
+        if (city) labelParts.push(city);
+        if (postalCode) labelParts.push(postalCode);
+        const label = labelParts.length > 0 ? labelParts.join(', ') : item.display_name;
         
         return {
-          label: item.label || `${street}, ${city}`,
+          label: label,
           street: street,
           city: city,
           postalCode: postalCode,
@@ -86,7 +106,6 @@ export const AddressAutocomplete = ({
       setIsOpen(formattedSuggestions.length > 0);
     } catch (error) {
       console.error('Address suggestion error:', error);
-      // Fallback - no suggestions on error
       setSuggestions([]);
     } finally {
       setIsLoading(false);
