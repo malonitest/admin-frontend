@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
+import { SearchableSelect } from '@/components/SearchableSelect';
+import { getBrandNames, getModelsForBrand } from '@/data/carBrands';
 
 interface INote {
   message: string;
@@ -184,6 +186,7 @@ export function LeadDetail() {
     vin: '',
     brand: '',
     model: '',
+    customerModel: '',
     registration: '',
     carSPZ: '',
     mileage: '',
@@ -227,7 +230,8 @@ export function LeadDetail() {
           salesVisitAt: leadData.salesVisitAt ? leadData.salesVisitAt.split('T')[0] : '',
           vin: leadData.car?.VIN || '',
           brand: leadData.car?.brand || '',
-          model: leadData.car?.model || '',
+          model: '',
+          customerModel: leadData.car?.model || '',
           registration: leadData.car?.registration?.toString() || '',
           carSPZ: leadData.car?.carSPZ || '',
           mileage: leadData.car?.mileage?.toString() || '',
@@ -514,27 +518,42 @@ export function LeadDetail() {
             {/* Brand */}
             <div>
               <label className="block text-xs text-gray-500 mb-1">Značka auta</label>
-              <input 
-                type="text" 
+              <SearchableSelect
                 value={formData.brand}
-                onChange={(e) => handleInputChange('brand', e.target.value)}
-                placeholder="Značka auta"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
+                onChange={(value) => {
+                  handleInputChange('brand', value);
+                  // Reset model when brand changes
+                  handleInputChange('model', '');
+                }}
+                options={getBrandNames()}
+                placeholder="Vyberte značku"
               />
             </div>
 
             {/* Model */}
             <div>
               <label className="block text-xs text-gray-500 mb-1">Model auta</label>
-              <input 
-                type="text" 
+              <SearchableSelect
                 value={formData.model}
-                onChange={(e) => handleInputChange('model', e.target.value)}
-                placeholder="Model auta"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
+                onChange={(value) => handleInputChange('model', value)}
+                options={formData.brand ? getModelsForBrand(formData.brand) : []}
+                placeholder={formData.brand ? "Vyberte model" : "Nejprve vyberte značku"}
+                disabled={!formData.brand}
               />
             </div>
-            <p className="text-red-500 text-sm">Zadejte model vozu</p>
+
+            {/* Customer Model */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Model zadaný zákazníkem</label>
+              <input 
+                type="text" 
+                value={formData.customerModel}
+                onChange={(e) => handleInputChange('customerModel', e.target.value)}
+                placeholder="Model zadaný zákazníkem"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-50" 
+                readOnly
+              />
+            </div>
 
             {/* Year */}
             <div>
