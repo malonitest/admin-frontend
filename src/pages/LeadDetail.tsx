@@ -493,19 +493,7 @@ export function LeadDetail() {
               />
             </div>
 
-            {/* Sales Visit Date */}
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Datum návštevy OZ</label>
-              <input 
-                type="date" 
-                value={formData.salesVisitAt}
-                onChange={(e) => handleInputChange('salesVisitAt', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
-              />
-            </div>
 
-            <p className="text-red-500 text-sm">Vyberte datum návštevy OZ</p>
-            <div className="h-1 bg-red-500 rounded"></div>
           </div>
 
           {/* Column 2 - Car Info */}
