@@ -44,6 +44,13 @@ interface Lead {
       name?: string;
     };
   };
+  lastModifiedBy?: {
+    id: string;
+    name?: string;
+    user?: {
+      name?: string;
+    };
+  };
 }
 
 interface Dealer {
@@ -352,6 +359,9 @@ export function Leads() {
   };
 
   const getDealerName = (lead: Lead): string => {
+    // Use lastModifiedBy (last dealer who made changes), fallback to dealer
+    if (lead.lastModifiedBy?.user?.name) return lead.lastModifiedBy.user.name;
+    if (lead.lastModifiedBy?.name) return lead.lastModifiedBy.name;
     if (lead.dealer?.user?.name) return lead.dealer.user.name;
     if (lead.dealer?.name) return lead.dealer.name;
     return '-';
@@ -360,7 +370,7 @@ export function Leads() {
   const getAuthorName = (lead: Lead): string => {
     if (lead.originalAuthor?.user?.name) return lead.originalAuthor.user.name;
     if (lead.originalAuthor?.name) return lead.originalAuthor.name;
-    return getDealerName(lead);
+    return '-';
   };
 
   const getCustomerName = (lead: Lead): string => {
