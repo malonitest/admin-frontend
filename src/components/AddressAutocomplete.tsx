@@ -40,6 +40,8 @@ export const AddressAutocomplete = ({
   const [validationStatus, setValidationStatus] = useState<'none' | 'valid' | 'multiple' | 'invalid'>('none');
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastValidatedRef = useRef<string>(''); // Track last validated address to prevent re-validation
+  const skipNextValidationRef = useRef<boolean>(false); // Skip validation after auto-fill
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -97,7 +99,12 @@ export const AddressAutocomplete = ({
 
   // Fetch and validate address using Mapy.cz v1 Geocode API
   const validateAddress = useCallback(async (query: string) => {
-    if (query.length < 3) {
+    // Skip if already validated this exact query
+    if (query === lastValidatedRef.current) {
+      return;
+    }
+
+    if (query.length < 5) {
       setSuggestions([]);
       setValidationStatus('none');
       return;
@@ -122,6 +129,9 @@ export const AddressAutocomplete = ({
       const data = await response.json();
       const results = parseGeocodeResponse(data);
       
+      // Remember this query was validated
+      lastValidatedRef.current = query;
+      
       if (results.length === 0) {
         // No results - invalid address
         setValidationStatus('invalid');
@@ -133,6 +143,10 @@ export const AddressAutocomplete = ({
         setValidationStatus('valid');
         setSuggestions([]);
         setIsOpen(false);
+        
+        // Mark to skip next validation (triggered by onChange)
+        skipNextValidationRef.current = true;
+        lastValidatedRef.current = addr.street || addr.label;
         
         // Auto-fill with normalized address
         onChange(addr.street || addr.label);
@@ -161,11 +175,20 @@ export const AddressAutocomplete = ({
     }
   }, [onChange, onAddressSelect]);
 
-  // Debounced validation (400ms)
+  // Debounced validation (800ms to reduce API calls)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
+    
+    // Skip validation if this change was triggered by auto-fill
+    if (skipNextValidationRef.current) {
+      skipNextValidationRef.current = false;
+      return;
+    }
+    
+    // Reset validation status when user types
     setValidationStatus('none');
+    lastValidatedRef.current = '';
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -173,10 +196,14 @@ export const AddressAutocomplete = ({
 
     debounceRef.current = setTimeout(() => {
       validateAddress(newValue);
-    }, 400);
+    }, 800); // Longer debounce to reduce API calls
   };
 
   const handleSelect = (suggestion: GeocodedAddress) => {
+    // Mark to skip next validation
+    skipNextValidationRef.current = true;
+    lastValidatedRef.current = suggestion.street || suggestion.label;
+    
     onChange(suggestion.street || suggestion.label);
     setIsOpen(false);
     setSuggestions([]);
