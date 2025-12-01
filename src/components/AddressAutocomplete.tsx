@@ -4,7 +4,6 @@ interface GeocodedAddress {
   label: string;
   street: string;
   city: string;
-  cityPart: string;
   postalCode: string;
   latitude: number;
   longitude: number;
@@ -24,6 +23,8 @@ interface AddressAutocompleteProps {
   className?: string;
   icon?: React.ReactNode;
 }
+
+const MAPY_API_KEY = 'ylj7EXFfwPaHMx459Z_IbHsNlnfHT7beiJum4KWRUiQ';
 
 export const AddressAutocomplete = ({
   value,
@@ -52,80 +53,49 @@ export const AddressAutocomplete = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Parse Mapy.cz geocode XML response
-  const parseGeocodeResponse = (xmlText: string): GeocodedAddress[] => {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-    const items = xmlDoc.querySelectorAll('item');
+  // Parse Mapy.cz v1 geocode JSON response
+  const parseGeocodeResponse = (data: any): GeocodedAddress[] => {
+    const items = data.items || [];
     
-    const results: GeocodedAddress[] = [];
-    
-    items.forEach((item) => {
-      const title = item.getAttribute('title') || '';
-      const x = parseFloat(item.getAttribute('x') || '0');
-      const y = parseFloat(item.getAttribute('y') || '0');
+    return items.map((item: any) => {
+      const position = item.position || {};
+      const regionalStructure = item.regionalStructure || [];
       
-      // Parse address parts from nested elements
-      let street = '';
+      // Extract address components
+      let street = item.name || '';
       let city = '';
-      let cityPart = '';
-      let postalCode = '';
+      let postalCode = item.zip || '';
       
-      // Get street (muni + ward for address)
-      const streetEl = item.querySelector('street');
-      const muniEl = item.querySelector('muni');
-      const wardEl = item.querySelector('ward');
-      const zipEl = item.querySelector('zip');
-      
-      if (streetEl) {
-        street = streetEl.getAttribute('title') || '';
-        const houseNum = streetEl.getAttribute('num') || '';
-        if (houseNum) {
-          street += ' ' + houseNum;
+      // Find city from regional structure
+      for (const region of regionalStructure) {
+        if (region.type === 'regional.municipality') {
+          city = region.name || '';
+          break;
         }
       }
       
-      if (muniEl) {
-        city = muniEl.getAttribute('title') || '';
+      // If no municipality found, try district or region
+      if (!city) {
+        for (const region of regionalStructure) {
+          if (region.type === 'regional.municipality_part' || region.type === 'regional.district') {
+            city = region.name || '';
+            break;
+          }
+        }
       }
       
-      if (wardEl) {
-        cityPart = wardEl.getAttribute('title') || '';
-      }
-      
-      if (zipEl) {
-        postalCode = (zipEl.getAttribute('title') || '').replace(/\s/g, '');
-      }
-      
-      // Fallback: try to parse from title if structured data missing
-      if (!street && title) {
-        const parts = title.split(',').map(p => p.trim());
-        if (parts.length >= 1) street = parts[0];
-        if (parts.length >= 2) city = parts[1];
-      }
-      
-      // Build nice label
-      const labelParts = [];
-      if (street) labelParts.push(street);
-      if (cityPart && cityPart !== city) labelParts.push(cityPart);
-      if (city) labelParts.push(city);
-      if (postalCode) labelParts.push(postalCode);
-      
-      results.push({
-        label: labelParts.join(', ') || title,
+      return {
+        label: item.label || `${street}, ${city}`,
         street,
         city,
-        cityPart,
-        postalCode,
-        latitude: y,
-        longitude: x,
-      });
+        postalCode: postalCode.replace(/\s/g, ''),
+        latitude: position.lat || 0,
+        longitude: position.lon || 0,
+      };
     });
-    
-    return results;
   };
 
-  // Fetch and validate address using Mapy.cz Geocode API (no API key needed)
+  // Fetch and validate address using Mapy.cz v1 Geocode API
   const validateAddress = useCallback(async (query: string) => {
     if (query.length < 3) {
       setSuggestions([]);
@@ -135,17 +105,22 @@ export const AddressAutocomplete = ({
 
     setIsLoading(true);
     try {
-      // Mapy.cz Geocode API - free, no key required for basic usage
+      // Mapy.cz v1 Geocode API with API key
       const response = await fetch(
-        `https://api.mapy.cz/geocode?query=${encodeURIComponent(query)}`
+        `https://api.mapy.cz/v1/geocode?query=${encodeURIComponent(query)}&lang=cs&limit=5&apikey=${MAPY_API_KEY}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
       );
 
       if (!response.ok) {
-        throw new Error('API request failed');
+        throw new Error(`API request failed: ${response.status}`);
       }
 
-      const xmlText = await response.text();
-      const results = parseGeocodeResponse(xmlText);
+      const data = await response.json();
+      const results = parseGeocodeResponse(data);
       
       if (results.length === 0) {
         // No results - invalid address
@@ -174,7 +149,7 @@ export const AddressAutocomplete = ({
       } else {
         // Multiple results - show selection
         setValidationStatus('multiple');
-        setSuggestions(results.slice(0, 5)); // Max 5 suggestions
+        setSuggestions(results);
         setIsOpen(true);
       }
     } catch (error) {
@@ -310,10 +285,8 @@ export const AddressAutocomplete = ({
             >
               <div className="font-medium">{suggestion.label}</div>
               <div className="text-xs text-gray-500 flex gap-2 mt-1">
+                {suggestion.city && <span>{suggestion.city}</span>}
                 {suggestion.postalCode && <span>PSČ: {suggestion.postalCode}</span>}
-                {suggestion.latitude && suggestion.longitude && (
-                  <span>GPS: {suggestion.latitude.toFixed(4)}, {suggestion.longitude.toFixed(4)}</span>
-                )}
               </div>
             </div>
           ))}
