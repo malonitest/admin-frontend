@@ -66,6 +66,12 @@ interface Lead {
   dealer?: { name?: string; id?: string } | string;
   assignedSalesManager?: { name?: string; id?: string } | string;
   supervisor?: { name?: string; id?: string } | string;
+  documents?: {
+    carVIN?: { _id: string; file: string };
+    carMileage?: { _id: string; file: string };
+    carExterior?: { _id: string; file: string }[];
+    carInterior?: { _id: string; file: string }[];
+  };
 }
 
 interface Dealer {
@@ -198,6 +204,7 @@ export function LeadDetail() {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
+      await refreshLead();
       alert(`${files.length > 1 ? 'Dokumenty byly' : 'Dokument byl'} úspěšně nahrán`);
     } catch (error) {
       console.error('Upload error:', error);
@@ -217,6 +224,16 @@ export function LeadDetail() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(null);
+  };
+
+  // Refresh lead data after document upload
+  const refreshLead = async () => {
+    try {
+      const res = await axiosClient.get(`/leads/${id}`);
+      setLead(res.data);
+    } catch (error) {
+      console.error('Failed to refresh lead:', error);
+    }
   };
 
   // Form states
@@ -1021,6 +1038,7 @@ export function LeadDetail() {
                         await axiosClient.post(`/leads/${id}/documents`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
+                        await refreshLead();
                         alert('Fotka palubní desky nahrána');
                       } catch (error) {
                         console.error('Upload error:', error);
@@ -1048,6 +1066,7 @@ export function LeadDetail() {
                         await axiosClient.post(`/leads/${id}/documents`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
+                        await refreshLead();
                         alert('Fotka palubní desky nahrána');
                       } catch (error) {
                         console.error('Upload error:', error);
@@ -1061,9 +1080,9 @@ export function LeadDetail() {
 
                   {/* Preview area */}
                   <div className="flex justify-center mb-3">
-                    {lead?.car?.mileagePhoto ? (
+                    {lead?.documents?.carMileage?.file ? (
                       <img 
-                        src={lead.car.mileagePhoto} 
+                        src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/v1'}/documents/download/${lead.documents.carMileage.file}`} 
                         alt="Palubní deska" 
                         className="w-32 h-20 object-cover rounded"
                       />
@@ -1136,6 +1155,7 @@ export function LeadDetail() {
                         await axiosClient.post(`/leads/${id}/documents`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
+                        await refreshLead();
                         alert('Fotka VIN nahrána');
                       } catch (error) {
                         console.error('Upload error:', error);
@@ -1163,6 +1183,7 @@ export function LeadDetail() {
                         await axiosClient.post(`/leads/${id}/documents`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
+                        await refreshLead();
                         alert('Fotka VIN nahrána');
                       } catch (error) {
                         console.error('Upload error:', error);
@@ -1176,9 +1197,9 @@ export function LeadDetail() {
 
                   {/* Preview area */}
                   <div className="flex justify-center mb-3">
-                    {lead?.car?.vinPhoto ? (
+                    {lead?.documents?.carVIN?.file ? (
                       <img 
-                        src={lead.car.vinPhoto} 
+                        src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/v1'}/documents/download/${lead.documents.carVIN.file}`} 
                         alt="VIN" 
                         className="w-32 h-20 object-cover rounded"
                       />
@@ -1292,6 +1313,7 @@ export function LeadDetail() {
                             headers: { 'Content-Type': 'multipart/form-data' }
                           });
                         }
+                        await refreshLead();
                         alert('Dokumenty byly úspěšně nahrány');
                       } catch (error) {
                         console.error('Upload error:', error);
@@ -1321,6 +1343,7 @@ export function LeadDetail() {
                         await axiosClient.post(`/leads/${id}/documents`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
+                        await refreshLead();
                         alert('Dokument byl úspěšně nahrán');
                       } catch (error) {
                         console.error('Upload error:', error);
