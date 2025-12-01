@@ -171,6 +171,9 @@ export function LeadDetail() {
   const [loading, setLoading] = useState(true);
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [selectedDocCategory, setSelectedDocCategory] = useState<string | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -680,7 +683,10 @@ export function LeadDetail() {
             <button className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
               CarDetect report
             </button>
-            <button className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            <button 
+              onClick={() => setShowDocumentsModal(true)}
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
               Dokumenty
             </button>
             <button className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
@@ -858,6 +864,180 @@ export function LeadDetail() {
           </button>
         </div>
       </div>
+
+      {/* Documents Modal */}
+      {showDocumentsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {!selectedDocCategory ? (
+              <>
+                <h2 className="text-xl font-bold text-center mb-6">Dokumenty</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setSelectedDocCategory('najezd_vin')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Nájezd a VIN
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('evidencni_kontrola')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Evidenční kontrola
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('technicke_prukazy')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Technické průkazy
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('fyzicka_kontrola')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Fyzická kontrola
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('smlouvy')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Smlouvy
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('zelena_karta')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Zelená karta
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('plna_moc')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Plná moc
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('pri_prodeji')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Při prodeji
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('pojisteni')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Pojištění
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('ostatni')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium"
+                  >
+                    Ostatní dokumenty
+                  </button>
+                  <button
+                    onClick={() => setSelectedDocCategory('cebia_cardetect')}
+                    className="py-3 px-4 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium col-span-1"
+                  >
+                    Cebia a CarDetect
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="mt-6 w-full py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700"
+                >
+                  Zavřít
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center mb-6">
+                  <button
+                    onClick={() => setSelectedDocCategory(null)}
+                    className="mr-3 text-gray-600 hover:text-gray-800"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h2 className="text-xl font-bold">
+                    {selectedDocCategory === 'najezd_vin' && 'Nájezd a VIN'}
+                    {selectedDocCategory === 'evidencni_kontrola' && 'Evidenční kontrola'}
+                    {selectedDocCategory === 'technicke_prukazy' && 'Technické průkazy'}
+                    {selectedDocCategory === 'fyzicka_kontrola' && 'Fyzická kontrola'}
+                    {selectedDocCategory === 'smlouvy' && 'Smlouvy'}
+                    {selectedDocCategory === 'zelena_karta' && 'Zelená karta'}
+                    {selectedDocCategory === 'plna_moc' && 'Plná moc'}
+                    {selectedDocCategory === 'pri_prodeji' && 'Při prodeji'}
+                    {selectedDocCategory === 'pojisteni' && 'Pojištění'}
+                    {selectedDocCategory === 'ostatni' && 'Ostatní dokumenty'}
+                    {selectedDocCategory === 'cebia_cardetect' && 'Cebia a CarDetect'}
+                  </h2>
+                </div>
+
+                {/* Upload Area */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4">
+                  <input
+                    type="file"
+                    id="doc-upload"
+                    className="hidden"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={async (e) => {
+                      const files = e.target.files;
+                      if (!files || files.length === 0) return;
+                      
+                      setUploadingDoc(true);
+                      try {
+                        for (const file of Array.from(files)) {
+                          const formData = new FormData();
+                          formData.append('document', file);
+                          formData.append('category', selectedDocCategory || '');
+                          
+                          await axiosClient.post(`/leads/${id}/documents`, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          });
+                        }
+                        alert('Dokumenty byly úspěšně nahrány');
+                      } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Chyba při nahrávání dokumentů');
+                      } finally {
+                        setUploadingDoc(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="doc-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span className="text-gray-600">
+                      {uploadingDoc ? 'Nahrávám...' : 'Klikněte pro nahrání nebo přetáhněte soubory'}
+                    </span>
+                    <span className="text-sm text-gray-400 mt-1">
+                      PDF, DOC, DOCX, obrázky
+                    </span>
+                  </label>
+                </div>
+
+                {/* Uploaded Documents List - placeholder */}
+                <div className="text-sm text-gray-500 text-center py-4">
+                  Zatím žádné dokumenty v této kategorii
+                </div>
+
+                <button
+                  onClick={() => setSelectedDocCategory(null)}
+                  className="mt-4 w-full py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700"
+                >
+                  Zpět
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
