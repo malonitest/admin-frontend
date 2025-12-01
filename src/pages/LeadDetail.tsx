@@ -47,6 +47,8 @@ interface Lead {
     VIN?: string;
     mileage?: number;
     carSPZ?: string;
+    mileagePhoto?: string;
+    vinPhoto?: string;
   };
   lease?: {
     offer?: number;
@@ -947,6 +949,125 @@ export function LeadDetail() {
                   Zavřít
                 </button>
               </>
+            ) : selectedDocCategory === 'najezd_vin' ? (
+              <>
+                <h2 className="text-xl font-bold text-center mb-6">Nájezd a VIN</h2>
+                
+                {/* Fotka palubní desky */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                  <p className="text-center font-medium mb-3">Fotka palubní desky</p>
+                  <input
+                    type="file"
+                    id="doc-mileage"
+                    className="hidden"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingDoc(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('document', file);
+                        formData.append('category', 'carMileage');
+                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                          headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        alert('Fotka palubní desky nahrána');
+                      } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Chyba při nahrávání');
+                      } finally {
+                        setUploadingDoc(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <label htmlFor="doc-mileage" className="cursor-pointer flex flex-col items-center">
+                    {lead?.car?.mileagePhoto ? (
+                      <img 
+                        src={lead.car.mileagePhoto} 
+                        alt="Palubní deska" 
+                        className="w-32 h-20 object-cover rounded mb-2"
+                      />
+                    ) : (
+                      <div className="w-32 h-20 bg-gray-800 rounded flex items-center justify-center mb-2">
+                        <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {uploadingDoc ? 'Nahrávám...' : 'Klikněte pro nahrání nebo vyfocení'}
+                    </span>
+                  </label>
+                </div>
+
+                {/* Fotka VIN */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                  <p className="text-center font-medium mb-3">Fotka VIN</p>
+                  <input
+                    type="file"
+                    id="doc-vin"
+                    className="hidden"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingDoc(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('document', file);
+                        formData.append('category', 'carVIN');
+                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                          headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        alert('Fotka VIN nahrána');
+                      } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Chyba při nahrávání');
+                      } finally {
+                        setUploadingDoc(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <label htmlFor="doc-vin" className="cursor-pointer flex flex-col items-center">
+                    {lead?.car?.vinPhoto ? (
+                      <img 
+                        src={lead.car.vinPhoto} 
+                        alt="VIN" 
+                        className="w-32 h-20 object-cover rounded mb-2"
+                      />
+                    ) : (
+                      <div className="w-32 h-20 bg-gray-800 rounded flex items-center justify-center mb-2">
+                        <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {uploadingDoc ? 'Nahrávám...' : 'Klikněte pro nahrání nebo vyfocení'}
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  onClick={() => setSelectedDocCategory(null)}
+                  className="w-full py-2 bg-red-600 text-white rounded-full hover:bg-red-700 mb-2"
+                >
+                  Potvrdit
+                </button>
+                <button
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="w-full py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700"
+                >
+                  Zavřít
+                </button>
+              </>
             ) : (
               <>
                 <div className="flex items-center mb-6">
@@ -959,7 +1080,6 @@ export function LeadDetail() {
                     </svg>
                   </button>
                   <h2 className="text-xl font-bold">
-                    {selectedDocCategory === 'najezd_vin' && 'Nájezd a VIN'}
                     {selectedDocCategory === 'evidencni_kontrola' && 'Evidenční kontrola'}
                     {selectedDocCategory === 'technicke_prukazy' && 'Technické průkazy'}
                     {selectedDocCategory === 'fyzicka_kontrola' && 'Fyzická kontrola'}
