@@ -3,16 +3,37 @@ import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts';
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children?: { name: string; href: string; external?: boolean }[];
+}
+
 // Menu položky podle vzoru
-const navigation = [
+const navigation: NavItem[] = [
   { name: 'Statistiky', href: '/', icon: StatsIcon },
   { name: 'Pronájmy', href: '/leases', icon: LeaseIcon },
   { name: 'Leady', href: '/leads', icon: LeadIcon },
   { name: 'Obchodníci', href: '/dealers', icon: DealersIcon },
   { name: 'Faktury', href: '/invoices', icon: InvoiceIcon },
   { name: 'Logy', href: '/logs', icon: LogIcon },
-  { name: 'Reporty', href: '/reports', icon: ReportIcon },
+  { 
+    name: 'Reporty', 
+    href: '/reports', 
+    icon: ReportIcon,
+    children: [
+      { name: 'CC', href: '/reports/cc' },
+      { name: 'OS', href: '/reports/os' },
+      { name: 'Marketing', href: '/reports/marketing' },
+      { name: 'Finance', href: '/reports/finance' },
+      { name: 'Auta', href: '/reports/cars' },
+      { name: 'Sklad', href: 'https://green-grass-00b59b203.3.azurestaticapps.net', external: true },
+      { name: 'Collection', href: '/reports/collection' },
+    ]
+  },
   { name: 'Kalkulátor splátek', href: '/calculator', icon: CalculatorIcon },
+  { name: 'DriveBot - Carvex', href: '/drivebot', icon: DriveBotIcon },
   { name: 'Kontakty', href: '/contacts', icon: ContactIcon },
 ];
 
@@ -88,6 +109,14 @@ function ContactIcon({ className }: { className?: string }) {
   );
 }
 
+function DriveBotIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+    </svg>
+  );
+}
+
 function CloseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -120,9 +149,18 @@ function ChevronRightIcon({ className }: { className?: string }) {
   );
 }
 
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  );
+}
+
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -131,8 +169,98 @@ export function AdminLayout() {
     return location.pathname.startsWith(href);
   };
 
+  const toggleSubmenu = (name: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(name) 
+        ? prev.filter(n => n !== name)
+        : [...prev, name]
+    );
+  };
+
+  const isSubmenuExpanded = (name: string) => expandedMenus.includes(name);
+
   // Získání jména uživatele
   const userName = user?.name || user?.email?.split('@')[0] || 'Admin';
+
+  const renderNavItem = (item: NavItem, mobile: boolean = false) => {
+    const hasChildren = item.children && item.children.length > 0;
+    const isItemActive = isActive(item.href);
+    const isExpanded = isSubmenuExpanded(item.name);
+
+    if (hasChildren) {
+      return (
+        <div key={item.href}>
+          <button
+            onClick={() => toggleSubmenu(item.name)}
+            className={`w-full flex items-center justify-between px-3 py-2.5 mb-0.5 rounded text-sm transition-colors ${
+              isItemActive
+                ? 'bg-white/20 text-white'
+                : 'text-white/90 hover:bg-white/10'
+            } ${sidebarCollapsed && !mobile ? 'justify-center' : ''}`}
+          >
+            <div className="flex items-center">
+              <item.icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed && !mobile ? '' : 'mr-3'}`} />
+              {(!sidebarCollapsed || mobile) && <span>{item.name}</span>}
+            </div>
+            {(!sidebarCollapsed || mobile) && (
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            )}
+          </button>
+          {isExpanded && (!sidebarCollapsed || mobile) && (
+            <div className="ml-4 pl-4 border-l border-white/20">
+              {item.children!.map((child) => (
+                child.external ? (
+                  <a
+                    key={child.href}
+                    href={child.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={mobile ? () => setSidebarOpen(false) : undefined}
+                    className="flex items-center px-3 py-2 mb-0.5 rounded text-sm transition-colors text-white/80 hover:bg-white/10"
+                  >
+                    {child.name}
+                    <svg className="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                ) : (
+                  <Link
+                    key={child.href}
+                    to={child.href}
+                    onClick={mobile ? () => setSidebarOpen(false) : undefined}
+                    className={`flex items-center px-3 py-2 mb-0.5 rounded text-sm transition-colors ${
+                      location.pathname === child.href
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/80 hover:bg-white/10'
+                    }`}
+                  >
+                    {child.name}
+                  </Link>
+                )
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={mobile ? () => setSidebarOpen(false) : undefined}
+        title={sidebarCollapsed && !mobile ? item.name : undefined}
+        className={`flex items-center px-3 py-2.5 mb-0.5 rounded text-sm transition-colors ${
+          isItemActive
+            ? 'bg-white/20 text-white'
+            : 'text-white/90 hover:bg-white/10'
+        } ${sidebarCollapsed && !mobile ? 'justify-center' : ''}`}
+      >
+        <item.icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed && !mobile ? '' : 'mr-3'}`} />
+        {(!sidebarCollapsed || mobile) && <span>{item.name}</span>}
+      </Link>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -165,22 +293,8 @@ export function AdminLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-2 px-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center px-3 py-2.5 mb-0.5 rounded text-sm transition-colors ${
-                isActive(item.href)
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/90 hover:bg-white/10'
-              }`}
-            >
-              <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
+        <nav className="mt-2 px-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 60px)' }}>
+          {navigation.map((item) => renderNavItem(item, true))}
         </nav>
       </div>
 
@@ -213,21 +327,7 @@ export function AdminLayout() {
 
           {/* Navigation */}
           <nav className="flex-1 mt-2 px-2 overflow-y-auto">
-            {navigation.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                title={sidebarCollapsed ? item.name : undefined}
-                className={`flex items-center px-3 py-2.5 mb-0.5 rounded text-sm transition-colors ${
-                  isActive(item.href)
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/90 hover:bg-white/10'
-                } ${sidebarCollapsed ? 'justify-center' : ''}`}
-              >
-                <item.icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed ? '' : 'mr-3'}`} />
-                {!sidebarCollapsed && <span>{item.name}</span>}
-              </Link>
-            ))}
+            {navigation.map((item) => renderNavItem(item, false))}
           </nav>
         </div>
       </div>

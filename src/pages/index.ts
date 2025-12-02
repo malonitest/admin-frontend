@@ -1,5 +1,10 @@
-export { Login } from './Login';
-export { Dashboard } from './Dashboard';
-export { Users } from './Users';
-export { UserDetail } from './UserDetail';
-export { Settings } from './Settings';
+export { Login } from "./Login";
+export { Dashboard } from "./Dashboard";
+export { Users } from "./Users";
+export { UserDetail } from "./UserDetail";
+export { Settings } from "./Settings";
+export { default as DriveBot } from "./DriveBot";
+export { default as ReportsCC } from "./ReportsCC";
+export { default as ReportsOS } from "./ReportsOS";
+export { default as ReportsMarketing } from "./ReportsMarketing";
+export { default as LogsPage } from "./LogsPage";
