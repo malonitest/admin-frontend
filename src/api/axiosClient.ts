@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1';
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,

@@ -1,11 +1,11 @@
 # ?? Admin Frontend - Backend Integration Guide
 
-## ?? Zmìny v integraci backendu (8.12.2024)
+## ?? Zmìny v integraci backendu (9.12.2024)
 
 ### ? Co bylo provedeno:
 
 1. **Aktualizace API URL**
-   - Produkèní backend: `https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1`
+   - Produkèní backend: `https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1`
    - Lokální vývoj: `http://localhost:8080/v1`
 
 2. **Vylepšení autentizace**
@@ -23,7 +23,7 @@
 
 Soubor `.env`:
 ```env
-VITE_API_BASE_URL=https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1
+VITE_API_BASE_URL=https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1
 ```
 
 Pro lokální vývoj s lokálním backendem:
@@ -39,7 +39,7 @@ Pro produkèní deployment na Azure je potøeba nastavit environment variable v Azu
 2. Configuration ? Application settings
 3. Pøidat:
    - Name: `VITE_API_BASE_URL`
-   - Value: `https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1`
+   - Value: `https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1`
 
 ## ?? Autentizace
 
@@ -95,18 +95,18 @@ Hlavní moduly:
 ### Swagger UI
 Interaktivní dokumentace:
 ```
-https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1/docs
+https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/docs
 ```
 
 ### Health Check
 ```bash
-curl https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/health
+curl https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/health
 ```
 
 ### Test Login
 ```bash
 curl -X POST \
-  https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1/auth/login \
+  https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password123"}'
 ```
@@ -137,13 +137,13 @@ npm run preview
 
 Automatický deployment pøes GitHub Actions pøi push do `main` branch.
 
-Workflow soubor: `.github/workflows/azure-static-web-apps-happy-pebble-041ffdb03.yml`
+Workflow soubor: `.github/workflows/azure-static-web-apps.yml`
 
 ## ?? Troubleshooting
 
 ### CORS Error
 ```
-Access to fetch at 'https://backrent-simple-app...' has been blocked by CORS policy
+Access to fetch at 'https://backrent-itx754fut5nry-app...' has been blocked by CORS policy
 ```
 **Øešení**: Backend má nakonfigurované CORS pro frontend domény. Kontaktujte backend team pro pøidání nové domény.
 
@@ -167,10 +167,10 @@ net::ERR_CONNECTION_REFUSED
 
 ## ?? Kontakt
 
-- **Backend API**: https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io
+- **Backend API**: https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io
 - **Frontend**: https://happy-pebble-041ffdb03.3.azurestaticapps.net
-- **Swagger**: https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1/docs
+- **Swagger**: https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/docs
 
 ---
 
-**Poslední aktualizace**: 8.12.2024
+**Poslední aktualizace**: 9.12.2024

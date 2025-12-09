@@ -1,14 +1,14 @@
 # ?? Deployment Notes - Backend Migration
 
-**Datum**: 8.12.2024  
-**Verze**: 1.1.0
+**Datum**: 9.12.2024  
+**Verze**: 1.2.0
 
 ## ? Provedené zmìny
 
 ### 1. **Nový Backend URL**
 Aplikace nyní používá nový Azure Container Apps backend:
 ```
-https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1
+https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1
 ```
 
 ### 2. **Vylepšená Autentizace**
@@ -27,7 +27,7 @@ https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapp
 Pøidat v Azure Portal ? Static Web Apps ? Configuration:
 
 ```
-VITE_API_BASE_URL=https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1
+VITE_API_BASE_URL=https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1
 ```
 
 ### Deployment Steps
@@ -61,7 +61,7 @@ https://happy-pebble-041ffdb03.3.azurestaticapps.net
 
 **Backend**:
 ```
-https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/health
+https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/health
 ```
 
 ### Logs
@@ -107,13 +107,13 @@ git push origin main
 
 3. Starý backend URL (pokud je stále dostupný):
 ```
-http://localhost:3000/v1
+https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1
 ```
 
 ## ?? Support
 
-**API Status**: https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/health  
-**API Docs**: https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1/docs  
+**API Status**: https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/health  
+**API Docs**: https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/docs  
 **Frontend**: https://happy-pebble-041ffdb03.3.azurestaticapps.net
 
 ---

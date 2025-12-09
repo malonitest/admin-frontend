@@ -4,7 +4,7 @@
 
 ### Production (Azure)
 ```
-https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io
+https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io
 ```
 
 ### Local Development
@@ -161,7 +161,7 @@ All list endpoints support pagination:
 
 Interactive API documentation available at:
 ```
-https://backrent-simple-app.wonderfulstone-7bd2a01f.westeurope.azurecontainerapps.io/v1/docs
+https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/docs
 ```
 
 ## Health Check
@@ -173,5 +173,5 @@ Returns API health status.
 
 ---
 
-**Last Updated**: 2024-12-08  
+**Last Updated**: 2024-12-09  
 **Backend Version**: 3.0.11
