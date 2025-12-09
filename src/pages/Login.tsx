@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts';
 import { useTranslation } from '@/hooks';
@@ -14,15 +14,23 @@ export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  // Debug: Log API URL
+  useEffect(() => {
+    console.log('?? DEBUG: API Base URL:', import.meta.env.VITE_API_BASE_URL);
+    console.log('?? DEBUG: All env vars:', import.meta.env);
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
+      console.log('?? Attempting login with email:', email);
       await login({ email, password });
       navigate('/');
-    } catch {
+    } catch (err) {
+      console.error('? Login error:', err);
       setError(t('auth.loginError'));
     } finally {
       setIsLoading(false);
@@ -74,6 +82,11 @@ export function Login() {
               {t('auth.loginButton')}
             </Button>
           </form>
+          
+          {/* Debug info */}
+          <div className="mt-4 text-xs text-gray-400 text-center">
+            API: {import.meta.env.VITE_API_BASE_URL || 'Not set'}
+          </div>
         </div>
       </div>
     </div>
