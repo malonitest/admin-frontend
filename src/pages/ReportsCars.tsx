@@ -127,11 +127,13 @@ const ReportsCars: React.FC = () => {
     return Array.from(new Set(reportData.cars.map(car => car.year))).sort((a, b) => b - a);
   }, [reportData]);
 
-  const formatCurrency = (value: number): string => {
+  const formatCurrency = (value: number | undefined): string => {
+    if (value === undefined || value === null) return '0 Kè';
     return value.toLocaleString('cs-CZ') + ' Kè';
   };
 
   const getStatusColor = (status: string): string => {
+    if (!status) return 'bg-gray-100 text-gray-800';
     switch (status.toLowerCase()) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'sold': return 'bg-blue-100 text-blue-800';
@@ -167,7 +169,7 @@ const ReportsCars: React.FC = () => {
                 </svg>
                 <span className="text-sm">Celkem vozidel</span>
               </div>
-              <div className="text-3xl font-bold text-blue-900">{reportData.stats.totalCars}</div>
+              <div className="text-3xl font-bold text-blue-900">{reportData.stats.totalCars ?? 0}</div>
             </div>
 
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
@@ -197,7 +199,7 @@ const ReportsCars: React.FC = () => {
                 </svg>
                 <span className="text-sm">Prùmìrný rok</span>
               </div>
-              <div className="text-3xl font-bold text-orange-900">{Math.round(reportData.stats.averageYear)}</div>
+              <div className="text-3xl font-bold text-orange-900">{Math.round(reportData.stats.averageYear ?? 0)}</div>
             </div>
 
             <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
@@ -207,7 +209,7 @@ const ReportsCars: React.FC = () => {
                 </svg>
                 <span className="text-sm">Prùmìrný nájezd</span>
               </div>
-              <div className="text-2xl font-bold text-indigo-900">{reportData.stats.averageMileage.toLocaleString('cs-CZ')} km</div>
+              <div className="text-2xl font-bold text-indigo-900">{(reportData.stats.averageMileage ?? 0).toLocaleString('cs-CZ')} km</div>
             </div>
 
             <div className="bg-red-50 rounded-lg p-4 border border-red-200">
@@ -217,7 +219,7 @@ const ReportsCars: React.FC = () => {
                 </svg>
                 <span className="text-sm">ROI</span>
               </div>
-              <div className="text-3xl font-bold text-red-900">{reportData.stats.roi.toFixed(1)}%</div>
+              <div className="text-3xl font-bold text-red-900">{(reportData.stats.roi ?? 0).toFixed(1)}%</div>
             </div>
           </div>
 
@@ -289,13 +291,13 @@ const ReportsCars: React.FC = () => {
               <div className="bg-blue-50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-blue-700">S fotografiemi</span>
-                  <span className="text-2xl font-bold text-blue-900">{reportData.stats.completeness.withPhotos}</span>
+                  <span className="text-2xl font-bold text-blue-900">{reportData.stats.completeness?.withPhotos ?? 0}</span>
                 </div>
                 <div className="mt-2">
                   <div className="w-full bg-blue-200 rounded-full h-2">
                     <div 
                       className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${(reportData.stats.completeness.withPhotos / reportData.stats.totalCars) * 100}%` }}
+                      style={{ width: `${reportData.stats.totalCars > 0 ? ((reportData.stats.completeness?.withPhotos ?? 0) / reportData.stats.totalCars) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -304,13 +306,13 @@ const ReportsCars: React.FC = () => {
               <div className="bg-green-50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-green-700">S dokumenty</span>
-                  <span className="text-2xl font-bold text-green-900">{reportData.stats.completeness.withDocuments}</span>
+                  <span className="text-2xl font-bold text-green-900">{reportData.stats.completeness?.withDocuments ?? 0}</span>
                 </div>
                 <div className="mt-2">
                   <div className="w-full bg-green-200 rounded-full h-2">
                     <div 
                       className="bg-green-600 h-2 rounded-full" 
-                      style={{ width: `${(reportData.stats.completeness.withDocuments / reportData.stats.totalCars) * 100}%` }}
+                      style={{ width: `${reportData.stats.totalCars > 0 ? ((reportData.stats.completeness?.withDocuments ?? 0) / reportData.stats.totalCars) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -319,13 +321,13 @@ const ReportsCars: React.FC = () => {
               <div className="bg-purple-50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-purple-700">Kompletní</span>
-                  <span className="text-2xl font-bold text-purple-900">{reportData.stats.completeness.complete}</span>
+                  <span className="text-2xl font-bold text-purple-900">{reportData.stats.completeness?.complete ?? 0}</span>
                 </div>
                 <div className="mt-2">
                   <div className="w-full bg-purple-200 rounded-full h-2">
                     <div 
                       className="bg-purple-600 h-2 rounded-full" 
-                      style={{ width: `${(reportData.stats.completeness.complete / reportData.stats.totalCars) * 100}%` }}
+                      style={{ width: `${reportData.stats.totalCars > 0 ? ((reportData.stats.completeness?.complete ?? 0) / reportData.stats.totalCars) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -440,15 +442,15 @@ const ReportsCars: React.FC = () => {
                     filteredCars.map((car, index) => (
                       <tr key={car.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900">{car.brand} {car.model}</div>
+                          <div className="text-sm font-medium text-gray-900">{car.brand ?? ''} {car.model ?? ''}</div>
                           {car.notes && (
                             <div className="text-xs text-gray-500 mt-1">{car.notes.substring(0, 50)}...</div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">{car.vin || '-'}</td>
-                        <td className="px-4 py-3 text-right text-sm text-gray-900">{car.year}</td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-900">{car.year ?? '-'}</td>
                         <td className="px-4 py-3 text-right text-sm text-gray-900">
-                          {car.mileage.toLocaleString('cs-CZ')} km
+                          {(car.mileage ?? 0).toLocaleString('cs-CZ')} km
                         </td>
                         <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                           {formatCurrency(car.purchasePrice)}
@@ -488,7 +490,7 @@ const ReportsCars: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(car.status)}`}>
-                            {car.status}
+                            {car.status ?? 'Unknown'}
                           </span>
                         </td>
                       </tr>
