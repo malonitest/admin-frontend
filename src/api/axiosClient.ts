@@ -1,9 +1,11 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-// PRODUCTION BACKEND URL - DO NOT CHANGE
-const API_BASE_URL = 'https://backrent-api-prod.azurewebsites.net/v1';
+// FALLBACK to OLD backend (new domain doesn't resolve)
+// TODO: Update when backend team provides correct production URL
+const API_BASE_URL = 'https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1';
 
-console.log('?? API Base URL:', API_BASE_URL);
+console.log('??  Using FALLBACK backend URL:', API_BASE_URL);
+console.log('??  New backend (backrent-api-prod.azurewebsites.net) does not exist yet!');
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
