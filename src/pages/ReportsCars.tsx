@@ -73,6 +73,7 @@ const ReportsCars: React.FC = () => {
   const [yearFilter, setYearFilter] = useState<string>('');
   const [mileageFilter, setMileageFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<string>('all'); // all, 30days, 90days, year
 
   const fetchReportData = async () => {
     setLoading(true);
@@ -357,7 +358,22 @@ const ReportsCars: React.FC = () => {
               {/* Filters */}
               <div className="bg-white rounded-lg shadow p-4 mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtry</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Èasové období</label>
+                    <select
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">Všechny</option>
+                      <option value="30days">Posledních 30 dní</option>
+                      <option value="90days">Posledních 90 dní</option>
+                      <option value="year">Tento rok</option>
+                      <option value="lastyear">Minulý rok</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Hledat</label>
                     <input
@@ -413,13 +429,14 @@ const ReportsCars: React.FC = () => {
                   </div>
                 </div>
 
-                {(brandFilter || yearFilter || mileageFilter || searchQuery) && (
+                {(brandFilter || yearFilter || mileageFilter || searchQuery || dateFilter !== 'all') && (
                   <button
                     onClick={() => {
                       setBrandFilter('');
                       setYearFilter('');
                       setMileageFilter('');
                       setSearchQuery('');
+                      setDateFilter('all');
                     }}
                     className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
                   >
