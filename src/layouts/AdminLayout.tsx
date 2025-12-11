@@ -34,6 +34,7 @@ const navigation: NavItem[] = [
         children: [
           { name: 'Přehled', href: '/reports/cc' },
           { name: 'Funnel 1', href: '/reports/cc/funnel1' },
+          { name: 'Funnel Technik', href: '/reports/cc/funnel-technik' },
         ]
       },
       { name: 'OS', href: '/reports/os' },

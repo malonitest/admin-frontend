@@ -7,6 +7,7 @@ import Leads from '@/pages/Leads';
 import NewLead from '@/pages/NewLead';
 import LeadDetail from '@/pages/LeadDetail';
 import ReportsCCFunnel1 from '@/pages/ReportsCCFunnel1';
+import ReportsCCFunnelTechnik from '@/pages/ReportsCCFunnelTechnik';
 
 // Placeholder komponenty pro chybějící stránky
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
       {
         path: 'reports/cc/funnel1',
         element: <ReportsCCFunnel1 />,
+      },
+      {
+        path: 'reports/cc/funnel-technik',
+        element: <ReportsCCFunnelTechnik />,
       },
       {
         path: 'reports/os',
