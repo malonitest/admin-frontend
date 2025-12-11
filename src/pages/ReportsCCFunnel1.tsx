@@ -137,11 +137,11 @@ const ReportsCCFunnel1: React.FC = () => {
 
   // Prepare funnel chart data
   const funnelChartData = useMemo(() => {
-    if (!reportData) return [];
+    if (!reportData || !reportData.stages) return [];
     return reportData.stages.map((stage) => ({
       name: stage.stage,
       count: stage.count,
-      percentage: parseFloat(stage.percentage.toFixed(1)),
+      percentage: parseFloat((stage.percentage ?? 0).toFixed(1)),
     }));
   }, [reportData]);
 
@@ -152,7 +152,7 @@ const ReportsCCFunnel1: React.FC = () => {
       name: reason.reason.length > 30 ? reason.reason.substring(0, 30) + '...' : reason.reason,
       fullName: reason.reason,
       count: reason.count,
-      percentage: parseFloat(reason.percentage.toFixed(1)),
+      percentage: parseFloat((reason.percentage ?? 0).toFixed(1)),
     }));
   }, [reportData]);
 
@@ -161,7 +161,7 @@ const ReportsCCFunnel1: React.FC = () => {
     if (!reportData || !reportData.averageTimeInStages) return [];
     return Object.entries(reportData.averageTimeInStages).map(([stage, days]) => ({
       name: stage,
-      days: parseFloat(days.toFixed(1)),
+      days: parseFloat((days ?? 0).toFixed(1)),
     }));
   }, [reportData]);
 
@@ -278,8 +278,8 @@ const ReportsCCFunnel1: React.FC = () => {
                 </svg>
                 <span className="text-sm">Konverzní pomìr</span>
               </div>
-              <div className={`text-3xl font-bold ${getConversionColor(reportData.conversionRate)}`}>
-                {reportData.conversionRate.toFixed(1)}%
+              <div className={`text-3xl font-bold ${getConversionColor(reportData.conversionRate ?? 0)}`}>
+                {(reportData.conversionRate ?? 0).toFixed(1)}%
               </div>
             </div>
           </div>
@@ -373,14 +373,14 @@ const ReportsCCFunnel1: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {stage.percentage.toFixed(1)}%
+                        {(stage.percentage ?? 0).toFixed(1)}%
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {stage.declinedReasons && stage.declinedReasons.length > 0 ? (
                           <div className="space-y-1">
                             {stage.declinedReasons.slice(0, 3).map((reason, idx) => (
                               <div key={idx}>
-                                {reason.reason} ({reason.count}x, {reason.percentage.toFixed(1)}%)
+                                {reason.reason} ({reason.count}x, {(reason.percentage ?? 0).toFixed(1)}%)
                               </div>
                             ))}
                           </div>
@@ -424,7 +424,7 @@ const ReportsCCFunnel1: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                          {reason.percentage.toFixed(1)}%
+                          {(reason.percentage ?? 0).toFixed(1)}%
                         </td>
                       </tr>
                     ))}
