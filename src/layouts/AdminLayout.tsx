@@ -6,8 +6,13 @@ import { useAuth } from '@/contexts';
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children?: { name: string; href: string; external?: boolean }[];
+  icon?: React.ComponentType<{ className?: string }>;
+  children?: Array<{ 
+    name: string; 
+    href: string; 
+    external?: boolean;
+    children?: Array<{ name: string; href: string }>;
+  }>;
 }
 
 // Menu položky podle vzoru
@@ -23,8 +28,14 @@ const navigation: NavItem[] = [
     href: '/reports', 
     icon: ReportIcon,
     children: [
-      { name: 'CC', href: '/reports/cc' },
-      { name: 'CC - Funnel 1', href: '/reports/cc/funnel1' },
+      { 
+        name: 'CC', 
+        href: '/reports/cc',
+        children: [
+          { name: 'Přehled', href: '/reports/cc' },
+          { name: 'Funnel 1', href: '/reports/cc/funnel1' },
+        ]
+      },
       { name: 'OS', href: '/reports/os' },
       { name: 'Marketing', href: '/reports/marketing' },
       { name: 'Finance', href: '/reports/finance' },
@@ -185,10 +196,11 @@ export function AdminLayout() {
 
   const renderNavItem = (item: NavItem, mobile: boolean = false) => {
     const hasChildren = item.children && item.children.length > 0;
-    const isItemActive = isActive(item.href);
+    const isItemActive = item.icon ? isActive(item.href) : false;
     const isExpanded = isSubmenuExpanded(item.name);
 
-    if (hasChildren) {
+    if (hasChildren && item.icon) {
+      // Top-level menu with icon (e.g., "Reporty")
       return (
         <div key={item.href}>
           <button
@@ -209,22 +221,63 @@ export function AdminLayout() {
           </button>
           {isExpanded && (!sidebarCollapsed || mobile) && (
             <div className="ml-4 pl-4 border-l border-white/20">
-              {item.children!.map((child) => (
-                child.external ? (
-                  <a
-                    key={child.href}
-                    href={child.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={mobile ? () => setSidebarOpen(false) : undefined}
-                    className="flex items-center px-3 py-2 mb-0.5 rounded text-sm transition-colors text-white/80 hover:bg-white/10"
-                  >
-                    {child.name}
-                    <svg className="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                ) : (
+              {item.children!.map((child) => {
+                const childHasChildren = child.children && child.children.length > 0;
+                const childExpanded = isSubmenuExpanded(`${item.name}-${child.name}`);
+                
+                if (childHasChildren) {
+                  // Second-level submenu (e.g., "CC" with "Funnel 1")
+                  return (
+                    <div key={child.href}>
+                      <button
+                        onClick={() => toggleSubmenu(`${item.name}-${child.name}`)}
+                        className="w-full flex items-center justify-between px-3 py-2 mb-0.5 rounded text-sm transition-colors text-white/80 hover:bg-white/10"
+                      >
+                        <span>{child.name}</span>
+                        <ChevronDownIcon className={`w-3 h-3 transition-transform ${childExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+                      {childExpanded && (
+                        <div className="ml-4 pl-3 border-l border-white/10">
+                          {child.children!.map((subChild) => (
+                            <Link
+                              key={subChild.href}
+                              to={subChild.href}
+                              onClick={mobile ? () => setSidebarOpen(false) : undefined}
+                              className={`flex items-center px-3 py-1.5 mb-0.5 rounded text-xs transition-colors ${
+                                location.pathname === subChild.href
+                                  ? 'bg-white/20 text-white'
+                                  : 'text-white/70 hover:bg-white/10'
+                              }`}
+                            >
+                              {subChild.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Regular second-level item
+                if (child.external) {
+                  return (
+                    <a
+                      key={child.href}
+                      href={child.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={mobile ? () => setSidebarOpen(false) : undefined}
+                      className="flex items-center px-3 py-2 mb-0.5 rounded text-sm transition-colors text-white/80 hover:bg-white/10"
+                    >
+                      {child.name}
+                      <svg className="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  );
+                }
+
+                return (
                   <Link
                     key={child.href}
                     to={child.href}
@@ -237,14 +290,15 @@ export function AdminLayout() {
                   >
                     {child.name}
                   </Link>
-                )
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       );
     }
 
+    // Regular menu item without children
     return (
       <Link
         key={item.href}
@@ -257,7 +311,7 @@ export function AdminLayout() {
             : 'text-white/90 hover:bg-white/10'
         } ${sidebarCollapsed && !mobile ? 'justify-center' : ''}`}
       >
-        <item.icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed && !mobile ? '' : 'mr-3'}`} />
+        {item.icon && <item.icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed && !mobile ? '' : 'mr-3'}`} />}
         {(!sidebarCollapsed || mobile) && <span>{item.name}</span>}
       </Link>
     );
