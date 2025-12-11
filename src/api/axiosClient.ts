@@ -1,6 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backrent-api-prod.azurewebsites.net/v1';
+// PRODUCTION BACKEND URL - DO NOT CHANGE
+const API_BASE_URL = 'https://backrent-api-prod.azurewebsites.net/v1';
+
+console.log('?? API Base URL:', API_BASE_URL);
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
