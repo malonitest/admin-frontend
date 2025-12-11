@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { AuthProvider } from '@/contexts';
 import { router } from '@/routes';
 import { initMigrationCheck } from '@/utils/azureMigration';
+import { DEPLOYMENT_VERSION, BACKEND_URL } from '@/config/deployment';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +19,8 @@ function App() {
   // Run migration check on app startup
   useEffect(() => {
     initMigrationCheck();
+    console.log('?? App deployment:', DEPLOYMENT_VERSION);
+    console.log('?? Backend:', BACKEND_URL);
   }, []);
 
   return (
