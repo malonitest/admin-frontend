@@ -34,11 +34,18 @@ const navigation: NavItem[] = [
         children: [
           { name: 'Přehled', href: '/reports/cc' },
           { name: 'Funnel 1', href: '/reports/cc/funnel1' },
-          { name: 'Funnel Technik', href: '/reports/cc/funnel-technik' },
         ]
       },
       { name: 'OS', href: '/reports/os' },
       { name: 'Marketing', href: '/reports/marketing' },
+      { 
+        name: 'Technik', 
+        href: '/reports/technik',
+        children: [
+          { name: 'Přehled', href: '/reports/technik' },
+          { name: 'Funnel Technik', href: '/reports/technik/funnel' },
+        ]
+      },
       { name: 'Finance', href: '/reports/finance' },
       { name: 'Auta', href: '/reports/cars' },
       { name: 'Sklad', href: 'https://green-grass-00b59b203.3.azurestaticapps.net', external: true },

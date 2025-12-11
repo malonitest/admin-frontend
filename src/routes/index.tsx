@@ -7,6 +7,7 @@ import Leads from '@/pages/Leads';
 import NewLead from '@/pages/NewLead';
 import LeadDetail from '@/pages/LeadDetail';
 import ReportsCCFunnel1 from '@/pages/ReportsCCFunnel1';
+import ReportsTechnik from '@/pages/ReportsTechnik';
 import ReportsCCFunnelTechnik from '@/pages/ReportsCCFunnelTechnik';
 
 // Placeholder komponenty pro chybějící stránky
@@ -86,16 +87,20 @@ export const router = createBrowserRouter([
         element: <ReportsCCFunnel1 />,
       },
       {
-        path: 'reports/cc/funnel-technik',
-        element: <ReportsCCFunnelTechnik />,
-      },
-      {
         path: 'reports/os',
         element: <ReportsOS />,
       },
       {
         path: 'reports/marketing',
         element: <ReportsMarketing />,
+      },
+      {
+        path: 'reports/technik',
+        element: <ReportsTechnik />,
+      },
+      {
+        path: 'reports/technik/funnel',
+        element: <ReportsCCFunnelTechnik />,
       },
       {
         path: 'reports/finance',
