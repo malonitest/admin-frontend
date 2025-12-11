@@ -111,14 +111,11 @@ const ReportsCCFunnel1: React.FC = () => {
     setError(null);
 
     try {
-      const params = new URLSearchParams();
+      const { dateFrom, dateTo } = getDateRange();
       
-      if (period === 'custom' && customDateFrom && customDateTo) {
-        params.append('dateFrom', customDateFrom);
-        params.append('dateTo', customDateTo);
-      } else if (period !== 'month') {
-        params.append('period', period);
-      }
+      const params = new URLSearchParams();
+      params.append('dateFrom', dateFrom.toISOString());
+      params.append('dateTo', dateTo.toISOString());
 
       const response = await axiosClient.get(`/stats/funnel?${params.toString()}`);
       setReportData(response.data);

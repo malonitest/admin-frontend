@@ -70,11 +70,15 @@ Report sleduje tyto f·ze:
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `period` | string | No | `day`, `week`, `month` (default), `year` |
-| `dateFrom` | string | No | ISO date: `2024-01-01` |
-| `dateTo` | string | No | ISO date: `2024-01-31` |
+| `dateFrom` | string | Yes | ISO date: `2024-01-01T00:00:00.000Z` |
+| `dateTo` | string | Yes | ISO date: `2024-01-31T23:59:59.999Z` |
 
-**Note:** If `dateFrom` and `dateTo` provided, they override `period`.
+**Note:** Both parameters are required. Frontend calculates date range based on selected period and sends ISO datetime strings.
+
+**Example:**
+```
+GET /v1/stats/funnel?dateFrom=2024-12-01T00:00:00.000Z&dateTo=2024-12-31T23:59:59.999Z
+```
 
 ---
 
@@ -263,6 +267,227 @@ Track which stage the lead was in when declined:
 
 ---
 
+## ?? **Backend Implementation Example:**
+
+Based on the pattern used in `/stats/os-report`, here's the implementation structure:
+
+### **Controller: `src/controllers/stats.controller.ts`**
+
+```typescript
+export const getFunnelReport = async (req: Request, res: Response) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({
+        code: 400,
+        message: 'dateFrom and dateTo parameters are required'
+      });
+    }
+
+    const start = new Date(dateFrom as string);
+    const end = new Date(dateTo as string);
+
+    // Define funnel stages (matching Lead status enum)
+    const stageConfig = [
+      { status: 'NEW', label: 'Nov˝ lead' },
+      { status: 'SUPERVISOR_APPROVED', label: 'Schv·len AM' },
+      { status: 'UPLOAD_DOCUMENTS', label: 'P¯ed·no technikovi' },
+      { status: 'CONVERTED', label: 'Konvertov·no' }
+    ];
+
+    // Fetch all leads in date range (CC team only)
+    const allLeads = await Lead.find({
+      createdAt: { $gte: start, $lte: end },
+      team: 'CC'  // Filter by CC team
+    }).populate('dealer', 'name email');
+
+    const totalLeads = allLeads.length;
+    const convertedLeads = allLeads.filter(l => l.status === 'CONVERTED').length;
+    const declinedLeads = allLeads.filter(l => l.status === 'DECLINED').length;
+    const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+
+    // Build stages data
+    const stages = stageConfig.map(({ status, label }) => {
+      const leadsInStage = allLeads.filter(l => l.status === status);
+      const count = leadsInStage.length;
+      const percentage = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
+
+      // Get decline reasons for leads that were declined at this stage
+      const declinedAtStage = allLeads.filter(l => 
+        l.status === 'DECLINED' && 
+        l.lastStatus === status
+      );
+
+      const declinedReasons = getTopDeclineReasons(declinedAtStage, 5);
+
+      // Get sample notes (optional)
+      const notes = leadsInStage
+        .filter(l => l.notes && l.notes.length > 0)
+        .slice(0, 3)
+        .map(l => ({
+          text: l.notes[0].text,
+          date: l.notes[0].createdAt,
+          author: l.notes[0].author?.name || 'Unknown'
+        }));
+
+      return {
+        stage: label,
+        count,
+        percentage: parseFloat(percentage.toFixed(2)),
+        declinedReasons,
+        notes
+      };
+    });
+
+    // Overall decline reasons
+    const allDeclined = allLeads.filter(l => l.status === 'DECLINED');
+    const overallDeclinedReasons = getTopDeclineReasons(allDeclined, 10);
+
+    // Calculate average time in stages
+    const averageTimeInStages = calculateAverageTimeInStages(stageConfig, allLeads);
+
+    res.status(200).json({
+      dateFrom: start,
+      dateTo: end,
+      stages,
+      totalLeads,
+      convertedLeads,
+      conversionRate: parseFloat(conversionRate.toFixed(2)),
+      declinedLeads,
+      declinedReasons: overallDeclinedReasons,
+      averageTimeInStages
+    });
+
+  } catch (error) {
+    console.error('Funnel stats error:', error);
+    res.status(500).json({
+      code: 500,
+      message: error.message
+    });
+  }
+};
+
+// Helper: Get top decline reasons with translations
+function getTopDeclineReasons(leads: any[], limit: number) {
+  const reasonCounts: Record<string, number> = {};
+  
+  leads.forEach(lead => {
+    const reason = lead.declinedType || lead.notInterestedStatus || 'OTHER';
+    reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+  });
+
+  const total = leads.length;
+  
+  return Object.entries(reasonCounts)
+    .map(([reason, count]) => ({
+      reason: DECLINE_REASON_TRANSLATIONS[reason] || reason,
+      count,
+      percentage: total > 0 ? parseFloat(((count / total) * 100).toFixed(2)) : 0
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+// Helper: Calculate average days in each stage
+function calculateAverageTimeInStages(stageConfig: any[], leads: any[]): Record<string, number> {
+  const result: Record<string, number> = {};
+  
+  stageConfig.forEach(({ status, label }) => {
+    const leadsInStage = leads.filter(l => 
+      l.status === status || 
+      (l.statusHistory && l.statusHistory.some((h: any) => h.status === status))
+    );
+    
+    if (leadsInStage.length === 0) {
+      result[label] = 0;
+      return;
+    }
+
+    const totalDays = leadsInStage.reduce((sum, lead) => {
+      // Find when lead entered this stage
+      const stageEntry = lead.statusHistory?.find((h: any) => h.status === status);
+      
+      if (stageEntry) {
+        const entryDate = new Date(stageEntry.date);
+        
+        // Find when lead left this stage (next status change or current time)
+        const nextStatusIndex = lead.statusHistory.findIndex((h: any) => h.status === status) + 1;
+        const exitDate = nextStatusIndex < lead.statusHistory.length
+          ? new Date(lead.statusHistory[nextStatusIndex].date)
+          : lead.status === status ? new Date() : new Date(lead.statusUpdatedAt);
+        
+        const days = (exitDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+        return sum + days;
+      }
+      
+      return sum;
+    }, 0);
+
+    result[label] = parseFloat((totalDays / leadsInStage.length).toFixed(1));
+  });
+
+  return result;
+}
+
+const DECLINE_REASON_TRANSLATIONS: Record<string, string> = {
+  'NOT_REACHED_1': 'NEDOVOL¡NO 1X',
+  'NOT_REACHED_2': 'NEDOVOL¡NO 2X',
+  'NOT_REACHED_3': 'NEDOVOL¡NO 3X',
+  'NOT_REACHED_4': 'NEDOVOL¡NO 4X',
+  'NOT_REACHED_X': 'NEDOVOL¡NO OPAKOVANÃ',
+  'NOT_INTERESTED': 'NEM¡ Z¡JEM',
+  'CAR_LOW_VALUE': 'NÕZKA HODNOTA AUTA',
+  'CAR_OLD': 'ST¡ÿÕ VOZU',
+  'CAR_DENIED_BY_TECHNICIAN': 'ZAMÕTNUTO TECHNIKEM',
+  'CAR_BAD_TECHNICAL_STATE': 'äPATN› TECHNICK› STAV VOZU',
+  'CAR_HIGH_MILEAGE': 'VYSOK› N¡JEZD',
+  'CAR_NOT_OWNED': 'AUTO NEVLASTNÕ',
+  'CAR_LEASED': 'AUTO NA LEASING',
+  'CAR_BURDENED': 'AUTO ZAçÕéENO Z¡VAZKY',
+  'CUSTOMER_NOT_ELIGIBLE': 'NESPL“UJE PODMÕNKY',
+  'CUSTOMER_PRICE_DISADVANTAGEOUS': 'NEV›HODN¡ NABÕDKA/CENA',
+  'CUSTOMER_SOLVED_ELSEWHERE': 'PENÕZE JIé NEPOTÿEBUJE, VYÿEäENO JINAK',
+  'OTHER': 'OSTATNÕ'
+};
+```
+
+### **Route: `src/routes/v1/stats.route.ts`**
+
+```typescript
+import express from 'express';
+import { auth } from '../../middlewares/auth';
+import * as statsController from '../../controllers/stats.controller';
+
+const router = express.Router();
+
+// Existing routes
+router.get('/cc-report', auth('getStats'), statsController.getCCReport);
+router.get('/os-report', auth('getStats'), statsController.getOSReport);
+
+// NEW: Funnel report
+router.get('/funnel', auth('getStats'), statsController.getFunnelReport);
+
+export default router;
+```
+
+---
+
+## ? **Acceptance Criteria:**
+
+- [ ] Endpoint `/v1/stats/funnel` exists and returns 200 OK
+- [ ] Accepts `dateFrom` and `dateTo` in ISO format (required)
+- [ ] Filters leads by CC team (`team: 'CC'`)
+- [ ] Returns proper data structure matching interface
+- [ ] Respects `getStats` permission (ADMIN, FINANCE_DIRECTOR, SUPERVISOR)
+- [ ] Translates decline reasons to Czech
+- [ ] Calculates conversion rate correctly
+- [ ] Groups decline reasons by stage
+- [ ] Calculates average time in stages
+- [ ] Returns sample notes for each stage (optional)
+
+---
+
 ## ?? **Priority:**
 
 **HIGH** - Frontend Funnel 1 Report is implemented and deployed but cannot function without this endpoint.
@@ -270,6 +495,8 @@ Track which stage the lead was in when declined:
 ---
 
 **Created:** 9.12.2024  
+**Updated:** 9.12.2024  
 **Status:** ? MISSING ENDPOINT  
 **Assigned To:** Backend Team  
-**Blocks:** Funnel 1 Report feature
+**Blocks:** Funnel 1 Report feature  
+**Pattern:** Based on `/stats/os-report` implementation
