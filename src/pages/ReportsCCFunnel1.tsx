@@ -111,8 +111,6 @@ const ReportsCCFunnel1: React.FC = () => {
     setError(null);
 
     try {
-      const { dateFrom, dateTo } = getDateRange();
-
       const params = new URLSearchParams();
       
       if (period === 'custom' && customDateFrom && customDateTo) {
@@ -319,7 +317,7 @@ const ReportsCCFunnel1: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      label={(entry: typeof declineReasonsChartData[0]) => `${entry.name}: ${entry.percentage}%`}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="count"
