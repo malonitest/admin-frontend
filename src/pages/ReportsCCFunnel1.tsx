@@ -117,9 +117,19 @@ const ReportsCCFunnel1: React.FC = () => {
       params.append('dateFrom', dateFrom.toISOString());
       params.append('dateTo', dateTo.toISOString());
 
+      console.log('?? Fetching funnel data:', {
+        endpoint: `/stats/funnel?${params.toString()}`,
+        dateFrom: dateFrom.toISOString(),
+        dateTo: dateTo.toISOString(),
+      });
+
       const response = await axiosClient.get(`/stats/funnel?${params.toString()}`);
+      
+      console.log('? Funnel API response:', response.data);
+      
       setReportData(response.data);
     } catch (err) {
+      console.error('? Funnel API error:', err);
       setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data reportu');
     } finally {
       setLoading(false);
