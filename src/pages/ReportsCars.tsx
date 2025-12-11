@@ -317,6 +317,7 @@ const ReportsCars: React.FC = () => {
                       className="bg-blue-600 h-2 rounded-full" 
                       style={{ width: `${reportData.stats.totalCars > 0 ? ((reportData.stats.completeness?.withPhotos ?? 0) / reportData.stats.totalCars) * 100 : 0}%` }}
                     ></div>
+                  </div>
                 </div>
               </div>
 
@@ -331,6 +332,7 @@ const ReportsCars: React.FC = () => {
                       className="bg-green-600 h-2 rounded-full" 
                       style={{ width: `${reportData.stats.totalCars > 0 ? ((reportData.stats.completeness?.withDocuments ?? 0) / reportData.stats.totalCars) * 100 : 0}%` }}
                     ></div>
+                  </div>
                 </div>
               </div>
 
@@ -345,6 +347,7 @@ const ReportsCars: React.FC = () => {
                       className="bg-purple-600 h-2 rounded-full" 
                       style={{ width: `${reportData.stats.totalCars > 0 ? ((reportData.stats.completeness?.complete ?? 0) / reportData.stats.totalCars) * 100 : 0}%` }}
                     ></div>
+                  </div>
                 </div>
               </div>
             </div>
