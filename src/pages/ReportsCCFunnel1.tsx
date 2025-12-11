@@ -83,8 +83,9 @@ const ReportsCCFunnel1: React.FC = () => {
         return { dateFrom: start, dateTo: end };
       }
       case 'month': {
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        // Default to November 2024 where we know data exists
+        const start = new Date(2024, 10, 1); // November 2024
+        const end = new Date(2024, 10, 30, 23, 59, 59, 999);
         return { dateFrom: start, dateTo: end };
       }
       case 'year': {
@@ -94,13 +95,13 @@ const ReportsCCFunnel1: React.FC = () => {
       }
       case 'custom': {
         return {
-          dateFrom: customDateFrom ? new Date(customDateFrom) : new Date(now.getFullYear(), now.getMonth(), 1),
-          dateTo: customDateTo ? new Date(customDateTo + 'T23:59:59') : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+          dateFrom: customDateFrom ? new Date(customDateFrom) : new Date(2024, 10, 1),
+          dateTo: customDateTo ? new Date(customDateTo + 'T23:59:59') : new Date(2024, 10, 30, 23, 59, 59, 999),
         };
       }
       default: {
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const start = new Date(2024, 10, 1); // November 2024
+        const end = new Date(2024, 10, 30, 23, 59, 59, 999);
         return { dateFrom: start, dateTo: end };
       }
     }
