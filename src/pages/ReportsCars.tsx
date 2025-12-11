@@ -7,13 +7,10 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
 } from 'recharts';
 
 // Types based on backend API
