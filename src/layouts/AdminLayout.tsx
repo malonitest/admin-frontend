@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
     icon: ReportIcon,
     children: [
       { name: 'CC', href: '/reports/cc' },
+      { name: 'CC - Funnel 1', href: '/reports/cc/funnel1' },
       { name: 'OS', href: '/reports/os' },
       { name: 'Marketing', href: '/reports/marketing' },
       { name: 'Finance', href: '/reports/finance' },
