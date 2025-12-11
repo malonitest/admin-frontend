@@ -147,7 +147,7 @@ const ReportsCCFunnel1: React.FC = () => {
 
   // Prepare decline reasons chart data
   const declineReasonsChartData = useMemo(() => {
-    if (!reportData) return [];
+    if (!reportData || !reportData.declinedReasons) return [];
     return reportData.declinedReasons.slice(0, 10).map((reason) => ({
       name: reason.reason.length > 30 ? reason.reason.substring(0, 30) + '...' : reason.reason,
       fullName: reason.reason,
@@ -158,7 +158,7 @@ const ReportsCCFunnel1: React.FC = () => {
 
   // Prepare time in stages chart data
   const timeInStagesChartData = useMemo(() => {
-    if (!reportData) return [];
+    if (!reportData || !reportData.averageTimeInStages) return [];
     return Object.entries(reportData.averageTimeInStages).map(([stage, days]) => ({
       name: stage,
       days: parseFloat(days.toFixed(1)),
@@ -396,7 +396,7 @@ const ReportsCCFunnel1: React.FC = () => {
           </div>
 
           {/* Overall Decline Reasons Table */}
-          {reportData.declinedReasons.length > 0 && (
+          {reportData.declinedReasons && reportData.declinedReasons.length > 0 && (
             <div className="bg-white rounded-lg shadow">
               <div className="p-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">Celkový pøehled dùvodù zamítnutí</h2>
