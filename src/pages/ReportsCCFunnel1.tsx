@@ -130,7 +130,7 @@ const ReportsCCFunnel1: React.FC = () => {
       params.append('dateFrom', dateFrom.toISOString());
       params.append('dateTo', dateTo.toISOString());
 
-      console.log('?? Fetching funnel data:', {
+      console.log('ğŸ“Š Fetching funnel data:', {
         endpoint: `/stats/funnel?${params.toString()}`,
         dateFrom: dateFrom.toISOString(),
         dateTo: dateTo.toISOString(),
@@ -138,12 +138,12 @@ const ReportsCCFunnel1: React.FC = () => {
 
       const response = await axiosClient.get(`/stats/funnel?${params.toString()}`);
       
-      console.log('? Funnel API response:', response.data);
+      console.log('âœ… Funnel API response:', response.data);
       
       setReportData(response.data);
     } catch (err) {
-      console.error('? Funnel API error:', err);
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data reportu');
+      console.error('âŒ Funnel API error:', err);
+      setError(err instanceof Error ? err.message : 'NepodaÅ™ilo se naÄÃ­st data reportu');
     } finally {
       setLoading(false);
     }
@@ -226,7 +226,7 @@ const ReportsCCFunnel1: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Funnel 1 - Konverzní trychtıø CC</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Funnel 1 - KonverznÃ­ trychtÃ½Å™ CC</h1>
 
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
@@ -234,7 +234,7 @@ const ReportsCCFunnel1: React.FC = () => {
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className="font-medium text-gray-700">Èasové období</span>
+          <span className="font-medium text-gray-700">ÄŒasovÃ© obdobÃ­</span>
         </div>
 
         <div className="flex flex-wrap gap-3 items-center">
@@ -248,10 +248,10 @@ const ReportsCCFunnel1: React.FC = () => {
                 }`}
               >
                 {p === 'day' && 'Den'}
-                {p === 'week' && 'Tıden'}
-                {p === 'month' && 'Mìsíc'}
+                {p === 'week' && 'TÃ½den'}
+                {p === 'month' && 'MÄ›sÃ­c'}
                 {p === 'year' && 'Rok'}
-                {p === 'custom' && 'Vlastní'}
+                {p === 'custom' && 'VlastnÃ­'}
               </button>
             ))}
           </div>
@@ -275,7 +275,7 @@ const ReportsCCFunnel1: React.FC = () => {
           )}
         </div>
 
-        <p className="text-sm text-gray-500 mt-2">Vybrané období: {getPeriodLabel()}</p>
+        <p className="text-sm text-gray-500 mt-2">VybranÃ© obdobÃ­: {getPeriodLabel()}</p>
       </div>
 
       {/* Error State */}
@@ -301,10 +301,10 @@ const ReportsCCFunnel1: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <h3 className="text-lg font-semibold text-yellow-900 mb-1">ádná data pro vybrané obdob&iacute;</h3>
+                  <h3 className="text-lg font-semibold text-yellow-900 mb-1">Å½Ã¡dnÃ¡ data pro vybranÃ© obdobÃ­</h3>
                   <p className="text-yellow-700">
-                    Pro období <strong>{getPeriodLabel()}</strong> nejsou v datab&aacute;zi ádné leady. 
-                    Zkuste vybrat jin&eacute; èasov&eacute; obdob&iacute; nebo importovat testovac&iacute; data.
+                    Pro obdobÃ­ <strong>{getPeriodLabel()}</strong> nejsou v databÃ¡zi Å¾Ã¡dnÃ© leady. 
+                    Zkuste vybrat jinÃ© ÄasovÃ© obdobÃ­ nebo importovat testovacÃ­ data.
                   </p>
                 </div>
               </div>
@@ -317,7 +317,7 @@ const ReportsCCFunnel1: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-sm">Celkem leadù</span>
+                <span className="text-sm">Celkem leadÅ¯</span>
               </div>
               <div className="text-3xl font-bold text-blue-900">{reportData.totalLeads}</div>
             </div>
@@ -327,7 +327,7 @@ const ReportsCCFunnel1: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm">Konvertováno</span>
+                <span className="text-sm">KonvertovÃ¡no</span>
               </div>
               <div className="text-3xl font-bold text-green-900">{reportData.convertedLeads}</div>
             </div>
@@ -337,7 +337,7 @@ const ReportsCCFunnel1: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm">Zamítnuto</span>
+                <span className="text-sm">ZamÃ­tnuto</span>
               </div>
               <div className="text-3xl font-bold text-red-900">{reportData.declinedLeads}</div>
             </div>
@@ -347,7 +347,7 @@ const ReportsCCFunnel1: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <span className="text-sm">Konverzní pomìr</span>
+                <span className="text-sm">KonverznÃ­ pomÄ›r</span>
               </div>
               <div className={`text-3xl font-bold ${getConversionColor(reportData.conversionRate ?? 0)}`}>
                 {(reportData.conversionRate ?? 0).toFixed(1)}%
@@ -375,29 +375,29 @@ const ReportsCCFunnel1: React.FC = () => {
                       />
                     </div>
                     <div className="text-xs text-gray-500 flex items-center justify-between">
-                      <span>Prùm. èas</span>
+                      <span>PrÅ¯m. Äas</span>
                       <span className="font-semibold text-gray-900">
                         {stage.averageDays ? `${stage.averageDays.toFixed(1)} dne` : 'N/A'}
                       </span>
                     </div>
                     {topReason ? (
                       <div className="bg-red-50 rounded-md p-2">
-                        <p className="text-xs text-red-800 font-medium">Top dùvod zamítnutí</p>
+                        <p className="text-xs text-red-800 font-medium">Top dÅ¯vod zamÃ­tnutÃ­</p>
                         <p className="text-sm text-red-900">
-                          {topReason.reason} ({topReason.count}×)
+                          {topReason.reason} ({topReason.count}Ã—)
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-gray-50 rounded-md p-2 text-xs text-gray-500">Bez zamítnutıch v této fázi</div>
+                      <div className="bg-gray-50 rounded-md p-2 text-xs text-gray-500">Bez zamÃ­tnutÃ½ch v tÃ©to fÃ¡zi</div>
                     )}
                     {latestNote ? (
                       <div className="text-xs text-gray-600 border-t pt-2">
-                        <p className="font-semibold text-gray-800 mb-1">Poslední poznámka</p>
+                        <p className="font-semibold text-gray-800 mb-1">PoslednÃ­ poznÃ¡mka</p>
                         <p className="line-clamp-2">{latestNote.text}</p>
-                        <span className="text-gray-400">{latestNote.author || 'Bez autora'} • {formatNoteDate(latestNote.date)}</span>
+                        <span className="text-gray-400">{latestNote.author || 'Bez autora'} â€¢ {formatNoteDate(latestNote.date)}</span>
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-400 border-t pt-2">ádné poznámky</div>
+                      <div className="text-xs text-gray-400 border-t pt-2">Å½Ã¡dnÃ© poznÃ¡mky</div>
                     )}
                   </div>
                 );
@@ -410,7 +410,7 @@ const ReportsCCFunnel1: React.FC = () => {
             {/* Funnel Chart */}
             {funnelChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Konverzní trychtıø</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">KonverznÃ­ trychtÃ½Å™</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={funnelChartData} layout="horizontal">
                     <CartesianGrid strokeDasharray="3 3" />
@@ -418,7 +418,7 @@ const ReportsCCFunnel1: React.FC = () => {
                     <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11 }} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="count" fill="#3B82F6" name="Poèet leadù" />
+                    <Bar dataKey="count" fill="#3B82F6" name="PoÄet leadÅ¯" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -427,7 +427,7 @@ const ReportsCCFunnel1: React.FC = () => {
             {/* Decline Reasons Pie Chart */}
             {declineReasonsChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Dùvody zamítnutí</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">DÅ¯vody zamÃ­tnutÃ­</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -453,14 +453,14 @@ const ReportsCCFunnel1: React.FC = () => {
             {/* Time in Stages Chart */}
             {timeInStagesChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Prùmìrnı èas ve fázích (dny)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">PrÅ¯mÄ›rnÃ½ Äas ve fÃ¡zÃ­ch (dny)</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={timeInStagesChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="days" fill="#10B981" name="Prùmìrnı poèet dní" />
+                    <Bar dataKey="days" fill="#10B981" name="PrÅ¯mÄ›rnÃ½ poÄet dnÅ¯" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -470,17 +470,17 @@ const ReportsCCFunnel1: React.FC = () => {
           {/* Funnel Stages Detail Table */}
           <div className="bg-white rounded-lg shadow mb-6">
             <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Detaily jednotlivıch fází</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Detaily jednotlivÃ½ch fÃ¡zÃ­</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fáze</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Poèet leadù</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">FÃ¡ze</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">PoÄet leadÅ¯</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">% z celku</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Prùmìrnı èas (dny)</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Top dùvody zamítnutí</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">PrÅ¯mÄ›rnÃ½ Äas (dny)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Top dÅ¯vody zamÃ­tnutÃ­</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -526,7 +526,7 @@ const ReportsCCFunnel1: React.FC = () => {
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5l2 2h5a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <h2 className="text-lg font-semibold text-gray-900">Nejnovìjší poznámky z fází</h2>
+                <h2 className="text-lg font-semibold text-gray-900">NejnovÄ›jÅ¡Ã­ poznÃ¡mky z fÃ¡zÃ­</h2>
               </div>
               <div className="divide-y">
                 {stageNotes.map((stage) => (
@@ -536,7 +536,7 @@ const ReportsCCFunnel1: React.FC = () => {
                       <div key={`${stage.stage}-${idx}`} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
                         <p className="text-sm text-gray-900">{note.text}</p>
                         <div className="text-xs text-gray-500 flex justify-between mt-2">
-                          <span>{note.author || 'Neznámı autor'}</span>
+                          <span>{note.author || 'NeznÃ¡mÃ½ autor'}</span>
                           <span>{formatNoteDate(note.date)}</span>
                         </div>
                       </div>
@@ -551,16 +551,16 @@ const ReportsCCFunnel1: React.FC = () => {
           {reportData.declinedReasons && reportData.declinedReasons.length > 0 && (
             <div className="bg-white rounded-lg shadow">
               <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Celkovı pøehled dùvodù zamítnutí</h2>
+                <h2 className="text-lg font-semibold text-gray-900">CelkovÃ½ pÅ™ehled dÅ¯vodÅ¯ zamÃ­tnutÃ­</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Dùvod</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Poèet</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">% zamítnutıch</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">DÅ¯vod</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">PoÄet</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">% zamÃ­tnutÃ½ch</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">

@@ -141,7 +141,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
       const response = await axiosClient.get(`/stats/funnel-technik?${params.toString()}`);
       setReportData(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nepoda¯ilo se naËÌst data reportu');
+      setError(err instanceof Error ? err.message : 'Nepoda≈ôilo se naƒç√≠st data reportu');
     } finally {
       setLoading(false);
     }
@@ -195,7 +195,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Funnel Technik - P¯ehled kontroly vozidel</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Funnel Technik - P≈ôehled kontroly vozidel</h1>
 
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
@@ -203,7 +203,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className="font-medium text-gray-700">»asovÈ obdobÌ</span>
+          <span className="font-medium text-gray-700">ƒåasov√© obdob√≠</span>
         </div>
 
         <div className="flex flex-wrap gap-3 items-center">
@@ -217,10 +217,10 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                 }`}
               >
                 {p === 'day' && 'Den'}
-                {p === 'week' && 'T˝den'}
-                {p === 'month' && 'MÏsÌc'}
+                {p === 'week' && 'T√Ωden'}
+                {p === 'month' && 'Mƒõs√≠c'}
                 {p === 'year' && 'Rok'}
-                {p === 'custom' && 'VlastnÌ'}
+                {p === 'custom' && 'Vlastn√≠'}
               </button>
             ))}
           </div>
@@ -244,7 +244,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
           )}
         </div>
 
-        <p className="text-sm text-gray-500 mt-2">VybranÈ obdobÌ: {getPeriodLabel()}</p>
+        <p className="text-sm text-gray-500 mt-2">Vybran√© obdob√≠: {getPeriodLabel()}</p>
       </div>
 
       {/* Error State */}
@@ -268,7 +268,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="text-sm">Celkem p¯ed·no</span>
+                <span className="text-sm">Celkem p≈ôed√°no</span>
               </div>
               <div className="text-3xl font-bold text-blue-900">{reportData.stats.totalHandedToTechnician}</div>
             </div>
@@ -278,7 +278,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm">Schv·leno</span>
+                <span className="text-sm">Schv√°leno</span>
               </div>
               <div className="text-3xl font-bold text-green-900">{reportData.stats.approved}</div>
               <div className="text-xs text-green-600 mt-1">{reportData.stats.approvalRate.toFixed(1)}%</div>
@@ -289,7 +289,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm">ZamÌtnuto</span>
+                <span className="text-sm">Zam√≠tnuto</span>
               </div>
               <div className="text-3xl font-bold text-red-900">{reportData.stats.rejected}</div>
               <div className="text-xs text-red-600 mt-1">{reportData.stats.rejectionRate.toFixed(1)}%</div>
@@ -310,10 +310,10 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm">Pr˘mÏrn· doba</span>
+                <span className="text-sm">Pr≈Ømƒõrn√° doba</span>
               </div>
               <div className="text-3xl font-bold text-purple-900">{reportData.stats.averageDaysInReview}</div>
-              <div className="text-xs text-purple-600 mt-1">dnÌ</div>
+              <div className="text-xs text-purple-600 mt-1">dn√≠</div>
             </div>
           </div>
 
@@ -322,7 +322,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
             {/* Status Breakdown Pie Chart */}
             {statusBreakdownChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">RozloûenÌ podle status˘</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Rozlo≈æen√≠ podle status≈Ø</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -348,14 +348,14 @@ const ReportsCCFunnelTechnik: React.FC = () => {
             {/* Decline Reasons Bar Chart */}
             {declineReasonsChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">D˘vody zamÌtnutÌ</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">D≈Øvody zam√≠tnut√≠</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={declineReasonsChartData} layout="vertical" margin={{ left: 150 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10 }} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#EF4444" name="PoËet" />
+                    <Bar dataKey="count" fill="#EF4444" name="Poƒçet" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -365,19 +365,19 @@ const ReportsCCFunnelTechnik: React.FC = () => {
           {/* Leads Table */}
           <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
             <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Seznam lead˘ ({reportData.leads.length})</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Seznam lead≈Ø ({reportData.leads.length})</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Z·kaznÌk</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Z√°kazn√≠k</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Vozidlo</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">»·stka</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">ƒå√°stka</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Dny</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Pozn·mky</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Pozn√°mky</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -393,7 +393,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                         <div className="text-xs text-gray-500">VIN: {lead.carVIN}</div>
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                        {lead.requestedAmount.toLocaleString('cs-CZ')} KË
+                        {lead.requestedAmount.toLocaleString('cs-CZ')} Kƒç
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lead.currentStatus)}`}>
@@ -414,7 +414,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
                             onClick={() => setSelectedLeadNotes(lead.notes || [])}
                             className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium transition-colors"
                           >
-                            ?? {lead.notes.length}
+                            üìù {lead.notes.length}
                           </button>
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
@@ -434,7 +434,7 @@ const ReportsCCFunnelTechnik: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Pozn·mky technika</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Pozn√°mky technika</h3>
               <button
                 onClick={() => setSelectedLeadNotes(null)}
                 className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
