@@ -256,7 +256,7 @@ export function Reports2FunnelTechnik() {
                       outerRadius={80}
                       dataKey="value"
                     >
-                      {statusChartData.map((entry, index) => (
+                      {statusChartData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
