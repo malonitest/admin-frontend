@@ -46,7 +46,13 @@ const navigation: NavItem[] = [
           { name: 'Funnel Technik', href: '/reports/technik/funnel' },
         ]
       },
-      { name: 'Finance', href: '/reports/finance' },
+      { 
+        name: 'Finance',
+        href: '/reports/finance',
+        children: [
+          { name: 'Kompletní finanční report', href: '/reports/finance' },
+        ],
+      },
       { name: 'KPI Investor', href: '/reports/kpi' },
       { name: 'Auta', href: '/reports/cars' },
       { name: 'Sklad', href: 'https://green-grass-00b59b203.3.azurestaticapps.net', external: true },
