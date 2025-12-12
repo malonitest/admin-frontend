@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { axiosClient } from '@/api/axiosClient';
+import { axiosClient } from '../api/axiosClient';
 import {
   BarChart,
   Bar,
@@ -63,7 +63,7 @@ const formatNoteDate = (value: string): string => {
   return parsed.toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const ReportsCCFunnel1: React.FC = () => {
+const ReportsCCFunnel1 = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<IFunnelReportData | null>(null);
@@ -199,11 +199,23 @@ const ReportsCCFunnel1: React.FC = () => {
   // Prepare time in stages chart data
   const timeInStagesChartData = useMemo(() => {
     if (!reportData || !reportData.averageTimeInStages) return [];
-    return Object.entries(reportData.averageTimeInStages).map(([stage, days]) => ({
-      name: stage,
-      days: parseFloat((days ?? 0).toFixed(1)),
-    }));
+    const stageTimes = reportData.averageTimeInStages;
+    return Object.keys(stageTimes).map(stage => {
+      const days = stageTimes[stage] ?? 0;
+      return {
+        name: stage,
+        days: parseFloat(days.toFixed(1)),
+      };
+    });
   }, [reportData]);
+
+  const renderDeclineReasonLabel = (entry: { payload?: { name?: string; percentage?: number } }) => {
+    const payload = entry.payload;
+    if (!payload?.name || typeof payload.percentage !== 'number') {
+      return '';
+    }
+    return `${payload.name}: ${payload.percentage}%`;
+  };
 
   const getConversionColor = (rate: number): string => {
     if (rate >= 20) return 'text-green-600';
@@ -422,7 +434,7 @@ const ReportsCCFunnel1: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry: any) => `${entry.name}: ${entry.percentage}%`}
+                      label={renderDeclineReasonLabel}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="count"
