@@ -184,8 +184,26 @@ export function LeadDetail() {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isDragging, setIsDragging] = useState<string | null>(null); // Track which drop zone is active
 
+  // Document category to documentType mapping according to backend API
+  const getDocumentType = (category: string): string => {
+    const mapping: Record<string, string> = {
+      'najezd_vin': 'carVIN', // nebo 'carMileage' - použije se podle specifického uploadu
+      'evidencni_kontrola': 'carVTP',
+      'technicke_prukazy': 'carMTP',
+      'fyzicka_kontrola': 'carExterior', // nebo 'carInterior'
+      'smlouvy': 'buyAgreement', // nebo 'rentAgreement'
+      'zelena_karta': 'greenCard',
+      'plna_moc': 'buyMandate', // nebo 'sellMandate'
+      'pri_prodeji': 'sellMandate',
+      'pojisteni': 'insurance',
+      'ostatni': 'other',
+      'cebia_cardetect': 'carDetectReport',
+    };
+    return mapping[category] || 'other';
+  };
+
   // Drag & drop handler
-  const handleDrop = async (e: React.DragEvent, category: string) => {
+  const handleDrop = async (e: React.DragEvent, documentType: string) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(null);
@@ -197,10 +215,11 @@ export function LeadDetail() {
     try {
       for (const file of Array.from(files)) {
         const formData = new FormData();
-        formData.append('document', file);
-        formData.append('category', category);
+        formData.append('file', file);
+        formData.append('documentType', documentType);
+        formData.append('leadId', id!);
         
-        await axiosClient.post(`/leads/${id}/documents`, formData, {
+        await axiosClient.post(`/documents/upload`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
@@ -1033,9 +1052,10 @@ export function LeadDetail() {
                       setUploadingDoc(true);
                       try {
                         const formData = new FormData();
-                        formData.append('document', file);
-                        formData.append('category', 'carMileage');
-                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                        formData.append('file', file);
+                        formData.append('documentType', 'carMileage');
+                        formData.append('leadId', id!);
+                        await axiosClient.post(`/documents/upload`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
                         await refreshLead();
@@ -1061,9 +1081,10 @@ export function LeadDetail() {
                       setUploadingDoc(true);
                       try {
                         const formData = new FormData();
-                        formData.append('document', file);
-                        formData.append('category', 'carMileage');
-                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                        formData.append('file', file);
+                        formData.append('documentType', 'carMileage');
+                        formData.append('leadId', id!);
+                        await axiosClient.post(`/documents/upload`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
                         await refreshLead();
@@ -1150,9 +1171,10 @@ export function LeadDetail() {
                       setUploadingDoc(true);
                       try {
                         const formData = new FormData();
-                        formData.append('document', file);
-                        formData.append('category', 'carVIN');
-                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                        formData.append('file', file);
+                        formData.append('documentType', 'carVIN');
+                        formData.append('leadId', id!);
+                        await axiosClient.post(`/documents/upload`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
                         await refreshLead();
@@ -1178,9 +1200,10 @@ export function LeadDetail() {
                       setUploadingDoc(true);
                       try {
                         const formData = new FormData();
-                        formData.append('document', file);
-                        formData.append('category', 'carVIN');
-                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                        formData.append('file', file);
+                        formData.append('documentType', 'carVIN');
+                        formData.append('leadId', id!);
+                        await axiosClient.post(`/documents/upload`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
                         await refreshLead();
@@ -1304,12 +1327,14 @@ export function LeadDetail() {
                       
                       setUploadingDoc(true);
                       try {
+                        const documentType = getDocumentType(selectedDocCategory || '');
                         for (const file of Array.from(files)) {
                           const formData = new FormData();
-                          formData.append('document', file);
-                          formData.append('category', selectedDocCategory || '');
+                          formData.append('file', file);
+                          formData.append('documentType', documentType);
+                          formData.append('leadId', id!);
                           
-                          await axiosClient.post(`/leads/${id}/documents`, formData, {
+                          await axiosClient.post(`/documents/upload`, formData, {
                             headers: { 'Content-Type': 'multipart/form-data' }
                           });
                         }
@@ -1336,11 +1361,13 @@ export function LeadDetail() {
                       
                       setUploadingDoc(true);
                       try {
+                        const documentType = getDocumentType(selectedDocCategory || '');
                         const formData = new FormData();
-                        formData.append('document', file);
-                        formData.append('category', selectedDocCategory || '');
+                        formData.append('file', file);
+                        formData.append('documentType', documentType);
+                        formData.append('leadId', id!);
                         
-                        await axiosClient.post(`/leads/${id}/documents`, formData, {
+                        await axiosClient.post(`/documents/upload`, formData, {
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
                         await refreshLead();

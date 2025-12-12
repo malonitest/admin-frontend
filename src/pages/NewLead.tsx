@@ -240,10 +240,22 @@ export function NewLead() {
       };
       const response = await axiosClient.post('/leads', leadData);
       const leadId = response.data.id;
-      for (const { photos, type } of [{ photos: interiorPhotos, type: 'carInterior' }, { photos: exteriorPhotos, type: 'carExterior' }, { photos: odometerPhotos, type: 'carMileage' }, { photos: vinPhotos, type: 'carVIN' }]) {
+      
+      // Upload documents using correct endpoint and documentType
+      for (const { photos, documentType } of [
+        { photos: interiorPhotos, documentType: 'carInterior' }, 
+        { photos: exteriorPhotos, documentType: 'carExterior' }, 
+        { photos: odometerPhotos, documentType: 'carMileage' }, 
+        { photos: vinPhotos, documentType: 'carVIN' }
+      ]) {
         for (const photo of photos) {
-          const formData = new FormData(); formData.append('file', photo.file); formData.append('documentType', type);
-          await axiosClient.post(`/leads/${leadId}/documents`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+          const formData = new FormData();
+          formData.append('file', photo.file);
+          formData.append('documentType', documentType);
+          formData.append('leadId', leadId);
+          await axiosClient.post(`/documents/upload`, formData, { 
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
         }
       }
       navigate('/leads');
