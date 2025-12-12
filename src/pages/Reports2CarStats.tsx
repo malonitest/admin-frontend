@@ -102,7 +102,7 @@ export function Reports2CarStats() {
       setReportData(response.data);
     } catch (err) {
       console.error('Car Stats API error:', err);
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data reportu');
+      setError(err instanceof Error ? err.message : 'NepodaÅ™ilo se naÄÃ­st data reportu');
     } finally {
       setLoading(false);
     }
@@ -128,8 +128,8 @@ export function Reports2CarStats() {
   const getPeriodLabel = (): string => {
     switch (period) {
       case 'day': return 'Dnes';
-      case 'week': return 'Tento tıden';
-      case 'month': return 'Tento mìsíc';
+      case 'week': return 'Tento tÃ½den';
+      case 'month': return 'Tento mÄ›sÃ­c';
       case 'year': return 'Tento rok';
       case 'custom': return `${customDateFrom} - ${customDateTo}`;
       default: return '';
@@ -171,9 +171,9 @@ export function Reports2CarStats() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">?? Statistiky aut</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ğŸ“Š Statistiky aut</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Kompletní pøehled konvertovanıch vozidel s filtrováním
+            KompletnÃ­ pÅ™ehled konvertovanÃ½ch vozidel s filtrovÃ¡nÃ­m
           </p>
         </div>
       </div>
@@ -181,7 +181,7 @@ export function Reports2CarStats() {
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-wrap items-center gap-4 mb-4">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">ObdobÃ­:</span>
           <div className="flex gap-2 flex-wrap">
             {(['day', 'week', 'month', 'year', 'custom'] as PeriodType[]).map((p) => (
               <button
@@ -194,10 +194,10 @@ export function Reports2CarStats() {
                 }`}
               >
                 {p === 'day' && 'Den'}
-                {p === 'week' && 'Tıden'}
-                {p === 'month' && 'Mìsíc'}
+                {p === 'week' && 'TÃ½den'}
+                {p === 'month' && 'MÄ›sÃ­c'}
                 {p === 'year' && 'Rok'}
-                {p === 'custom' && 'Vlastní'}
+                {p === 'custom' && 'VlastnÃ­'}
               </button>
             ))}
           </div>
@@ -226,7 +226,7 @@ export function Reports2CarStats() {
           <div className="flex flex-wrap items-center gap-4">
             <input
               type="text"
-              placeholder="Znaèka (napø. Škoda)"
+              placeholder="ZnaÄka (napÅ™. Å koda)"
               value={brandFilter}
               onChange={(e) => setBrandFilter(e.target.value)}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36"
@@ -247,14 +247,14 @@ export function Reports2CarStats() {
             />
             <input
               type="number"
-              placeholder="Nájezd od (km)"
+              placeholder="NÃ¡jezd od (km)"
               value={mileageFromFilter}
               onChange={(e) => setMileageFromFilter(e.target.value)}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-32"
             />
             <input
               type="number"
-              placeholder="Nájezd do (km)"
+              placeholder="NÃ¡jezd do (km)"
               value={mileageToFilter}
               onChange={(e) => setMileageToFilter(e.target.value)}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-32"
@@ -293,31 +293,31 @@ export function Reports2CarStats() {
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="text-sm font-medium text-purple-600">?? Celkem aut</div>
+              <div className="text-sm font-medium text-purple-600">ğŸš— Celkem aut</div>
               <div className="text-3xl font-bold text-purple-900 mt-1">
                 {reportData.stats?.totalCars}
               </div>
             </div>
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="text-sm font-medium text-blue-600">?? Celková hodnota odkupu</div>
+              <div className="text-sm font-medium text-blue-600">ğŸ’° CelkovÃ¡ hodnota odkupu</div>
               <div className="text-2xl font-bold text-blue-900 mt-1">
-                {reportData.stats?.totalPurchaseValue?.toLocaleString('cs-CZ')} Kè
+                {reportData.stats?.totalPurchaseValue?.toLocaleString('cs-CZ')} KÄ
               </div>
             </div>
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div className="text-sm font-medium text-green-600">?? Prùmìrná cena</div>
+              <div className="text-sm font-medium text-green-600">ğŸ“Š PrÅ¯mÄ›rnÃ¡ cena</div>
               <div className="text-2xl font-bold text-green-900 mt-1">
-                {reportData.stats?.averagePurchasePrice?.toLocaleString('cs-CZ')} Kè
+                {reportData.stats?.averagePurchasePrice?.toLocaleString('cs-CZ')} KÄ
               </div>
             </div>
             <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-              <div className="text-sm font-medium text-orange-600">??? Prùmìrnı nájezd</div>
+              <div className="text-sm font-medium text-orange-600">ğŸ›£ï¸ PrÅ¯mÄ›rnÃ½ nÃ¡jezd</div>
               <div className="text-2xl font-bold text-orange-900 mt-1">
                 {reportData.stats?.averageMileage?.toLocaleString('cs-CZ')} km
               </div>
             </div>
             <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
-              <div className="text-sm font-medium text-cyan-600">?? Prùmìrné stáøí</div>
+              <div className="text-sm font-medium text-cyan-600">ğŸ“… PrÅ¯mÄ›rnÃ© stÃ¡Å™Ã­</div>
               <div className="text-2xl font-bold text-cyan-900 mt-1">
                 {reportData.stats?.averageAge?.toFixed(1)} let
               </div>
@@ -329,7 +329,7 @@ export function Reports2CarStats() {
             {/* Brand Distribution */}
             {brandChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">??? Rozloení podle znaèky</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">ğŸ“Š RozloÅ¾enÃ­ podle znaÄky</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={brandChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -345,7 +345,7 @@ export function Reports2CarStats() {
             {/* Year Distribution */}
             {yearChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">?? Rozloení podle roku</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">ğŸ“… RozloÅ¾enÃ­ podle roku</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={yearChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -361,7 +361,7 @@ export function Reports2CarStats() {
             {/* Mileage Distribution */}
             {mileageChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">??? Rozloení podle nájezdu</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">ğŸ›£ï¸ RozloÅ¾enÃ­ podle nÃ¡jezdu</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
@@ -388,20 +388,20 @@ export function Reports2CarStats() {
           {reportData.cars && reportData.cars.length > 0 && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">?? Seznam aut ({reportData.cars.length})</h3>
+                <h3 className="text-lg font-semibold text-gray-900">ğŸš— Seznam aut ({reportData.cars.length})</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Znaèka & Model</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ZnaÄka & Model</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Rok</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Nájezd</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">NÃ¡jezd</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SPZ</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">VIN</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Odkupní cena</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">OdkupnÃ­ cena</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Odhad. hodnota</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Zákazník</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ZÃ¡kaznÃ­k</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Foto</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Dok.</th>
@@ -420,10 +420,10 @@ export function Reports2CarStats() {
                         <td className="px-4 py-3 text-sm text-gray-900">{car.carSPZ}</td>
                         <td className="px-4 py-3 text-xs font-mono text-gray-500">{car.carVIN}</td>
                         <td className="px-4 py-3 text-sm text-right font-semibold text-green-600">
-                          {car.purchasePrice?.toLocaleString('cs-CZ')} Kè
+                          {car.purchasePrice?.toLocaleString('cs-CZ')} KÄ
                         </td>
                         <td className="px-4 py-3 text-sm text-right font-semibold text-blue-600">
-                          {car.estimatedValue?.toLocaleString('cs-CZ')} Kè
+                          {car.estimatedValue?.toLocaleString('cs-CZ')} KÄ
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm text-gray-900">{car.customerName}</div>
@@ -433,10 +433,10 @@ export function Reports2CarStats() {
                           {new Date(car.convertedDate).toLocaleDateString('cs-CZ')}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          {car.hasPhotos ? <span className="text-green-600">?</span> : <span className="text-red-600">?</span>}
+                          {car.hasPhotos ? <span className="text-green-600">âœ“</span> : <span className="text-red-600">âœ—</span>}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          {car.hasDocuments ? <span className="text-green-600">?</span> : <span className="text-red-600">?</span>}
+                          {car.hasDocuments ? <span className="text-green-600">âœ“</span> : <span className="text-red-600">âœ—</span>}
                         </td>
                       </tr>
                     ))}
@@ -450,17 +450,17 @@ export function Reports2CarStats() {
           {reportData.byBrand && reportData.byBrand.length > 0 && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">??? Statistiky podle znaèky</h3>
+                <h3 className="text-lg font-semibold text-gray-900">ğŸ“Š Statistiky podle znaÄky</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Znaèka</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Poèet</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Celková hodnota</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Prùmìrná cena</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Podíl</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ZnaÄka</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">PoÄet</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">CelkovÃ¡ hodnota</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">PrÅ¯mÄ›rnÃ¡ cena</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">PodÃ­l</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -469,10 +469,10 @@ export function Reports2CarStats() {
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.brand}</td>
                         <td className="px-4 py-3 text-sm text-right text-gray-900">{item.count}</td>
                         <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                          {item.totalValue?.toLocaleString('cs-CZ')} Kè
+                          {item.totalValue?.toLocaleString('cs-CZ')} KÄ
                         </td>
                         <td className="px-4 py-3 text-sm text-right text-gray-900">
-                          {item.avgPrice?.toLocaleString('cs-CZ')} Kè
+                          {item.avgPrice?.toLocaleString('cs-CZ')} KÄ
                         </td>
                         <td className="px-4 py-3 text-sm text-right text-gray-900">{item.percentage}%</td>
                       </tr>
@@ -485,13 +485,13 @@ export function Reports2CarStats() {
 
           {/* Notes */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">?? Poznámky k reportu</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">ğŸ“ PoznÃ¡mky k reportu</h3>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Zobrazuje pouze konvertovaná vozidla (úspìšnì odkoupená)</li>
-              <li>• Pouijte filtry pro detailnìjší analızu podle znaèky, roku nebo nájezdu</li>
-              <li>• <strong>Odkupní cena</strong> - cena, za kterou bylo auto odkoupeno</li>
-              <li>• <strong>Odhadovaná hodnota</strong> - aktuální trní odhad</li>
-              <li>• Data jsou aktuální k vybranému období: <strong>{getPeriodLabel()}</strong></li>
+              <li>â€¢ Zobrazuje pouze konvertovanÃ¡ vozidla (ÃºspÄ›Å¡nÄ› odkoupenÃ¡)</li>
+              <li>â€¢ PouÅ¾ijte filtry pro detailnÄ›jÅ¡Ã­ analÃ½zu podle znaÄky, roku nebo nÃ¡jezdu</li>
+              <li>â€¢ <strong>OdkupnÃ­ cena</strong> - cena, za kterou bylo auto odkoupeno</li>
+              <li>â€¢ <strong>OdhadovanÃ¡ hodnota</strong> - aktuÃ¡lnÃ­ trÅ¾nÃ­ odhad</li>
+              <li>â€¢ Data jsou aktuÃ¡lnÃ­ k vybranÃ©mu obdobÃ­: <strong>{getPeriodLabel()}</strong></li>
             </ul>
           </div>
         </>
