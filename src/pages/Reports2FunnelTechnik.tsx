@@ -16,39 +16,44 @@ import {
 // Types based on backend API
 interface IFunnelTechnikLeadItem {
   leadId: string;
-  uniqueId: number;
+  uniqueId?: number;
   customerName: string;
   customerPhone: string;
   carBrand: string;
   carModel: string;
-  carVIN: string;
-  requestedAmount: number;
-  handedToTechnicianDate: string;
-  currentStatus: string;
-  currentStatusLabel: string;
+  carYear?: string;
+  carVIN?: string;
+  requestedAmount?: number;
+  submittedAt: string;
+  technicianName?: string;
+  status: string;
+  daysInReview: number;
   declinedReason?: string;
-  declinedReasonLabel?: string;
   notes?: Array<{ text: string; date: string; author: string }>;
-  daysInTechnicianReview: number;
 }
 
-interface IFunnelTechnikStats {
-  totalHandedToTechnician: number;
+interface IFunnelTechnikSummary {
+  totalSubmitted: number;
   approved: number;
   rejected: number;
-  inProgress: number;
+  inReview: number;
   approvalRate: number;
   rejectionRate: number;
-  averageDaysInReview: number;
+  avgReviewTime: number;
+}
+
+interface IRejectionReason {
+  reason: string;
+  count: number;
+  percentage: number;
 }
 
 interface IFunnelTechnikReportData {
-  dateFrom: string;
-  dateTo: string;
-  stats: IFunnelTechnikStats;
-  leads: IFunnelTechnikLeadItem[];
-  declinedReasons?: Array<{ reason: string; count: number; percentage: number }>;
-  statusBreakdown?: Array<{ status: string; count: number; percentage: number }>;
+  dateFrom?: string;
+  dateTo?: string;
+  summary: IFunnelTechnikSummary;
+  leadsInReview?: IFunnelTechnikLeadItem[];
+  rejectionReasons?: IRejectionReason[];
 }
 
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';
@@ -59,7 +64,6 @@ export function Reports2FunnelTechnik() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<IFunnelTechnikReportData | null>(null);
-  const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
 
   // Period filters
   const [period, setPeriod] = useState<PeriodType>('month');
@@ -94,12 +98,6 @@ export function Reports2FunnelTechnik() {
     fetchReportData();
   }, [period]);
 
-  const handleCustomDateSearch = () => {
-    if (customDateFrom && customDateTo) {
-      fetchReportData();
-    }
-  };
-
   const getPeriodLabel = (): string => {
     switch (period) {
       case 'day': return 'Dnes';
@@ -111,26 +109,20 @@ export function Reports2FunnelTechnik() {
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    if (status === 'FINAL_APPROVAL' || status === 'CONVERTED') return 'bg-green-100 text-green-800';
-    if (status === 'DECLINED') return 'bg-red-100 text-red-800';
-    if (status === 'UPLOAD_DOCUMENTS') return 'bg-orange-100 text-orange-800';
-    return 'bg-gray-100 text-gray-800';
-  };
-
   // Prepare chart data
   const statusChartData = useMemo(() => {
-    if (!reportData?.statusBreakdown) return [];
-    return reportData.statusBreakdown.map(item => ({
-      name: item.status,
-      value: item.count,
-      percentage: item.percentage,
-    }));
+    if (!reportData?.summary) return [];
+    const { approved, rejected, inReview } = reportData.summary;
+    return [
+      { name: 'Schvaleno', value: approved },
+      { name: 'Zamitnuto', value: rejected },
+      { name: 'V kontrole', value: inReview },
+    ].filter(item => item.value > 0);
   }, [reportData]);
 
-  const declinedReasonsData = useMemo(() => {
-    if (!reportData?.declinedReasons) return [];
-    return reportData.declinedReasons.map(item => ({
+  const rejectionChartData = useMemo(() => {
+    if (!reportData?.rejectionReasons) return [];
+    return reportData.rejectionReasons.map(item => ({
       name: item.reason,
       count: item.count,
       percentage: item.percentage,
@@ -264,7 +256,7 @@ export function Reports2FunnelTechnik() {
                       outerRadius={80}
                       dataKey="value"
                     >
-                      {statusChartData.map((_, index) => (
+                      {statusChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
@@ -278,7 +270,7 @@ export function Reports2FunnelTechnik() {
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
                         <span>{item.name}</span>
                       </div>
-                      <span className="font-semibold">{item.value} ({item.percentage}%)</span>
+                      <span className="font-semibold">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -331,7 +323,7 @@ export function Reports2FunnelTechnik() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm text-gray-900">{lead.carBrand} {lead.carModel}</div>
-                          <div className="text-xs text-gray-500">{lead.carYear}</div>
+                          <div className="text-xs text-gray-500">{lead.carYear || 'N/A'}</div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">{lead.technicianName || 'N/A'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">
@@ -372,7 +364,7 @@ export function Reports2FunnelTechnik() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {reportData.rejectionReasons.map((item, index) => (
-                      <tr key={item.reason} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-4 py-3 text-sm text-gray-900">{item.reason}</td>
                         <td className="px-4 py-3 text-sm text-right text-gray-900">{item.count}</td>
                         <td className="px-4 py-3 text-sm text-right text-gray-900">{item.percentage}%</td>
