@@ -15,6 +15,11 @@ interface IFinancialReportItem {
   activeLeases: number;
   newLeases: number;
   carPurchasesCount: number;
+  carPurchases?: number;
+  insuranceCosts?: number;
+  maintenanceCosts?: number;
+  operationalCosts?: number;
+  otherCosts?: number;
 }
 
 interface IFinancialStats {
@@ -27,11 +32,39 @@ interface IFinancialStats {
   activeLeases: number;
 }
 
+interface IInvoiceItem {
+  invoiceId: string;
+  invoiceNumber: string;
+  leaseId: string;
+  customerId: string;
+  customerName: string;
+  amount: number;
+  dueDate: string;
+  paidDate?: string;
+  status: string;
+  type: string;
+  month: string;
+}
+
+interface IPaymentItem {
+  paymentId: string;
+  leaseId: string;
+  customerId: string;
+  customerName: string;
+  amount: number;
+  paymentDate: string;
+  type: string;
+  month: string;
+  status: string;
+}
+
 interface IFinancialReportData {
   stats: IFinancialStats;
   monthlyData: IFinancialReportItem[];
   revenueByType: Array<{ type: string; amount: number; percentage: number }>;
   costsByType: Array<{ type: string; amount: number; percentage: number }>;
+  invoices?: IInvoiceItem[];
+  payments?: IPaymentItem[];
 }
 
 interface IMonthDetailRevenue {
@@ -81,7 +114,6 @@ export function Reports2Financial() {
   // Month detail modal
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [monthDetailData, setMonthDetailData] = useState<IMonthDetailData | null>(null);
-  const [monthDetailLoading, setMonthDetailLoading] = useState(false);
 
   const fetchReportData = async () => {
     setLoading(true);
@@ -103,27 +135,96 @@ export function Reports2Financial() {
     }
   };
 
-  const fetchMonthDetail = async (month: string) => {
-    setMonthDetailLoading(true);
-    try {
-      const response = await axiosClient.get(`/stats/financial-report/month-detail?month=${month}`);
-      setMonthDetailData(response.data);
-    } catch (err) {
-      console.error('Error fetching month detail:', err);
-      setError('Chyba pri nacitani detailu mesice');
-    } finally {
-      setMonthDetailLoading(false);
-    }
-  };
-
   const handleMonthClick = (month: string) => {
+    if (!reportData) return;
+    
     setSelectedMonth(month);
-    fetchMonthDetail(month);
-  };
-
-  const closeMonthDetail = () => {
-    setSelectedMonth(null);
-    setMonthDetailData(null);
+    
+    // Filter invoices and payments for selected month
+    const monthInvoices = reportData.invoices?.filter(inv => inv.month === month) || [];
+    const monthPayments = reportData.payments?.filter(pay => pay.month === month) || [];
+    
+    // Find monthly data for totals
+    const monthData = reportData.monthlyData.find(m => m.month === month);
+    
+    if (!monthData) return;
+    
+    // Transform invoices to revenues
+    const revenues: IMonthDetailRevenue[] = monthInvoices.map(inv => ({
+      id: inv.invoiceId,
+      type: inv.type,
+      amount: inv.amount,
+      date: inv.paidDate || inv.dueDate,
+      description: `Faktura ${inv.invoiceNumber}`,
+      leaseId: inv.leaseId,
+      customerId: inv.customerId,
+      customerName: inv.customerName,
+    }));
+    
+    // For costs, we'll create entries based on monthly data
+    const costs: IMonthDetailCost[] = [];
+    
+    // Add car purchases as costs
+    if (monthData.carPurchasesCount > 0) {
+      costs.push({
+        id: `car-purchase-${month}`,
+        type: 'Odkup aut',
+        amount: monthData.carPurchases || 0,
+        date: `${month}-15`,
+        description: `Odkup vozidel (${monthData.carPurchasesCount} ks)`,
+      });
+    }
+    
+    // Add other costs
+    if (monthData.insuranceCosts) {
+      costs.push({
+        id: `insurance-${month}`,
+        type: 'Pojisteni',
+        amount: monthData.insuranceCosts,
+        date: `${month}-01`,
+        description: 'Naklady na pojisteni',
+      });
+    }
+    
+    if (monthData.maintenanceCosts) {
+      costs.push({
+        id: `maintenance-${month}`,
+        type: 'Udrzba',
+        amount: monthData.maintenanceCosts,
+        date: `${month}-15`,
+        description: 'Naklady na udrzbu vozidel',
+      });
+    }
+    
+    if (monthData.operationalCosts) {
+      costs.push({
+        id: `operational-${month}`,
+        type: 'Provozni naklady',
+        amount: monthData.operationalCosts,
+        date: `${month}-01`,
+        description: 'Provozni naklady',
+      });
+    }
+    
+    if (monthData.otherCosts) {
+      costs.push({
+        id: `other-${month}`,
+        type: 'Ostatni',
+        amount: monthData.otherCosts,
+        date: `${month}-30`,
+        description: 'Ostatni naklady',
+      });
+    }
+    
+    setMonthDetailData({
+      month: month,
+      monthLabel: monthData.monthLabel,
+      revenues,
+      costs,
+      totalRevenue: monthData.totalRevenue,
+      totalCosts: monthData.totalCosts,
+      netProfit: monthData.netProfit,
+    });
   };
 
   useEffect(() => { fetchReportData(); }, [period]);
@@ -344,7 +445,7 @@ export function Reports2Financial() {
                 )}
               </div>
               <button
-                onClick={closeMonthDetail}
+                onClick={() => setSelectedMonth(null)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,13 +455,13 @@ export function Reports2Financial() {
             </div>
 
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {monthDetailLoading && (
+              {!monthDetailData && (
                 <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <div className="text-gray-500">Zpracovavam data...</div>
                 </div>
               )}
 
-              {!monthDetailLoading && monthDetailData && (
+              {monthDetailData && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Revenues Table */}
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
