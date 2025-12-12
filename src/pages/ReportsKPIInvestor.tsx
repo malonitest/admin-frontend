@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useKpiInvestorReport } from '@/hooks';
 import type {
-  IFinancialReportItem,
+  IKPIFinancialReportItem,
   IKPIFinancialBreakdownItem,
   IKPIMetric,
   KPIReportPeriod,
@@ -145,7 +145,7 @@ const ComparisonCard = ({
   dataset,
 }: {
   label: string;
-  dataset?: IFinancialReportItem;
+  dataset?: IKPIFinancialReportItem;
 }) => (
   <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
     <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>

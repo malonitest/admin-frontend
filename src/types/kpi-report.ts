@@ -15,7 +15,7 @@ export interface IKPIFinancialBreakdownItem {
   percentage: number;
 }
 
-export interface IFinancialReportItem {
+export interface IKPIFinancialReportItem {
   month: string;
   totalRevenue: number;
   totalCosts: number;
@@ -24,7 +24,7 @@ export interface IFinancialReportItem {
   paymentSuccessRate?: number;
 }
 
-export interface IFinancialStats {
+export interface IKPIFinancialStats {
   totalRevenue: number;
   totalCosts: number;
   totalProfit: number;
@@ -38,9 +38,9 @@ export interface IFinancialStats {
 }
 
 export interface IKPIFinancialSection {
-  stats: IFinancialStats;
-  latestMonth?: IFinancialReportItem;
-  previousMonth?: IFinancialReportItem;
+  stats: IKPIFinancialStats;
+  latestMonth?: IKPIFinancialReportItem;
+  previousMonth?: IKPIFinancialReportItem;
   revenueByType: IKPIFinancialBreakdownItem[];
   costsByType: IKPIFinancialBreakdownItem[];
 }

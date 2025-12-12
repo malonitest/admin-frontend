@@ -1,11 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import { useFinancialReport } from '@/hooks';
-import type {
-  IFinancialBreakdownItem,
-  IFinancialCategoryItem,
-  KPIReportPeriod,
-} from '@/types';
+import type { IFinancialReportItem, KPIReportPeriod } from '@/types';
 
 const PERIOD_OPTIONS: KPIReportPeriod[] = ['day', 'week', 'month', 'year', 'custom'];
 
@@ -23,6 +19,11 @@ const dateFormatter = new Intl.DateTimeFormat('cs-CZ', {
   year: 'numeric',
 });
 
+const monthFormatter = new Intl.DateTimeFormat('cs-CZ', {
+  month: 'long',
+  year: 'numeric',
+});
+
 function formatDate(value?: string | null) {
   if (!value) {
     return '—';
@@ -31,6 +32,18 @@ function formatDate(value?: string | null) {
     return dateFormatter.format(new Date(value));
   } catch {
     return value;
+  }
+}
+
+function formatMonthLabel(month: string, label?: string) {
+  if (label) {
+    return label;
+  }
+  try {
+    const normalized = month.length === 7 ? `${month}-01T00:00:00.000Z` : month;
+    return monthFormatter.format(new Date(normalized));
+  } catch {
+    return month;
   }
 }
 
@@ -50,40 +63,13 @@ const SummaryCard = ({ label, value, helper }: { label: string; value: string; h
   </div>
 );
 
-const CategoryList = ({ title, icon, items }: { title: string; icon: string; items: IFinancialCategoryItem[] }) => (
-  <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-xl" aria-hidden>{icon}</span>
-      <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
-    </div>
-    {items.length === 0 ? (
-      <p className="text-sm text-gray-500">Bez dat pro zvolené období.</p>
-    ) : (
-      <ul className="space-y-3">
-        {items.map((item) => (
-          <li key={item.type} className="flex items-center justify-between text-sm">
-            <div>
-              <p className="font-medium text-gray-900">{item.label}</p>
-              {item.count !== undefined && (
-                <p className="text-xs text-gray-500">Poèet: {numberFormatter.format(item.count)}</p>
-              )}
-              {item.description && <p className="text-xs text-gray-500">{item.description}</p>}
-            </div>
-            <div className="text-right">
-              <p className="font-semibold text-gray-900">{formatCurrency(item.amount)}</p>
-              {typeof item.percentage === 'number' && (
-                <p className="text-xs text-gray-500">{item.percentage.toFixed(1)} %</p>
-              )}
-            </div>
-          </li>
-        ))}
-
-      </ul>
-    )}
-  </div>
-);
-
-const BreakdownList = ({ title, items }: { title: string; items: IFinancialBreakdownItem[] }) => (
+const BreakdownList = ({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ type: string; amount: number; percentage: number }>;
+}) => (
   <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
     <h3 className="text-sm font-semibold text-gray-700 mb-3">{title}</h3>
     {items.length === 0 ? (
@@ -93,13 +79,13 @@ const BreakdownList = ({ title, items }: { title: string; items: IFinancialBreak
         {items.map((item) => (
           <li key={item.type}>
             <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-900">{item.label}</span>
+              <span className="font-medium text-gray-900">{item.type}</span>
               <span className="text-gray-700">{formatCurrency(item.amount)}</span>
             </div>
             <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
               <div className="flex-1 h-2 rounded-full bg-gray-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-red-500 to-orange-400"
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300"
                   style={{ width: `${Math.min(item.percentage, 100)}%` }}
                 />
               </div>
@@ -107,7 +93,6 @@ const BreakdownList = ({ title, items }: { title: string; items: IFinancialBreak
             </div>
           </li>
         ))}
-
       </ul>
     )}
   </div>
@@ -127,7 +112,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{normalized}</span>;
 };
 
-const Table = ( {
+const Table = ({
   title,
   columns,
   rows,
@@ -137,7 +122,7 @@ const Table = ( {
   columns: { key: string; label: string; width?: string; align?: 'left' | 'right' }[];
   rows: Record<string, string | number | JSX.Element>[];
   emptyLabel: string;
-} ) => (
+}) => (
   <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
     <h3 className="text-sm font-semibold text-gray-700 mb-3">{title}</h3>
     {rows.length === 0 ? (
@@ -150,7 +135,6 @@ const Table = ( {
               {columns.map((col) => (
                 <th key={col.key} className={`px-3 py-2 ${col.align === 'right' ? 'text-right' : 'text-left'}`}>{col.label}</th>
               ))}
-
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -164,10 +148,60 @@ const Table = ( {
                     {row[col.key] as JSX.Element | string | number}
                   </td>
                 ))}
-
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+);
 
+const MonthlyTable = ({ data }: { data: IFinancialReportItem[] }) => (
+  <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
+    <h3 className="text-sm font-semibold text-gray-700 mb-3">Mìsíèní P/L pøehled</h3>
+    {data.length === 0 ? (
+      <p className="text-sm text-gray-500">Bez dostupných mìsícù.</p>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left text-gray-500 font-medium">Mìsíc</th>
+              <th className="px-3 py-2 text-right text-gray-500 font-medium">Pøíjmy</th>
+              <th className="px-3 py-2 text-right text-gray-500 font-medium">Náklady</th>
+              <th className="px-3 py-2 text-right text-gray-500 font-medium">Èistý zisk</th>
+              <th className="px-3 py-2 text-right text-gray-500 font-medium">Marže</th>
+              <th className="px-3 py-2 text-center text-gray-500 font-medium">Odkupy aut</th>
+              <th className="px-3 py-2 text-center text-gray-500 font-medium">Aktivní / Nové / Ukonèené</th>
+              <th className="px-3 py-2 text-right text-gray-500 font-medium">Úspìšnost plateb</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {data.map((month) => (
+              <tr key={month.month}>
+                <td className="px-3 py-2 font-medium text-gray-800">{formatMonthLabel(month.month, month.monthLabel)}</td>
+                <td className="px-3 py-2 text-right">{formatCurrency(month.totalRevenue)}</td>
+                <td className="px-3 py-2 text-right">{formatCurrency(month.totalCosts)}</td>
+                <td className={`px-3 py-2 text-right ${month.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {formatCurrency(month.netProfit)}
+                </td>
+                <td className={`px-3 py-2 text-right ${month.profitMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {month.profitMargin.toFixed(1)} %
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <p>{numberFormatter.format(month.carPurchasesCount)} ks</p>
+                  <p className="text-xs text-gray-500">{formatCurrency(month.carPurchases)}</p>
+                </td>
+                <td className="px-3 py-2 text-center text-gray-700">
+                  <p>{numberFormatter.format(month.activeLeases)} aktivních</p>
+                  <p className="text-xs text-gray-500">
+                    +{numberFormatter.format(month.newLeases)} / -{numberFormatter.format(month.endedLeases)}
+                  </p>
+                </td>
+                <td className="px-3 py-2 text-right">{month.paymentSuccessRate.toFixed(1)} %</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -180,30 +214,26 @@ export default function ReportsFinancial() {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
 
-  const queryFilters = useMemo(
-    () => {
-      if (period !== 'custom') {
-        return { period } as const;
-      }
-      return {
-        period,
-        dateFrom: customDateFrom ? new Date(`${customDateFrom}T00:00:00.000Z`).toISOString() : undefined,
-        dateTo: customDateTo ? new Date(`${customDateTo}T23:59:59.999Z`).toISOString() : undefined,
-      } as const;
-    },
-    [ period, customDateFrom, customDateTo ],
-  );
+  const queryFilters = useMemo(() => {
+    if (period !== 'custom') {
+      return { period } as const;
+    }
+    return {
+      period,
+      dateFrom: customDateFrom ? new Date(`${customDateFrom}T00:00:00.000Z`).toISOString() : undefined,
+      dateTo: customDateTo ? new Date(`${customDateTo}T23:59:59.999Z`).toISOString() : undefined,
+    } as const;
+  }, [period, customDateFrom, customDateTo]);
 
   const { data, loading, error, refetch } = useFinancialReport(queryFilters);
-  const isCustomReady =
-    period !== 'custom' || (Boolean(queryFilters.dateFrom) && Boolean(queryFilters.dateTo));
+  const isCustomReady = period !== 'custom' || (Boolean(queryFilters.dateFrom) && Boolean(queryFilters.dateTo));
 
   const activeRangeLabel = data
-    ? `${formatDate(data.period.dateFrom)} – ${formatDate(data.period.dateTo)}`
+    ? `${formatDate(data.dateFrom)} – ${formatDate(data.dateTo)}`
     : undefined;
 
   const invoiceRows = (data?.invoices ?? []).map((invoice) => ({
-    id: invoice.id,
+    id: invoice.invoiceId,
     invoiceNumber: invoice.invoiceNumber,
     customerName: invoice.customerName,
     amount: formatCurrency(invoice.amount),
@@ -214,11 +244,11 @@ export default function ReportsFinancial() {
   }));
 
   const paymentRows = (data?.payments ?? []).map((payment) => ({
-    id: payment.id,
+    id: payment.paymentId,
     leaseId: payment.leaseId,
     customerName: payment.customerName,
     amount: formatCurrency(payment.amount),
-    paidAt: formatDate(payment.paidAt),
+    paidAt: formatDate(payment.paymentDate),
     type: payment.type,
     status: <StatusBadge status={payment.status} />,
   }));
@@ -233,9 +263,6 @@ export default function ReportsFinancial() {
               Pøehled pøíjmù, nákladù a zisku. {activeRangeLabel && `Období: ${activeRangeLabel}.`}
             </p>
           </div>
-          {data?.generatedAt && (
-            <p className="text-xs text-gray-500">Aktualizováno {formatDate(data.generatedAt)}</p>
-          )}
         </div>
       </header>
 
@@ -323,53 +350,29 @@ export default function ReportsFinancial() {
       {!loading && data && (
         <>
           <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-            <SummaryCard label="Celkové pøíjmy" value={formatCurrency(data.totals.revenue)} />
-            <SummaryCard label="Celkové náklady" value={formatCurrency(data.totals.costs)} />
-            <SummaryCard label="Hrubý zisk" value={formatCurrency(data.totals.grossProfit)} />
-            <SummaryCard label="Èistý zisk" value={formatCurrency(data.totals.netProfit)} />
-            <SummaryCard label="Zisková marže" value={formatPercentage(data.totals.profitMarginPercentage)} />
-          </section>
-
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <CategoryList title="Pøíjmy" icon="??" items={data.monthlyOverview.revenue} />
-            <CategoryList title="Náklady" icon="??" items={data.monthlyOverview.costs} />
-            <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Zisk / Ztráta</h3>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center justify-between">
-                  <span>Hrubý zisk</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(data.monthlyOverview.profit.grossProfit)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span>Èistý zisk</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(data.monthlyOverview.profit.netProfit)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span>Zisková marže</span>
-                  <span className="font-semibold text-gray-900">{formatPercentage(data.monthlyOverview.profit.profitMarginPercentage)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span>Odkup aut</span>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">{numberFormatter.format(data.totals.carBuyoutsCount)} ks</p>
-                    <p className="text-xs text-gray-500">{formatCurrency(data.totals.carBuyoutsAmount)}</p>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </section>
-
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SummaryCard label="Celkové pøíjmy" value={formatCurrency(data.stats.totalRevenue)} />
+            <SummaryCard label="Celkové náklady" value={formatCurrency(data.stats.totalCosts)} />
+            <SummaryCard label="Èistý zisk" value={formatCurrency(data.stats.totalProfit)} />
+            <SummaryCard label="Zisková marže" value={formatPercentage(data.stats.profitMargin)} />
             <SummaryCard label="Aktivní leasingy" value={numberFormatter.format(data.stats.activeLeases)} />
-            <SummaryCard label="Nové leasingy" value={numberFormatter.format(data.stats.newLeases)} />
-            <SummaryCard label="Ukonèené leasingy" value={numberFormatter.format(data.stats.completedLeases)} />
-            <SummaryCard label="Prùmìrná splátka" value={formatCurrency(data.stats.averageInstallment)} />
-            <SummaryCard label="Úspìšnost plateb" value={formatPercentage(data.stats.paymentSuccessRate)} />
           </section>
+
+          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <SummaryCard label="Prùmìrné mìsíèní pøíjmy" value={formatCurrency(data.stats.averageMonthlyRevenue)} />
+            <SummaryCard label="Prùmìrný mìsíèní zisk" value={formatCurrency(data.stats.averageMonthlyProfit)} />
+            <SummaryCard
+              label="Odkoupená auta"
+              value={numberFormatter.format(data.stats.totalCarsPurchased)}
+              helper={formatCurrency(data.stats.totalCarsPurchasedValue)}
+            />
+            <SummaryCard label="Hodnota leasingù" value={formatCurrency(data.stats.totalLeaseValue)} />
+          </section>
+
+          <MonthlyTable data={data.monthlyData} />
 
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BreakdownList title="Rozpad pøíjmù" items={data.revenueBreakdown} />
-            <BreakdownList title="Rozpad nákladù" items={data.costBreakdown} />
+            <BreakdownList title="Rozpad pøíjmù" items={data.revenueByType} />
+            <BreakdownList title="Rozpad nákladù" items={data.costsByType} />
           </section>
 
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
