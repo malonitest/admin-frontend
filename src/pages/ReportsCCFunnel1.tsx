@@ -14,6 +14,12 @@ import {
   Cell,
 } from 'recharts';
 
+interface IFunnelStageNote {
+  text: string;
+  date: string;
+  author: string;
+}
+
 // Types based on backend API
 interface IFunnelStageData {
   stage: string;
@@ -24,16 +30,13 @@ interface IFunnelStageData {
     count: number;
     percentage: number;
   }>;
-  notes?: Array<{
-    text: string;
-    date: Date;
-    author: string;
-  }>;
+  notes?: IFunnelStageNote[];
+  averageDays?: number | null;
 }
 
 interface IFunnelReportData {
-  dateFrom: Date;
-  dateTo: Date;
+  dateFrom: string;
+  dateTo: string;
   stages: IFunnelStageData[];
   totalLeads: number;
   convertedLeads: number;
@@ -50,6 +53,15 @@ interface IFunnelReportData {
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';
 
 const CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+
+const formatNoteDate = (value: string): string => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
 
 const ReportsCCFunnel1: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -145,6 +157,23 @@ const ReportsCCFunnel1: React.FC = () => {
     const { dateFrom, dateTo } = getDateRange();
     return `${dateFrom.toLocaleDateString('cs-CZ')} - ${dateTo.toLocaleDateString('cs-CZ')}`;
   };
+
+  const stageDetails = useMemo<IFunnelStageData[]>(() => {
+    if (!reportData || !reportData.stages) return [];
+    return reportData.stages.map((stage) => ({
+      ...stage,
+      averageDays: reportData.averageTimeInStages?.[stage.stage] ?? null,
+    }));
+  }, [reportData]);
+
+  const stageNotes = useMemo(() => {
+    return stageDetails
+      .filter((stage) => stage.notes && stage.notes.length)
+      .map((stage) => ({
+        stage: stage.stage,
+        notes: stage.notes!.slice(0, 3),
+      }));
+  }, [stageDetails]);
 
   // Prepare funnel chart data
   const funnelChartData = useMemo(() => {
@@ -313,6 +342,56 @@ const ReportsCCFunnel1: React.FC = () => {
             </div>
           </div>
 
+          {stageDetails.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              {stageDetails.map((stage, index) => {
+                const topReason = stage.declinedReasons?.[0];
+                const latestNote = stage.notes?.[0];
+                const color = CHART_COLORS[index % CHART_COLORS.length];
+                return (
+                  <div key={stage.stage} className="bg-white rounded-lg shadow border border-gray-100 p-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900">{stage.stage}</p>
+                      <span className="text-xs font-medium text-gray-500">{(stage.percentage ?? 0).toFixed(1)}%</span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">{stage.count}</div>
+                    <div className="h-2 bg-gray-100 rounded-full">
+                      <div
+                        className="h-2 rounded-full"
+                        style={{ width: `${Math.min(stage.percentage ?? 0, 100)}%`, backgroundColor: color }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center justify-between">
+                      <span>Prùm. èas</span>
+                      <span className="font-semibold text-gray-900">
+                        {stage.averageDays ? `${stage.averageDays.toFixed(1)} dne` : 'N/A'}
+                      </span>
+                    </div>
+                    {topReason ? (
+                      <div className="bg-red-50 rounded-md p-2">
+                        <p className="text-xs text-red-800 font-medium">Top dùvod zamítnutí</p>
+                        <p className="text-sm text-red-900">
+                          {topReason.reason} ({topReason.count}×)
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-md p-2 text-xs text-gray-500">Bez zamítnutých v této fázi</div>
+                    )}
+                    {latestNote ? (
+                      <div className="text-xs text-gray-600 border-t pt-2">
+                        <p className="font-semibold text-gray-800 mb-1">Poslední poznámka</p>
+                        <p className="line-clamp-2">{latestNote.text}</p>
+                        <span className="text-gray-400">{latestNote.author || 'Bez autora'} • {formatNoteDate(latestNote.date)}</span>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400 border-t pt-2">Žádné poznámky</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Funnel Chart */}
@@ -387,11 +466,12 @@ const ReportsCCFunnel1: React.FC = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fáze</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Poèet leadù</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">% z celku</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Prùmìrný èas (dny)</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Top dùvody zamítnutí</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {reportData.stages.map((stage, index) => (
+                  {stageDetails.map((stage, index) => (
                     <tr key={stage.stage} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-4 py-3">
                         <span className="font-medium text-gray-900">{stage.stage}</span>
@@ -403,6 +483,9 @@ const ReportsCCFunnel1: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
                         {(stage.percentage ?? 0).toFixed(1)}%
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                        {stage.averageDays ? stage.averageDays.toFixed(1) : '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {stage.declinedReasons && stage.declinedReasons.length > 0 ? (
@@ -423,6 +506,33 @@ const ReportsCCFunnel1: React.FC = () => {
               </table>
             </div>
           </div>
+
+          {stageNotes.length > 0 && (
+            <div className="bg-white rounded-lg shadow mb-6">
+              <div className="p-4 border-b border-gray-200 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5l2 2h5a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h2 className="text-lg font-semibold text-gray-900">Nejnovìjší poznámky z fází</h2>
+              </div>
+              <div className="divide-y">
+                {stageNotes.map((stage) => (
+                  <div key={stage.stage} className="p-4 space-y-3">
+                    <p className="text-sm font-semibold text-gray-800">{stage.stage}</p>
+                    {stage.notes.map((note, idx) => (
+                      <div key={`${stage.stage}-${idx}`} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                        <p className="text-sm text-gray-900">{note.text}</p>
+                        <div className="text-xs text-gray-500 flex justify-between mt-2">
+                          <span>{note.author || 'Neznámý autor'}</span>
+                          <span>{formatNoteDate(note.date)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Overall Decline Reasons Table */}
           {reportData.declinedReasons && reportData.declinedReasons.length > 0 && (
