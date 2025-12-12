@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { axiosClient } from '@/api/axiosClient';
 import {
   BarChart,
@@ -72,7 +72,7 @@ export function Reports2KPI() {
   const [customDateFrom, setCustomDateFrom] = useState<string>('');
   const [customDateTo, setCustomDateTo] = useState<string>('');
 
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -83,6 +83,8 @@ export function Reports2KPI() {
       } else {
         params.append('period', period);
       }
+      
+      console.log('Fetching KPI data with URL:', `/stats/kpi-investor?${params.toString()}`);
       const response = await axiosClient.get(`/stats/kpi-investor?${params.toString()}`);
       setReportData(response.data);
     } catch (err) {
@@ -91,11 +93,11 @@ export function Reports2KPI() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period, customDateFrom, customDateTo]);
 
   useEffect(() => {
     fetchReportData();
-  }, [period]);
+  }, [fetchReportData]);
 
   const getPeriodLabel = (): string => {
     switch (period) {
