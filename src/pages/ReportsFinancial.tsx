@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import type { JSX } from 'react';
+import { useMemo, useState, type JSX, type ReactNode } from 'react';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { useFinancialReport } from '@/hooks';
 import type { IFinancialReportItem, KPIReportPeriod } from '@/types';
 
@@ -51,6 +51,9 @@ function formatCurrency(amount: number) {
   return moneyFormatter.format(amount ?? 0);
 }
 
+const PIE_COLORS = ['#0EA5E9', '#10B981', '#F97316', '#6366F1', '#F43F5E', '#14B8A6'];
+const BAR_COLORS = ['#0EA5E9', '#A855F7', '#F97316', '#10B981', '#EC4899', '#6366F1'];
+
 function formatPercentage(value: number) {
   return `${(value ?? 0).toFixed(1)} %`;
 }
@@ -63,43 +66,17 @@ const SummaryCard = ({ label, value, helper }: { label: string; value: string; h
   </div>
 );
 
-const BreakdownList = ({
-  title,
-  items,
-}: {
-  title: string;
-  items: Array<{ type: string; amount: number; percentage: number }>;
-}) => (
+const ChartCard = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
     <h3 className="text-sm font-semibold text-gray-700 mb-3">{title}</h3>
-    {items.length === 0 ? (
-      <p className="text-sm text-gray-500">Bez dat</p>
-    ) : (
-      <ul className="space-y-3 text-sm">
-        {items.map((item) => (
-          <li key={item.type}>
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-900">{item.type}</span>
-              <span className="text-gray-700">{formatCurrency(item.amount)}</span>
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-              <div className="flex-1 h-2 rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300"
-                  style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                />
-              </div>
-              <span>{item.percentage.toFixed(1)} %</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-    )}
+    {children}
   </div>
 );
 
+const ChartEmptyState = () => <p className="text-sm text-gray-500">Bez dostupných dat pro vybrané období.</p>;
+
 const StatusBadge = ({ status }: { status: string }) => {
-  const normalized = status.toUpperCase();
+  const normalized = (status || '').toUpperCase();
   const variants: Record<string, string> = {
     PAID: 'bg-green-100 text-green-800',
     UNPAID: 'bg-yellow-100 text-yellow-800',
@@ -109,7 +86,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     FAILED: 'bg-red-100 text-red-800',
   };
   const cls = variants[normalized] || 'bg-gray-100 text-gray-800';
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{normalized}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{normalized || 'NEZNÁMÝ'}</span>;
 };
 
 const Table = ({
@@ -210,7 +187,7 @@ const MonthlyTable = ({ data }: { data: IFinancialReportItem[] }) => (
 );
 
 export default function ReportsFinancial() {
-  const [period, setPeriod] = useState<KPIReportPeriod>('month');
+  const [period, setPeriod] = useState<KPIReportPeriod>('year');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
 
@@ -252,6 +229,32 @@ export default function ReportsFinancial() {
     type: payment.type,
     status: <StatusBadge status={payment.status} />,
   }));
+
+  const monthlyChartData = useMemo(() => {
+    if (!data?.monthlyData) return [] as Array<IFinancialReportItem & { label: string }>;
+    return data.monthlyData.map((month) => ({
+      ...month,
+      label: formatMonthLabel(month.month, month.monthLabel),
+    }));
+  }, [data]);
+
+  const revenueChartData = useMemo<Array<Record<string, number | string>>>(() => {
+    if (!data?.revenueByType) return [];
+    return data.revenueByType.map((item) => ({
+      type: item.type,
+      amount: item.amount,
+      percentage: item.percentage,
+    }));
+  }, [data]);
+
+  const costChartData = useMemo<Array<Record<string, number | string>>>(() => {
+    if (!data?.costsByType) return [];
+    return data.costsByType.map((item) => ({
+      type: item.type,
+      amount: item.amount,
+      percentage: item.percentage,
+    }));
+  }, [data]);
 
   return (
     <div className="space-y-6">
@@ -368,14 +371,81 @@ export default function ReportsFinancial() {
             <SummaryCard label="Hodnota leasingù" value={formatCurrency(data.stats.totalLeaseValue)} />
           </section>
 
+          <ChartCard title="P/L Statement – Mìsíèní trend">
+            {monthlyChartData.length === 0 ? (
+              <ChartEmptyState />
+            ) : (
+              <ResponsiveContainer width="100%" height={360}>
+                <LineChart data={monthlyChartData} margin={{ top: 12, right: 24, left: 0, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(value: number) => `${numberFormatter.format(Math.round(Number(value) / 1000))}k`} />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    labelFormatter={(label) => label as string}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="totalRevenue" stroke="#10B981" strokeWidth={2} name="Pøíjmy" dot={false} />
+                  <Line type="monotone" dataKey="totalCosts" stroke="#F97316" strokeWidth={2} name="Náklady" dot={false} />
+                  <Line type="monotone" dataKey="netProfit" stroke="#0EA5E9" strokeWidth={2} name="Zisk" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </ChartCard>
+
           <MonthlyTable data={data.monthlyData} />
 
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BreakdownList title="Rozpad pøíjmù" items={data.revenueByType} />
-            <BreakdownList title="Rozpad nákladù" items={data.costsByType} />
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ChartCard title="Rozpad pøíjmù">
+              {revenueChartData.length === 0 ? (
+                <ChartEmptyState />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Legend layout="vertical" verticalAlign="middle" align="right" />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Pie
+                      data={revenueChartData}
+                      dataKey="amount"
+                      nameKey="type"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="60%"
+                      outerRadius="100%"
+                      fill="#8884d8"
+                      stroke="none"
+                    >
+                      {revenueChartData.map((_, index) => (
+                        <Cell key={`cell-revenue-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+            <ChartCard title="Rozpad nákladù">
+              {costChartData.length === 0 ? (
+                <ChartEmptyState />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={costChartData} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="type" tick={{ fontSize: 12 }} />
+                    <YAxis tickFormatter={(value: number) => `${numberFormatter.format(Math.round(Number(value) / 1000))}k`} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Legend />
+                    <Bar dataKey="amount" name="Náklady" radius={[6, 6, 0, 0]}>
+                      {costChartData.map((_, index) => (
+                        <Cell key={`cell-costs-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
           </section>
 
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Table
               title="Faktury"
               emptyLabel="Žádné faktury v tomto období"
