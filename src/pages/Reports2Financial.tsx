@@ -34,6 +34,38 @@ interface IFinancialReportData {
   costsByType: Array<{ type: string; amount: number; percentage: number }>;
 }
 
+interface IMonthDetailRevenue {
+  id: string;
+  type: string;
+  amount: number;
+  date: string;
+  description: string;
+  leaseId?: string;
+  customerId?: string;
+  customerName?: string;
+}
+
+interface IMonthDetailCost {
+  id: string;
+  type: string;
+  amount: number;
+  date: string;
+  description: string;
+  carId?: string;
+  supplierId?: string;
+  supplierName?: string;
+}
+
+interface IMonthDetailData {
+  month: string;
+  monthLabel: string;
+  revenues: IMonthDetailRevenue[];
+  costs: IMonthDetailCost[];
+  totalRevenue: number;
+  totalCosts: number;
+  netProfit: number;
+}
+
 type PeriodType = 'month' | 'year' | 'custom';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -45,6 +77,11 @@ export function Reports2Financial() {
   const [period, setPeriod] = useState<PeriodType>('year');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
+  
+  // Month detail modal
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [monthDetailData, setMonthDetailData] = useState<IMonthDetailData | null>(null);
+  const [monthDetailLoading, setMonthDetailLoading] = useState(false);
 
   const fetchReportData = async () => {
     setLoading(true);
@@ -64,6 +101,29 @@ export function Reports2Financial() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchMonthDetail = async (month: string) => {
+    setMonthDetailLoading(true);
+    try {
+      const response = await axiosClient.get(`/stats/financial-report/month-detail?month=${month}`);
+      setMonthDetailData(response.data);
+    } catch (err) {
+      console.error('Error fetching month detail:', err);
+      setError('Chyba pri nacitani detailu mesice');
+    } finally {
+      setMonthDetailLoading(false);
+    }
+  };
+
+  const handleMonthClick = (month: string) => {
+    setSelectedMonth(month);
+    fetchMonthDetail(month);
+  };
+
+  const closeMonthDetail = () => {
+    setSelectedMonth(null);
+    setMonthDetailData(null);
   };
 
   useEffect(() => { fetchReportData(); }, [period]);
@@ -144,6 +204,7 @@ export function Reports2Financial() {
 
       {!loading && reportData && (
         <>
+          {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
               <div className="text-sm font-medium text-green-600">Celkove prijmy</div>
@@ -171,6 +232,7 @@ export function Reports2Financial() {
             </div>
           </div>
 
+          {/* Charts */}
           {plChartData.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">P/L Statement - Mesicni prehled</h3>
@@ -222,10 +284,12 @@ export function Reports2Financial() {
             )}
           </div>
 
+          {/* Monthly Table - now clickable */}
           {reportData.monthlyData && reportData.monthlyData.length > 0 && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">Mesicni P/L Statement</h3>
+                <p className="text-sm text-gray-500 mt-1">Kliknutim na mesic zobrazite detail prijmu a nakladu</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -240,7 +304,11 @@ export function Reports2Financial() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {reportData.monthlyData.map((month, index) => (
-                      <tr key={month.month} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <tr 
+                        key={month.month} 
+                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 cursor-pointer transition-colors`}
+                        onClick={() => handleMonthClick(month.month)}
+                      >
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{month.monthLabel}</td>
                         <td className="px-4 py-3 text-sm text-right text-green-600 font-semibold">{month.totalRevenue.toLocaleString('cs-CZ')} Kc</td>
                         <td className="px-4 py-3 text-sm text-right text-red-600 font-semibold">{month.totalCosts.toLocaleString('cs-CZ')} Kc</td>
@@ -254,6 +322,146 @@ export function Reports2Financial() {
             </div>
           )}
         </>
+      )}
+
+      {/* Month Detail Modal */}
+      {selectedMonth && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-green-50">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Detail mesice: {monthDetailData?.monthLabel || selectedMonth}
+                </h3>
+                {monthDetailData && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Prijmy: <span className="font-semibold text-green-600">{monthDetailData.totalRevenue.toLocaleString('cs-CZ')} Kc</span>
+                    {' | '}
+                    Naklady: <span className="font-semibold text-red-600">{monthDetailData.totalCosts.toLocaleString('cs-CZ')} Kc</span>
+                    {' | '}
+                    Zisk: <span className="font-semibold text-blue-600">{monthDetailData.netProfit.toLocaleString('cs-CZ')} Kc</span>
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={closeMonthDetail}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {monthDetailLoading && (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+
+              {!monthDetailLoading && monthDetailData && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Revenues Table */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-green-50 border-b border-green-200 px-4 py-3">
+                      <h4 className="text-lg font-semibold text-green-900">
+                        Prijmy ({monthDetailData.revenues.length})
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto max-h-[600px]">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Popis</th>
+                            <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {monthDetailData.revenues.map((revenue, index) => (
+                            <tr key={revenue.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-3 py-2 text-xs text-gray-900">
+                                {new Date(revenue.date).toLocaleDateString('cs-CZ')}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-gray-900">{revenue.type}</td>
+                              <td className="px-3 py-2 text-xs text-gray-700">
+                                {revenue.description}
+                                {revenue.customerName && (
+                                  <div className="text-xs text-gray-500 mt-0.5">{revenue.customerName}</div>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-right font-semibold text-green-600">
+                                {revenue.amount.toLocaleString('cs-CZ')} Kc
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-green-50">
+                          <tr>
+                            <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-900">Celkem</td>
+                            <td className="px-3 py-2 text-sm text-right font-bold text-green-700">
+                              {monthDetailData.totalRevenue.toLocaleString('cs-CZ')} Kc
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Costs Table */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-red-50 border-b border-red-200 px-4 py-3">
+                      <h4 className="text-lg font-semibold text-red-900">
+                        Naklady ({monthDetailData.costs.length})
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto max-h-[600px]">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Popis</th>
+                            <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {monthDetailData.costs.map((cost, index) => (
+                            <tr key={cost.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-3 py-2 text-xs text-gray-900">
+                                {new Date(cost.date).toLocaleDateString('cs-CZ')}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-gray-900">{cost.type}</td>
+                              <td className="px-3 py-2 text-xs text-gray-700">
+                                {cost.description}
+                                {cost.supplierName && (
+                                  <div className="text-xs text-gray-500 mt-0.5">{cost.supplierName}</div>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-right font-semibold text-red-600">
+                                {cost.amount.toLocaleString('cs-CZ')} Kc
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-red-50">
+                          <tr>
+                            <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-900">Celkem</td>
+                            <td className="px-3 py-2 text-sm text-right font-bold text-red-700">
+                              {monthDetailData.totalCosts.toLocaleString('cs-CZ')} Kc
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
