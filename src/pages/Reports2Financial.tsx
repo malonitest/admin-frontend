@@ -140,9 +140,8 @@ export function Reports2Financial() {
     
     setSelectedMonth(month);
     
-    // Filter invoices and payments for selected month
+    // Filter invoices for selected month
     const monthInvoices = reportData.invoices?.filter(inv => inv.month === month) || [];
-    const monthPayments = reportData.payments?.filter(pay => pay.month === month) || [];
     
     // Find monthly data for totals
     const monthData = reportData.monthlyData.find(m => m.month === month);
