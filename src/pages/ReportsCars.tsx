@@ -146,6 +146,27 @@ const resolveCarMileage = (car: ICarItem): number | null => {
   return null;
 };
 
+const CONVERTED_STATUS_VALUES = ['converted', 'konvertovano', 'konvertováno'];
+
+const normalizeStatus = (value?: string | null) => {
+  if (!value) return '';
+  return value.trim().toLowerCase();
+};
+
+const isConvertedCar = (car: ICarItem): boolean => {
+  const extended = car as ICarItem & { status?: string; carStatus?: string; leaseStatus?: string };
+  const candidates = [car.currentStatus, extended.status, extended.carStatus, extended.leaseStatus];
+  return candidates.some(status => CONVERTED_STATUS_VALUES.includes(normalizeStatus(status)));
+};
+
+const MILEAGE_BUCKETS = [
+  { label: '0-50k', min: 0, max: 50_000 },
+  { label: '50-100k', min: 50_000, max: 100_000 },
+  { label: '100-150k', min: 100_000, max: 150_000 },
+  { label: '150-200k', min: 150_000, max: 200_000 },
+  { label: '200k+', min: 200_000, max: Number.POSITIVE_INFINITY },
+];
+
 const ReportsCars: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -199,9 +220,147 @@ const ReportsCars: React.FC = () => {
     fetchReportData();
   }, [period, customDateFrom, customDateTo, brandFilter, yearFromFilter, yearToFilter, mileageFromFilter, mileageToFilter]);
 
+  const convertedCars = useMemo(() => {
+    if (!reportData) return [] as ICarItem[];
+    return reportData.cars.filter(isConvertedCar);
+  }, [reportData]);
+
+  const summaryStats = useMemo<ICarStatsSummary | null>(() => {
+    if (!convertedCars.length) return null;
+
+    let totalPurchaseValue = 0;
+    let totalEstimatedValue = 0;
+    let totalMileage = 0;
+    let mileageSamples = 0;
+    let totalAge = 0;
+    let ageSamples = 0;
+
+    convertedCars.forEach(car => {
+      const purchase = numberFromValue(car.purchasePrice);
+      const estimated = numberFromValue(car.estimatedValue);
+      if (purchase !== null) totalPurchaseValue += purchase;
+      if (estimated !== null) totalEstimatedValue += estimated;
+
+      const mileage = resolveCarMileage(car);
+      if (mileage !== null) {
+        totalMileage += mileage;
+        mileageSamples += 1;
+      }
+
+      const year = resolveCarYear(car);
+      if (year !== null && year > 1900) {
+        const currentYear = new Date().getFullYear();
+        totalAge += currentYear - year;
+        ageSamples += 1;
+      }
+    });
+
+    const totalCars = convertedCars.length;
+
+    return {
+      totalCars,
+      totalPurchaseValue,
+      totalEstimatedValue,
+      averagePurchasePrice: totalCars ? totalPurchaseValue / totalCars : 0,
+      averageEstimatedValue: totalCars ? totalEstimatedValue / totalCars : 0,
+      averageMileage: mileageSamples ? totalMileage / mileageSamples : 0,
+      averageAge: ageSamples ? totalAge / ageSamples : 0,
+    };
+  }, [convertedCars]);
+
+  const brandBreakdown = useMemo<IBrandDistributionItem[]>(() => {
+    if (!convertedCars.length) return [];
+    const map = new Map<string, { count: number; totalValue: number }>();
+
+    convertedCars.forEach(car => {
+      const brand = car.carBrand || 'Neznámá znaèka';
+      const purchase = numberFromValue(car.purchasePrice) ?? 0;
+      const current = map.get(brand) ?? { count: 0, totalValue: 0 };
+      current.count += 1;
+      current.totalValue += purchase;
+      map.set(brand, current);
+    });
+
+    const totalCars = convertedCars.length;
+
+    return Array.from(map.entries()).map(([brand, data]) => ({
+      brand,
+      count: data.count,
+      totalValue: data.totalValue,
+      avgPrice: data.count ? data.totalValue / data.count : 0,
+      percentage: totalCars ? (data.count / totalCars) * 100 : 0,
+    }));
+  }, [convertedCars]);
+
+  const yearBreakdown = useMemo<IYearDistributionItem[]>(() => {
+    if (!convertedCars.length) return [];
+    const map = new Map<number, { count: number; mileageSum: number; mileageSamples: number; priceSum: number }>();
+
+    convertedCars.forEach(car => {
+      const year = resolveCarYear(car);
+      if (year === null) return;
+
+      const mileage = resolveCarMileage(car);
+      const purchase = numberFromValue(car.purchasePrice) ?? 0;
+      const current = map.get(year) ?? { count: 0, mileageSum: 0, mileageSamples: 0, priceSum: 0 };
+      current.count += 1;
+      current.priceSum += purchase;
+      if (mileage !== null) {
+        current.mileageSum += mileage;
+        current.mileageSamples += 1;
+      }
+      map.set(year, current);
+    });
+
+    return Array.from(map.entries())
+      .map(([year, data]) => ({
+        year,
+        count: data.count,
+        avgMileage: data.mileageSamples ? data.mileageSum / data.mileageSamples : 0,
+        avgPrice: data.count ? data.priceSum / data.count : 0,
+      }))
+      .sort((a, b) => b.year - a.year);
+  }, [convertedCars]);
+
+  const mileageBreakdown = useMemo<IMileageRangeItem[]>(() => {
+    if (!convertedCars.length) return [];
+
+    const totals = MILEAGE_BUCKETS.map(bucket => ({ ...bucket, count: 0 }));
+
+    convertedCars.forEach(car => {
+      const mileage = resolveCarMileage(car);
+      if (mileage === null) return;
+      const bucket = totals.find(b => mileage >= b.min && mileage < b.max);
+      if (bucket) {
+        bucket.count += 1;
+      }
+    });
+
+    return totals
+      .filter(bucket => bucket.count > 0)
+      .map(bucket => ({
+        range: bucket.label,
+        count: bucket.count,
+        percentage: convertedCars.length ? (bucket.count / convertedCars.length) * 100 : 0,
+      }));
+  }, [convertedCars]);
+
+  const brandChartData = useMemo<Array<Record<string, number | string>>>(() => {
+    return brandBreakdown.map(item => ({
+      brand: item.brand,
+      count: item.count,
+      percentage: item.percentage,
+      totalValue: item.totalValue,
+      avgPrice: item.avgPrice,
+    }));
+  }, [brandBreakdown]);
+
+  const yearChartData = useMemo(() => yearBreakdown, [yearBreakdown]);
+  const mileageChartData = useMemo(() => mileageBreakdown, [mileageBreakdown]);
+
   const filteredCars = useMemo(() => {
-    if (!reportData) return [];
-    return reportData.cars.filter(car => {
+    if (!convertedCars.length) return [] as ICarItem[];
+    return convertedCars.filter(car => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       return (
@@ -211,33 +370,20 @@ const ReportsCars: React.FC = () => {
         car.carSPZ?.toLowerCase().includes(q)
       );
     });
-  }, [reportData, searchQuery]);
+  }, [convertedCars, searchQuery]);
 
   const uniqueBrands = useMemo(() => {
-    if (!reportData) return [] as string[];
-    return Array.from(new Set(reportData.cars.map(car => car.carBrand))).sort();
-  }, [reportData]);
+    if (!convertedCars.length) return [] as string[];
+    return Array.from(new Set(convertedCars.map(car => car.carBrand))).sort();
+  }, [convertedCars]);
 
   const uniqueYears = useMemo(() => {
-    if (!reportData) return [] as number[];
-    const resolvedYears = reportData.cars
+    if (!convertedCars.length) return [] as number[];
+    const resolvedYears = convertedCars
       .map(car => resolveCarYear(car))
       .filter((year): year is number => year !== null);
     return Array.from(new Set(resolvedYears)).sort((a, b) => b - a);
-  }, [reportData]);
-
-  const brandChartData = useMemo<Array<Record<string, number | string>>>(() => {
-    return (reportData?.byBrand ?? []).map(item => ({
-      brand: item.brand,
-      count: item.count,
-      percentage: item.percentage,
-      totalValue: item.totalValue,
-      avgPrice: item.avgPrice,
-    }));
-  }, [reportData]);
-
-  const yearChartData = useMemo(() => reportData?.byYear ?? [], [reportData]);
-  const mileageChartData = useMemo(() => reportData?.byMileageRange ?? [], [reportData]);
+  }, [convertedCars]);
 
   const formatCurrency = (value: number | string | null | undefined): string => {
     const numericValue = numberFromValue(value);
@@ -300,17 +446,22 @@ const ReportsCars: React.FC = () => {
   );
 
   const renderSummaryCards = () => {
-    const stats = reportData?.stats;
-    if (!stats) return null;
+    if (!summaryStats) {
+      return (
+        <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+          Žádná konvertovaná vozidla pro vybraný filtr.
+        </div>
+      );
+    }
 
     const cards = [
-      { label: 'Celkem aut v systému', value: stats.totalCars.toLocaleString('cs-CZ') },
-      { label: 'Celková odkupní hodnota', value: `${stats.totalPurchaseValue.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Celková odhadovaná hodnota', value: `${stats.totalEstimatedValue.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Prùmìrná odkupní cena', value: `${stats.averagePurchasePrice.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Prùmìrná odhadovaná hodnota', value: `${stats.averageEstimatedValue.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Prùmìrný nájezd', value: `${stats.averageMileage.toLocaleString('cs-CZ')} km` },
-      { label: 'Prùmìrné stáøí vozidel', value: `${stats.averageAge.toFixed(1)} roku` },
+      { label: 'Celkem aut v systému', value: summaryStats.totalCars.toLocaleString('cs-CZ') },
+      { label: 'Celková odkupní hodnota', value: `${summaryStats.totalPurchaseValue.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Celková odhadovaná hodnota', value: `${summaryStats.totalEstimatedValue.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Prùmìrná odkupní cena', value: `${summaryStats.averagePurchasePrice.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Prùmìrná odhadovaná hodnota', value: `${summaryStats.averageEstimatedValue.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Prùmìrný nájezd', value: `${summaryStats.averageMileage.toLocaleString('cs-CZ')} km` },
+      { label: 'Prùmìrné stáøí vozidel', value: `${summaryStats.averageAge.toFixed(1)} roku` },
     ];
 
     return (
@@ -326,11 +477,11 @@ const ReportsCars: React.FC = () => {
   };
 
   const renderCompleteness = () => {
-    if (!reportData) return null;
-    const total = reportData.stats.totalCars;
-    const withPhotos = reportData.cars.filter(car => car.hasPhotos).length;
-    const withDocuments = reportData.cars.filter(car => car.hasDocuments).length;
-    const complete = reportData.cars.filter(car => car.hasPhotos && car.hasDocuments).length;
+    if (!summaryStats || !convertedCars.length) return null;
+    const total = summaryStats.totalCars;
+    const withPhotos = convertedCars.filter(car => car.hasPhotos).length;
+    const withDocuments = convertedCars.filter(car => car.hasDocuments).length;
+    const complete = convertedCars.filter(car => car.hasPhotos && car.hasDocuments).length;
 
     const cards = [
       {
@@ -382,7 +533,7 @@ const ReportsCars: React.FC = () => {
   };
 
   const renderCharts = () => {
-    if (!reportData) return null;
+    if (!convertedCars.length) return null;
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -445,7 +596,7 @@ const ReportsCars: React.FC = () => {
 
   const renderAdvancedTables = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {reportData?.byBrand.length ? (
+      {brandBreakdown.length ? (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle znaèky</h3>
           <div className="overflow-x-auto">
@@ -460,7 +611,7 @@ const ReportsCars: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportData.byBrand.map(item => (
+                {brandBreakdown.map(item => (
                   <tr key={item.brand}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.brand}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
@@ -475,7 +626,7 @@ const ReportsCars: React.FC = () => {
         </div>
       ) : null}
 
-      {reportData?.byYear.length ? (
+      {yearBreakdown.length ? (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle roku výroby</h3>
           <div className="overflow-x-auto">
@@ -489,7 +640,7 @@ const ReportsCars: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportData.byYear.map(item => (
+                {yearBreakdown.map(item => (
                   <tr key={item.year}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.year}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
@@ -503,7 +654,7 @@ const ReportsCars: React.FC = () => {
         </div>
       ) : null}
 
-      {reportData?.byMileageRange.length ? (
+      {mileageBreakdown.length ? (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle nájezdu</h3>
           <div className="overflow-x-auto">
@@ -516,7 +667,7 @@ const ReportsCars: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportData.byMileageRange.map(item => (
+                {mileageBreakdown.map(item => (
                   <tr key={item.range}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.range}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
