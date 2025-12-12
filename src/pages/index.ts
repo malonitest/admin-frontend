@@ -10,3 +10,4 @@ export { default as ReportsMarketing } from "./ReportsMarketing";
 export { default as LogsPage } from "./LogsPage";
 export { default as ReportsKPIInvestor } from "./ReportsKPIInvestor";
 export { default as ReportsFinancial } from "./ReportsFinancial";
+export { default as ReportsCollection } from "./ReportsCollection";

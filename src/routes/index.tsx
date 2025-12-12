@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AdminLayout } from '@/layouts';
-import { Login, Dashboard, Settings, DriveBot, ReportsCC, ReportsOS, ReportsMarketing, LogsPage, ReportsKPIInvestor, ReportsFinancial } from '@/pages';
+import { Login, Dashboard, Settings, DriveBot, ReportsCC, ReportsOS, ReportsMarketing, LogsPage, ReportsKPIInvestor, ReportsFinancial, ReportsCollection } from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
 import Leads from '@/pages/Leads';
@@ -118,7 +118,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'reports/collection',
-        element: <PlaceholderPage title="Reporty Collection" />,
+        element: <ReportsCollection />,
       },
       {
         path: 'calculator',

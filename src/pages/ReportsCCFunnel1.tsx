@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { axiosClient } from '../api/axiosClient';
+import React, { useState, useEffect, useMemo } from 'react';
+import axiosClient from '../api/axiosClient';
 import {
   BarChart,
   Bar,
@@ -63,7 +63,7 @@ const formatNoteDate = (value: string): string => {
   return parsed.toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const ReportsCCFunnel1 = () => {
+const ReportsCCFunnel1: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<IFunnelReportData | null>(null);
@@ -200,13 +200,14 @@ const ReportsCCFunnel1 = () => {
   const timeInStagesChartData = useMemo(() => {
     if (!reportData || !reportData.averageTimeInStages) return [];
     const stageTimes = reportData.averageTimeInStages;
-    return Object.keys(stageTimes).map(stage => {
-      const days = stageTimes[stage] ?? 0;
-      return {
-        name: stage,
-        days: parseFloat(days.toFixed(1)),
-      };
-    });
+    const items: { name: string; days: number }[] = [];
+    for (const stage in stageTimes) {
+      if (Object.prototype.hasOwnProperty.call(stageTimes, stage)) {
+        const days = stageTimes[stage] ?? 0;
+        items.push({ name: stage, days: parseFloat(days.toFixed(1)) });
+      }
+    }
+    return items;
   }, [reportData]);
 
   const renderDeclineReasonLabel = (entry: { payload?: { name?: string; percentage?: number } }) => {
