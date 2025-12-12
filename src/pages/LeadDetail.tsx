@@ -202,7 +202,7 @@ export function LeadDetail() {
     return mapping[category] || 'other';
   };
 
-  // Drag & drop handler
+  // Drag & drop handler with automatic fallback to /uploadDocument
   const handleDrop = async (e: React.DragEvent, documentType: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -219,8 +219,17 @@ export function LeadDetail() {
         formData.append('documentType', documentType);
         formData.append('leadId', id!);
         
-        // Don't manually set Content-Type - axios will handle it with boundary
-        await axiosClient.post(`/documents/upload`, formData);
+        // Try new endpoint first, fallback to original if 404
+        try {
+          await axiosClient.post(`/documents/upload`, formData);
+        } catch (error: any) {
+          if (error.response?.status === 404) {
+            console.warn('⚠️ /upload returned 404, trying fallback /uploadDocument...');
+            await axiosClient.post(`/documents/uploadDocument`, formData);
+          } else {
+            throw error;
+          }
+        }
       }
       await refreshLead();
       alert(`${files.length > 1 ? 'Dokumenty byly' : 'Dokument byl'} úspěšně nahrán`);

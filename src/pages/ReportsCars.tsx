@@ -206,8 +206,8 @@ const ReportsCars: React.FC = () => {
       const response = await axiosClient.get(query ? `/stats/car-stats?${query}` : '/stats/car-stats');
       setReportData(response.data);
     } catch (err) {
-      console.error('? Car stats error:', err);
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data reportu');
+      console.error('Car stats error:', err);
+      setError(err instanceof Error ? err.message : 'Nepodarilo se nacist data reportu');
     } finally {
       setLoading(false);
     }
@@ -273,7 +273,7 @@ const ReportsCars: React.FC = () => {
     const map = new Map<string, { count: number; totalValue: number }>();
 
     convertedCars.forEach(car => {
-      const brand = car.carBrand || 'Neznámá znaèka';
+      const brand = car.carBrand || 'Neznama znacka';
       const purchase = numberFromValue(car.purchasePrice) ?? 0;
       const current = map.get(brand) ?? { count: 0, totalValue: 0 };
       current.count += 1;
@@ -388,7 +388,7 @@ const ReportsCars: React.FC = () => {
   const formatCurrency = (value: number | string | null | undefined): string => {
     const numericValue = numberFromValue(value);
     if (numericValue === null) return '-';
-    return `${numericValue.toLocaleString('cs-CZ')} Kè`;
+    return `${numericValue.toLocaleString('cs-CZ')} Kc`;
   };
 
   const formatNumber = (value: number | string | null | undefined, suffix = ''): string => {
@@ -428,18 +428,18 @@ const ReportsCars: React.FC = () => {
 
   const renderInstructionList = () => (
     <ul className="text-sm text-blue-700 space-y-1 list-disc ml-5">
-      <li>Vyberte <strong>období</strong> (den, týden, mìsíc, rok nebo vlastní rozsah) – filtruje data pøímo na backendu.</li>
-      <li>Filtrování podle <strong>znaèky, roku výroby a nájezdu</strong> využívá parametry API (brand, yearFrom, mileageFrom/To).</li>
-      <li>Vyhledávání pomáhá v tabulce (znaèka, model, VIN, SPZ) – zùstává jen na frontendu.</li>
-      <li>Rozšíøené statistiky kombinují údaje podle znaèky, roku výroby a nájezdových pásem.</li>
-      <li>Detailní tabulka zobrazuje kontakt na zákazníka, datum konverze i stav dokumentace.</li>
-      <li>Export dat probíhá pøes endpoint <code className="text-xs bg-blue-100 px-1.5 py-0.5 rounded">GET /v1/stats/car-stats</code>.</li>
+      <li>Vyberte <strong>obdobi</strong> (den, tyden, mesic, rok nebo vlastni rozsah) - filtruje data primo na backendu.</li>
+      <li>Filtrovani podle <strong>znacky, roku vyroby a najezdu</strong> vyuziva parametry API (brand, yearFrom, mileageFrom/To).</li>
+      <li>Vyhledavani pomaha v tabulce (znacka, model, VIN, SPZ) - zustava jen na frontendu.</li>
+      <li>Rozsirene statistiky kombinuji udaje podle znacky, roku vyroby a najezdovych pasem.</li>
+      <li>Detailni tabulka zobrazuje kontakt na zakaznika, datum konverze i stav dokumentace.</li>
+      <li>Export dat probiha pres endpoint <code className="text-xs bg-blue-100 px-1.5 py-0.5 rounded">GET /v1/stats/car-stats</code>.</li>
     </ul>
   );
 
   const renderCurlExamples = () => (
     <div className="mt-3 space-y-2">
-      <p className="text-xs text-blue-800 font-semibold">Pøíklady dotazù na API:</p>
+      <p className="text-xs text-blue-800 font-semibold">Priklady dotazu na API:</p>
       <pre className="bg-blue-100 text-[11px] text-blue-900 p-2 rounded break-all">{DEFAULT_CURL}</pre>
       <pre className="bg-blue-100 text-[11px] text-blue-900 p-2 rounded break-all">{FILTERED_CURL}</pre>
     </div>
@@ -449,19 +449,19 @@ const ReportsCars: React.FC = () => {
     if (!summaryStats) {
       return (
         <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
-          Žádná konvertovaná vozidla pro vybraný filtr.
+          Zadna konvertovana vozidla pro vybrany filtr.
         </div>
       );
     }
 
     const cards = [
-      { label: 'Celkem aut v systému', value: summaryStats.totalCars.toLocaleString('cs-CZ') },
-      { label: 'Celková odkupní hodnota', value: `${summaryStats.totalPurchaseValue.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Celková odhadovaná hodnota', value: `${summaryStats.totalEstimatedValue.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Prùmìrná odkupní cena', value: `${summaryStats.averagePurchasePrice.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Prùmìrná odhadovaná hodnota', value: `${summaryStats.averageEstimatedValue.toLocaleString('cs-CZ')} Kè` },
-      { label: 'Prùmìrný nájezd', value: `${summaryStats.averageMileage.toLocaleString('cs-CZ')} km` },
-      { label: 'Prùmìrné stáøí vozidel', value: `${summaryStats.averageAge.toFixed(1)} roku` },
+      { label: 'Celkem aut v systemu', value: summaryStats.totalCars.toLocaleString('cs-CZ') },
+      { label: 'Celkova odkupni hodnota', value: `${summaryStats.totalPurchaseValue.toLocaleString('cs-CZ')} Kc` },
+      { label: 'Celkova odhadovana hodnota', value: `${summaryStats.totalEstimatedValue.toLocaleString('cs-CZ')} Kc` },
+      { label: 'Prumerna odkupni cena', value: `${summaryStats.averagePurchasePrice.toLocaleString('cs-CZ')} Kc` },
+      { label: 'Prumerna odhadovana hodnota', value: `${summaryStats.averageEstimatedValue.toLocaleString('cs-CZ')} Kc` },
+      { label: 'Prumerny najezd', value: `${summaryStats.averageMileage.toLocaleString('cs-CZ')} km` },
+      { label: 'Prumerne stari vozidel', value: `${summaryStats.averageAge.toFixed(1)} roku` },
     ];
 
     return (
@@ -499,7 +499,7 @@ const ReportsCars: React.FC = () => {
         accent: 'text-green-700',
       },
       {
-        label: 'Kompletní složky',
+        label: 'Kompletni slozky',
         value: complete,
         trackBg: 'bg-purple-200',
         fillBg: 'bg-purple-600',
@@ -539,7 +539,7 @@ const ReportsCars: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {brandChartData.length ? (
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Rozložení podle znaèky</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Rozlozeni podle znacky</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -563,14 +563,14 @@ const ReportsCars: React.FC = () => {
 
         {yearChartData.length ? (
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuce podle roku výroby</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuce podle roku vyroby</h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={yearChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" tick={{ fontSize: 10 }} />
                 <YAxis />
                 <Tooltip formatter={(value: number) => `${value.toLocaleString('cs-CZ')} ks`} />
-                <Bar dataKey="count" fill="#10B981" name="Poèet vozidel" />
+                <Bar dataKey="count" fill="#10B981" name="Pocet vozidel" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -578,14 +578,14 @@ const ReportsCars: React.FC = () => {
 
         {mileageChartData.length ? (
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuce podle nájezdu</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuce podle najezdu</h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={mileageChartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="range" width={120} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(value: number) => `${value.toLocaleString('cs-CZ')} ks`} />
-                <Bar dataKey="count" fill="#F59E0B" name="Poèet vozidel" />
+                <Bar dataKey="count" fill="#F59E0B" name="Pocet vozidel" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -598,16 +598,16 @@ const ReportsCars: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {brandBreakdown.length ? (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle znaèky</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle znacky</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left">
               <thead>
                 <tr className="text-gray-500 uppercase text-xs">
-                  <th className="px-3 py-2">Znaèka</th>
-                  <th className="px-3 py-2 text-right">Poèet</th>
-                  <th className="px-3 py-2 text-right">Celková hodnota</th>
-                  <th className="px-3 py-2 text-right">Prùmìrná cena</th>
-                  <th className="px-3 py-2 text-right">Podíl</th>
+                  <th className="px-3 py-2">Znacka</th>
+                  <th className="px-3 py-2 text-right">Pocet</th>
+                  <th className="px-3 py-2 text-right">Celkova hodnota</th>
+                  <th className="px-3 py-2 text-right">Prumerna cena</th>
+                  <th className="px-3 py-2 text-right">Podil</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -615,8 +615,8 @@ const ReportsCars: React.FC = () => {
                   <tr key={item.brand}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.brand}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{item.totalValue.toLocaleString('cs-CZ')} Kè</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{item.avgPrice.toLocaleString('cs-CZ')} Kè</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.totalValue.toLocaleString('cs-CZ')} Kc</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.avgPrice.toLocaleString('cs-CZ')} Kc</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.percentage.toFixed(1)} %</td>
                   </tr>
                 ))}
@@ -628,15 +628,15 @@ const ReportsCars: React.FC = () => {
 
       {yearBreakdown.length ? (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle roku výroby</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle roku vyroby</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left">
               <thead>
                 <tr className="text-gray-500 uppercase text-xs">
                   <th className="px-3 py-2">Rok</th>
-                  <th className="px-3 py-2 text-right">Poèet</th>
-                  <th className="px-3 py-2 text-right">Prùmìrný nájezd</th>
-                  <th className="px-3 py-2 text-right">Prùmìrná cena</th>
+                  <th className="px-3 py-2 text-right">Pocet</th>
+                  <th className="px-3 py-2 text-right">Prumerny najezd</th>
+                  <th className="px-3 py-2 text-right">Prumerna cena</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -645,7 +645,7 @@ const ReportsCars: React.FC = () => {
                     <td className="px-3 py-2 font-medium text-gray-900">{item.year}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{item.avgMileage.toLocaleString('cs-CZ')} km</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{item.avgPrice.toLocaleString('cs-CZ')} Kè</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.avgPrice.toLocaleString('cs-CZ')} Kc</td>
                   </tr>
                 ))}
               </tbody>
@@ -656,14 +656,14 @@ const ReportsCars: React.FC = () => {
 
       {mileageBreakdown.length ? (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle nájezdu</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle najezdu</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left">
               <thead>
                 <tr className="text-gray-500 uppercase text-xs">
                   <th className="px-3 py-2">Rozsah</th>
-                  <th className="px-3 py-2 text-right">Poèet</th>
-                  <th className="px-3 py-2 text-right">Podíl</th>
+                  <th className="px-3 py-2 text-right">Pocet</th>
+                  <th className="px-3 py-2 text-right">Podil</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -685,34 +685,34 @@ const ReportsCars: React.FC = () => {
   const renderCarTable = () => (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex flex-col gap-1">
-        <h2 className="text-lg font-semibold text-gray-900">Detailní tabulka aut ({filteredCars.length})</h2>
-        <p className="text-sm text-gray-500 mt-1">Obsahuje ID auta, zákazníka, dokumentaci i finanèní údaje.</p>
+        <h2 className="text-lg font-semibold text-gray-900">Detailni tabulka aut ({filteredCars.length})</h2>
+        <p className="text-sm text-gray-500 mt-1">Obsahuje ID auta, zakaznika, dokumentaci i financni udaje.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 text-[11px] uppercase text-gray-500">
             <tr>
               <th className="px-4 py-3 text-left">ID auta</th>
-              <th className="px-4 py-3 text-left">Znaèka & model</th>
+              <th className="px-4 py-3 text-left">Znacka & model</th>
               <th className="px-4 py-3 text-right">Rok</th>
-              <th className="px-4 py-3 text-right">Nájezd</th>
+              <th className="px-4 py-3 text-right">Najezd</th>
               <th className="px-4 py-3 text-left">SPZ</th>
               <th className="px-4 py-3 text-left">VIN</th>
-              <th className="px-4 py-3 text-right">Odkupní cena</th>
+              <th className="px-4 py-3 text-right">Odkupni cena</th>
               <th className="px-4 py-3 text-right">Odhad hodnota</th>
-              <th className="px-4 py-3 text-left">Zákazník</th>
+              <th className="px-4 py-3 text-left">Zakaznik</th>
               <th className="px-4 py-3 text-left">Datum konverze</th>
               <th className="px-4 py-3 text-center">Fotky</th>
               <th className="px-4 py-3 text-center">Dokumenty</th>
-              <th className="px-4 py-3 text-right">Mìsíèní splátka</th>
-              <th className="px-4 py-3 text-left">Poznámky</th>
+              <th className="px-4 py-3 text-right">Mesicni splatka</th>
+              <th className="px-4 py-3 text-left">Poznamky</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 text-sm">
             {filteredCars.length === 0 ? (
               <tr>
                 <td colSpan={14} className="px-4 py-8 text-center text-gray-500">
-                  Žádná vozidla nenalezena pro vybrané parametry.
+                  Zadna vozidla nenalezena pro vybrane parametry.
                 </td>
               </tr>
             ) : (
@@ -765,19 +765,19 @@ const ReportsCars: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Report vozidel (Cars)</h1>
-          <p className="text-sm text-gray-500 mt-1">Komplexní pøehled portfolia aut, jejich hodnot a stavu dokumentace.</p>
+          <p className="text-sm text-gray-500 mt-1">Komplexni prehled portfolia aut, jejich hodnot a stavu dokumentace.</p>
         </div>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2">?? Jak používat report vozidel</h3>
+        <h3 className="text-sm font-semibold text-blue-800 mb-2">Jak pouzivat report vozidel</h3>
         {renderInstructionList()}
         {renderCurlExamples()}
       </div>
 
       <div className="bg-white rounded-lg shadow p-4 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">Obdobi:</span>
           <div className="flex flex-wrap gap-2">
             {(['day', 'week', 'month', 'year', 'custom'] as PeriodType[]).map(p => (
               <button
@@ -788,10 +788,10 @@ const ReportsCars: React.FC = () => {
                 }`}
               >
                 {p === 'day' && 'Den'}
-                {p === 'week' && 'Týden'}
-                {p === 'month' && 'Mìsíc'}
+                {p === 'week' && 'Tyden'}
+                {p === 'month' && 'Mesic'}
                 {p === 'year' && 'Rok'}
-                {p === 'custom' && 'Vlastní'}
+                {p === 'custom' && 'Vlastni'}
               </button>
             ))}
           </div>
@@ -816,13 +816,13 @@ const ReportsCars: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Znaèka</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Znacka</label>
             <select
               value={brandFilter}
               onChange={e => setBrandFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Všechny znaèky</option>
+              <option value="">Vsechny znacky</option>
               {uniqueBrands.map(brand => (
                 <option key={brand} value={brand}>
                   {brand}
@@ -832,13 +832,13 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rok výroby (od)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rok vyroby (od)</label>
             <select
               value={yearFromFilter}
               onChange={e => setYearFromFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Žádný filtr</option>
+              <option value="">Zadny filtr</option>
               {uniqueYears.map(year => (
                 <option key={`from-${year}`} value={year}>
                   {year}
@@ -848,13 +848,13 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rok výroby (do)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rok vyroby (do)</label>
             <select
               value={yearToFilter}
               onChange={e => setYearToFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Žádný filtr</option>
+              <option value="">Zadny filtr</option>
               {uniqueYears.map(year => (
                 <option key={`to-${year}`} value={year}>
                   {year}
@@ -864,7 +864,7 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nájezd (od)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Najezd (od)</label>
             <input
               type="number"
               value={mileageFromFilter}
@@ -875,7 +875,7 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nájezd (do)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Najezd (do)</label>
             <input
               type="number"
               value={mileageToFilter}
@@ -886,12 +886,12 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vyhledávání</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vyhledavani</label>
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Znaèka, model, VIN nebo SPZ"
+              placeholder="Znacka, model, VIN nebo SPZ"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             />
           </div>
@@ -912,7 +912,7 @@ const ReportsCars: React.FC = () => {
             }}
             className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium"
           >
-            Zrušit filtry
+            Zrusit filtry
           </button>
         )}
       </div>
@@ -933,7 +933,7 @@ const ReportsCars: React.FC = () => {
         </>
       ) : (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          Nepodaøilo se naèíst data. Zkuste to prosím znovu.
+          Nepodarilo se nacist data. Zkuste to prosim znovu.
         </div>
       )}
     </div>

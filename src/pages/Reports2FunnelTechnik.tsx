@@ -84,7 +84,7 @@ export function Reports2FunnelTechnik() {
       setReportData(response.data);
     } catch (err) {
       console.error('Funnel Technik API error:', err);
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data reportu');
+      setError(err instanceof Error ? err.message : 'Nepodarilo se nacist data reportu');
     } finally {
       setLoading(false);
     }
@@ -103,8 +103,8 @@ export function Reports2FunnelTechnik() {
   const getPeriodLabel = (): string => {
     switch (period) {
       case 'day': return 'Dnes';
-      case 'week': return 'Tento týden';
-      case 'month': return 'Tento mìsíc';
+      case 'week': return 'Tento tyden';
+      case 'month': return 'Tento mesic';
       case 'year': return 'Tento rok';
       case 'custom': return `${customDateFrom} - ${customDateTo}`;
       default: return '';
@@ -142,9 +142,9 @@ export function Reports2FunnelTechnik() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">?? Funnel Technik Report</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Funnel Technik Report</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Pøehled kontroly vozidel - leady pøedané technikovi
+            Prehled kontroly vozidel - leady predane technikovi
           </p>
         </div>
       </div>
@@ -152,7 +152,7 @@ export function Reports2FunnelTechnik() {
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">Obdobi:</span>
           <div className="flex gap-2 flex-wrap">
             {(['day', 'week', 'month', 'year', 'custom'] as PeriodType[]).map((p) => (
               <button
@@ -160,15 +160,15 @@ export function Reports2FunnelTechnik() {
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   period === p
-                    ? 'bg-orange-600 text-white'
+                    ? 'bg-purple-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {p === 'day' && 'Den'}
-                {p === 'week' && 'Týden'}
-                {p === 'month' && 'Mìsíc'}
+                {p === 'week' && 'Tyden'}
+                {p === 'month' && 'Mesic'}
                 {p === 'year' && 'Rok'}
-                {p === 'custom' && 'Vlastní'}
+                {p === 'custom' && 'Vlastni'}
               </button>
             ))}
           </div>
@@ -188,83 +188,71 @@ export function Reports2FunnelTechnik() {
                 onChange={(e) => setCustomDateTo(e.target.value)}
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
               />
-              <button
-                onClick={handleCustomDateSearch}
-                className="px-3 py-1.5 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700"
-              >
-                Zobrazit
-              </button>
             </div>
           )}
-
-          <span className="text-sm text-gray-500 ml-auto">
-            Vybrané období: <strong>{getPeriodLabel()}</strong>
-          </span>
         </div>
       </div>
 
       {/* Error State */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>
-      )}
+      {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>}
 
       {/* Loading State */}
       {loading && (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
       )}
 
       {/* Report Content */}
       {!loading && reportData && (
         <>
-          {/* Statistics Cards */}
+          {/* Summary Statistics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="text-sm font-medium text-blue-600">?? Celkem pøedáno</div>
+              <div className="text-sm font-medium text-blue-600">Celkem predano</div>
               <div className="text-3xl font-bold text-blue-900 mt-1">
-                {reportData.stats?.totalHandedToTechnician}
+                {reportData.summary?.totalSubmitted || 0}
               </div>
             </div>
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div className="text-sm font-medium text-green-600">? Schváleno</div>
-              <div className="text-3xl font-bold text-green-900 mt-1">
-                {reportData.stats?.approved}
-              </div>
-              <div className="text-sm text-green-600 mt-1">
-                {reportData.stats?.approvalRate?.toFixed(1)}%
+              <div className="text-sm font-medium text-green-600">Schvaleno</div>
+              <div className="text-2xl font-bold text-green-900 mt-1">
+                {reportData.summary?.approved || 0}
+                <span className="text-sm font-normal ml-2">
+                  {reportData.summary?.approvalRate?.toFixed(1)}%
+                </span>
               </div>
             </div>
             <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-              <div className="text-sm font-medium text-red-600">? Zamítnuto</div>
-              <div className="text-3xl font-bold text-red-900 mt-1">
-                {reportData.stats?.rejected}
-              </div>
-              <div className="text-sm text-red-600 mt-1">
-                {reportData.stats?.rejectionRate?.toFixed(1)}%
+              <div className="text-sm font-medium text-red-600">Zamitnuto</div>
+              <div className="text-2xl font-bold text-red-900 mt-1">
+                {reportData.summary?.rejected || 0}
+                <span className="text-sm font-normal ml-2">
+                  {reportData.summary?.rejectionRate?.toFixed(1)}%
+                </span>
               </div>
             </div>
             <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-              <div className="text-sm font-medium text-orange-600">? V kontrole</div>
-              <div className="text-3xl font-bold text-orange-900 mt-1">
-                {reportData.stats?.inProgress}
+              <div className="text-sm font-medium text-orange-600">V kontrole</div>
+              <div className="text-2xl font-bold text-orange-900 mt-1">
+                {reportData.summary?.inReview || 0}
               </div>
             </div>
             <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="text-sm font-medium text-purple-600">?? Prùmìrná doba kontroly</div>
-              <div className="text-3xl font-bold text-purple-900 mt-1">
-                {reportData.stats?.averageDaysInReview}
+              <div className="text-sm font-medium text-purple-600">Prumerna doba kontroly</div>
+              <div className="text-2xl font-bold text-purple-900 mt-1">
+                {reportData.summary?.avgReviewTime || 0}
+                <span className="text-sm font-normal ml-1">dni</span>
               </div>
-              <div className="text-sm text-purple-600 mt-1">dní</div>
             </div>
           </div>
 
-          {/* Charts */}
+          {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Status Breakdown */}
             {statusChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">?? Rozložení podle statusu</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Rozlozeni podle statusu</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
@@ -297,15 +285,15 @@ export function Reports2FunnelTechnik() {
               </div>
             )}
 
-            {/* Declined Reasons */}
-            {declinedReasonsData.length > 0 && (
+            {/* Rejection Reasons */}
+            {rejectionChartData.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">? Dùvody zamítnutí</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Duvody zamitnuti</h3>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={declinedReasonsData} layout="vertical">
+                  <BarChart data={rejectionChartData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="#EF4444" />
                   </BarChart>
@@ -314,83 +302,81 @@ export function Reports2FunnelTechnik() {
             )}
           </div>
 
-          {/* Leads Table */}
-          {reportData.leads && reportData.leads.length > 0 && (
+          {/* Leads in Review Table */}
+          {reportData.leadsInReview && reportData.leadsInReview.length > 0 && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">?? Seznam leadù ({reportData.leads.length})</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Leady v kontrole ({reportData.leadsInReview.length})</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Zákazník</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Vozidlo</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Èástka</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Zakaznik</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Auto</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Technik</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Predano</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Doba kontroly</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Dny v kontrole</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Poznámky</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {reportData.leads.map((lead) => (
-                      <>
-                        <tr key={lead.leadId} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{lead.uniqueId}</td>
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium text-gray-900">{lead.customerName}</div>
-                            <div className="text-xs text-gray-500">{lead.customerPhone}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium text-gray-900">{lead.carBrand} {lead.carModel}</div>
-                            <div className="text-xs text-gray-500 font-mono">{lead.carVIN}</div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                            {lead.requestedAmount?.toLocaleString('cs-CZ')} Kè
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(lead.currentStatus)}`}>
-                              {lead.currentStatusLabel}
-                            </span>
-                            {lead.declinedReasonLabel && (
-                              <div className="text-xs text-red-600 mt-1">{lead.declinedReasonLabel}</div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-center">
-                            <span className={`font-semibold ${lead.daysInTechnicianReview > 5 ? 'text-red-600' : 'text-gray-900'}`}>
-                              {lead.daysInTechnicianReview}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {lead.notes && lead.notes.length > 0 && (
-                              <button
-                                onClick={() => setExpandedNotes(expandedNotes === lead.leadId ? null : lead.leadId)}
-                                className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                              >
-                                ?? {lead.notes.length}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                        {expandedNotes === lead.leadId && lead.notes && (
-                          <tr>
-                            <td colSpan={7} className="px-4 py-3 bg-gray-50">
-                              <div className="space-y-2">
-                                <div className="text-sm font-semibold text-gray-700">Poznámky:</div>
-                                {lead.notes.map((note, idx) => (
-                                  <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200">
-                                    <p className="text-sm text-gray-800">{note.text}</p>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      {note.author} • {new Date(note.date).toLocaleString('cs-CZ')}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </>
+                    {reportData.leadsInReview.map((lead, index) => (
+                      <tr key={lead.leadId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">#{lead.leadId}</td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-gray-900">{lead.customerName}</div>
+                          <div className="text-xs text-gray-500">{lead.customerPhone}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-gray-900">{lead.carBrand} {lead.carModel}</div>
+                          <div className="text-xs text-gray-500">{lead.carYear}</div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{lead.technicianName || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {new Date(lead.submittedAt).toLocaleDateString('cs-CZ')}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{lead.daysInReview} dni</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            lead.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                            lead.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                            'bg-orange-100 text-orange-800'
+                          }`}>
+                            {lead.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Rejection Reasons Detail Table */}
+          {reportData.rejectionReasons && reportData.rejectionReasons.length > 0 && (
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Detaily duvodu zamitnuti</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Duvod</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pocet</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Podil</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {reportData.rejectionReasons.map((item, index) => (
+                      <tr key={item.reason} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-3 text-sm text-gray-900">{item.reason}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900">{item.count}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900">{item.percentage}%</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -400,13 +386,11 @@ export function Reports2FunnelTechnik() {
 
           {/* Notes */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">?? Poznámky k reportu</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Poznamky k reportu</h3>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Zobrazuje všechny leady ve fázi technické kontroly vozidel</li>
-              <li>• <strong>Schváleno</strong> - vozidla prošla kontrolou a pokraèují dál</li>
-              <li>• <strong>Zamítnuto</strong> - vozidla nesplnila technické požadavky</li>
-              <li>• <strong>V kontrole</strong> - aktuálnì probíhá technická kontrola</li>
-              <li>• Data jsou aktuální k vybranému období: <strong>{getPeriodLabel()}</strong></li>
+              <li>• Zahrnuje pouze leady predane technikovi</li>
+              <li>• Prumerna doba kontroly je pocitana od data predani technikovi</li>
+              <li>• Data jsou aktualni k obdobi: <strong>{getPeriodLabel()}</strong></li>
             </ul>
           </div>
         </>
