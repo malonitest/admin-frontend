@@ -219,9 +219,8 @@ export function LeadDetail() {
         formData.append('documentType', documentType);
         formData.append('leadId', id!);
         
-        await axiosClient.post(`/documents/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        // Don't manually set Content-Type - axios will handle it with boundary
+        await axiosClient.post(`/documents/upload`, formData);
       }
       await refreshLead();
       alert(`${files.length > 1 ? 'Dokumenty byly' : 'Dokument byl'} úspěšně nahrán`);
@@ -1055,9 +1054,7 @@ export function LeadDetail() {
                         formData.append('file', file);
                         formData.append('documentType', 'carMileage');
                         formData.append('leadId', id!);
-                        await axiosClient.post(`/documents/upload`, formData, {
-                          headers: { 'Content-Type': 'multipart/form-data' }
-                        });
+                        await axiosClient.post(`/documents/upload`, formData);
                         await refreshLead();
                         alert('Fotka palubní desky nahrána');
                       } catch (error) {
@@ -1084,9 +1081,7 @@ export function LeadDetail() {
                         formData.append('file', file);
                         formData.append('documentType', 'carMileage');
                         formData.append('leadId', id!);
-                        await axiosClient.post(`/documents/upload`, formData, {
-                          headers: { 'Content-Type': 'multipart/form-data' }
-                        });
+                        await axiosClient.post(`/documents/upload`, formData);
                         await refreshLead();
                         alert('Fotka palubní desky nahrána');
                       } catch (error) {
@@ -1174,9 +1169,7 @@ export function LeadDetail() {
                         formData.append('file', file);
                         formData.append('documentType', 'carVIN');
                         formData.append('leadId', id!);
-                        await axiosClient.post(`/documents/upload`, formData, {
-                          headers: { 'Content-Type': 'multipart/form-data' }
-                        });
+                        await axiosClient.post(`/documents/upload`, formData);
                         await refreshLead();
                         alert('Fotka VIN nahrána');
                       } catch (error) {
@@ -1203,9 +1196,7 @@ export function LeadDetail() {
                         formData.append('file', file);
                         formData.append('documentType', 'carVIN');
                         formData.append('leadId', id!);
-                        await axiosClient.post(`/documents/upload`, formData, {
-                          headers: { 'Content-Type': 'multipart/form-data' }
-                        });
+                        await axiosClient.post(`/documents/upload`, formData);
                         await refreshLead();
                         alert('Fotka VIN nahrána');
                       } catch (error) {
@@ -1334,9 +1325,7 @@ export function LeadDetail() {
                           formData.append('documentType', documentType);
                           formData.append('leadId', id!);
                           
-                          await axiosClient.post(`/documents/upload`, formData, {
-                            headers: { 'Content-Type': 'multipart/form-data' }
-                          });
+                          await axiosClient.post(`/documents/upload`, formData);
                         }
                         await refreshLead();
                         alert('Dokumenty byly úspěšně nahrány');
@@ -1367,9 +1356,7 @@ export function LeadDetail() {
                         formData.append('documentType', documentType);
                         formData.append('leadId', id!);
                         
-                        await axiosClient.post(`/documents/upload`, formData, {
-                          headers: { 'Content-Type': 'multipart/form-data' }
-                        });
+                        await axiosClient.post(`/documents/upload`, formData);
                         await refreshLead();
                         alert('Dokument byl úspěšně nahrán');
                       } catch (error) {

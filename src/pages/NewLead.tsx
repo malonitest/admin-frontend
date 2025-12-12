@@ -253,9 +253,8 @@ export function NewLead() {
           formData.append('file', photo.file);
           formData.append('documentType', documentType);
           formData.append('leadId', leadId);
-          await axiosClient.post(`/documents/upload`, formData, { 
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
+          // Don't manually set Content-Type - axios will handle it with boundary
+          await axiosClient.post(`/documents/upload`, formData);
         }
       }
       navigate('/leads');
