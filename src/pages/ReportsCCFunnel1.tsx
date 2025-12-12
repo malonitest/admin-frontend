@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axiosClient from '../api/axiosClient';
+import { axiosClient } from '@/api/axiosClient';
 import {
   BarChart,
   Bar,
@@ -301,10 +301,10 @@ const ReportsCCFunnel1: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <h3 className="text-lg font-semibold text-yellow-900 mb-1">Žádná data pro vybrané období</h3>
+                  <h3 className="text-lg font-semibold text-yellow-900 mb-1">Žádná data pro vybrané obdob&iacute;</h3>
                   <p className="text-yellow-700">
-                    Pro období <strong>{getPeriodLabel()}</strong> nejsou v databázi žádné leady. 
-                    Zkuste vybrat jiné èasové období nebo importovat testovací data.
+                    Pro období <strong>{getPeriodLabel()}</strong> nejsou v datab&aacute;zi žádné leady. 
+                    Zkuste vybrat jin&eacute; èasov&eacute; obdob&iacute; nebo importovat testovac&iacute; data.
                   </p>
                 </div>
               </div>

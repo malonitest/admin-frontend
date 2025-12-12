@@ -11,3 +11,8 @@ export { default as LogsPage } from "./LogsPage";
 export { default as ReportsKPIInvestor } from "./ReportsKPIInvestor";
 export { default as ReportsFinancial } from "./ReportsFinancial";
 export { default as ReportsCollection } from "./ReportsCollection";
+// Reports2 pages
+export { default as Reports2KPI } from "./Reports2KPI";
+export { default as Reports2Financial } from "./Reports2Financial";
+export { default as Reports2FunnelTechnik } from "./Reports2FunnelTechnik";
+export { default as Reports2CarStats } from "./Reports2CarStats";

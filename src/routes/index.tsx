@@ -10,6 +10,10 @@ import ReportsCCFunnel1 from '@/pages/ReportsCCFunnel1';
 import ReportsTechnik from '@/pages/ReportsTechnik';
 import ReportsCCFunnelTechnik from '@/pages/ReportsCCFunnelTechnik';
 import ReportsCars from '@/pages/ReportsCars';
+import Reports2KPI from '@/pages/Reports2KPI';
+import Reports2Financial from '@/pages/Reports2Financial';
+import Reports2FunnelTechnik from '@/pages/Reports2FunnelTechnik';
+import Reports2CarStats from '@/pages/Reports2CarStats';
 
 // Placeholder komponenty pro chybějící stránky
 // eslint-disable-next-line react-refresh/only-export-components
@@ -119,6 +123,23 @@ export const router = createBrowserRouter([
       {
         path: 'reports/collection',
         element: <ReportsCollection />,
+      },
+      // Reports2 routes - new report pages
+      {
+        path: 'reports2/kpi',
+        element: <Reports2KPI />,
+      },
+      {
+        path: 'reports2/financial',
+        element: <Reports2Financial />,
+      },
+      {
+        path: 'reports2/funnel-technik',
+        element: <Reports2FunnelTechnik />,
+      },
+      {
+        path: 'reports2/cars',
+        element: <Reports2CarStats />,
       },
       {
         path: 'calculator',
