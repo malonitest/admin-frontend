@@ -143,23 +143,39 @@ export function Reports2Financial() {
     // Filter invoices for selected month
     const monthInvoices = reportData.invoices?.filter(inv => inv.month === month) || [];
     
+    // Debug logging
+    console.log('=== MONTH DETAIL DEBUG ===');
+    console.log('Selected month:', month);
+    console.log('All invoices:', reportData.invoices);
+    console.log('Filtered invoices for month:', monthInvoices);
+    
     // Find monthly data for totals
     const monthData = reportData.monthlyData.find(m => m.month === month);
     
-    if (!monthData) return;
+    console.log('Monthly data:', monthData);
+    
+    if (!monthData) {
+      console.error('No monthly data found for month:', month);
+      return;
+    }
     
     // Transform invoices to revenues
-    const revenues: IMonthDetailRevenue[] = monthInvoices.map(inv => ({
-      id: inv.invoiceId,
-      type: inv.type,
-      amount: inv.amount,
-      date: inv.paidDate || inv.dueDate,
-      description: `Faktura ${inv.invoiceNumber}`,
-      leaseId: inv.leaseId,
-      customerId: inv.customerId,
-      customerName: inv.customerName,
-    }));
+    const revenues: IMonthDetailRevenue[] = monthInvoices.map(inv => {
+      console.log('Processing invoice:', inv);
+      return {
+        id: inv.invoiceId,
+        type: inv.type,
+        amount: inv.amount,
+        date: inv.paidDate || inv.dueDate,
+        description: `Faktura ${inv.invoiceNumber}`,
+        leaseId: inv.leaseId,
+        customerId: inv.customerId,
+        customerName: inv.customerName,
+      };
+    });
     
+    console.log('Transformed revenues:', revenues);
+
     // For costs, we'll create entries based on monthly data
     const costs: IMonthDetailCost[] = [];
     
