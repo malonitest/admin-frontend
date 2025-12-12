@@ -474,8 +474,8 @@ export function Reports2Financial() {
                         <thead className="bg-gray-50 sticky top-0">
                           <tr>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Zakaznik</th>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Popis</th>
                             <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
                           </tr>
                         </thead>
@@ -485,13 +485,13 @@ export function Reports2Financial() {
                               <td className="px-3 py-2 text-xs text-gray-900">
                                 {new Date(revenue.date).toLocaleDateString('cs-CZ')}
                               </td>
-                              <td className="px-3 py-2 text-xs text-gray-900">{revenue.type}</td>
-                              <td className="px-3 py-2 text-xs text-gray-700">
-                                {revenue.description}
-                                {revenue.customerName && (
-                                  <div className="text-xs text-gray-500 mt-0.5">{revenue.customerName}</div>
+                              <td className="px-3 py-2 text-xs">
+                                <div className="font-medium text-gray-900">{revenue.customerName || 'N/A'}</div>
+                                {revenue.customerId && (
+                                  <div className="text-xs text-gray-500">ID: {revenue.customerId.substring(0, 8)}...</div>
                                 )}
                               </td>
+                              <td className="px-3 py-2 text-xs text-gray-700">{revenue.type}</td>
                               <td className="px-3 py-2 text-xs text-right font-semibold text-green-600">
                                 {revenue.amount.toLocaleString('cs-CZ')} Kc
                               </td>
@@ -533,7 +533,7 @@ export function Reports2Financial() {
                               <td className="px-3 py-2 text-xs text-gray-900">
                                 {new Date(cost.date).toLocaleDateString('cs-CZ')}
                               </td>
-                              <td className="px-3 py-2 text-xs text-gray-900">{cost.type}</td>
+                              <td className="px-3 py-2 text-xs font-medium text-gray-900">{cost.type}</td>
                               <td className="px-3 py-2 text-xs text-gray-700">
                                 {cost.description}
                                 {cost.supplierName && (
