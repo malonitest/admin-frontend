@@ -1,86 +1,121 @@
 export type KPIReportPeriod = 'day' | 'week' | 'month' | 'year' | 'custom';
 
-export type KPIValueUnit = 'czk' | 'percentage' | 'count' | 'ratio' | 'days' | 'hours' | 'items';
-
-export interface IKPITrendItem {
+export interface IKPIMetric {
   label: string;
   value: number;
-  unit: KPIValueUnit;
+  unit?: string;
   changePercentage?: number;
   trend?: 'up' | 'down' | 'flat';
-  helperText?: string;
-}
-
-export interface IKPIHighlight extends IKPITrendItem {
   description?: string;
 }
 
-export interface IKPIBreakdownItem {
-  label: string;
-  value: number;
-  percentage?: number;
+export interface IKPIFinancialBreakdownItem {
+  type: string;
+  amount: number;
+  percentage: number;
 }
 
-export interface IKPIFinancialComparison {
-  label: string;
-  revenue: number;
-  costs: number;
+export interface IFinancialReportItem {
+  month: string;
+  totalRevenue: number;
+  totalCosts: number;
   netProfit: number;
-  marginPercentage?: number;
+  profitMargin: number;
+  paymentSuccessRate?: number;
 }
 
-export interface IKPIFinancialOverview {
-  totals: {
-    revenue: number;
-    costs: number;
-    netProfit: number;
-    marginPercentage?: number;
-  };
-  latestMonth: IKPIFinancialComparison;
-  previousMonth: IKPIFinancialComparison;
-  revenueByType: IKPIBreakdownItem[];
-  costsByType: IKPIBreakdownItem[];
+export interface IFinancialStats {
+  totalRevenue: number;
+  totalCosts: number;
+  totalProfit: number;
+  averageMonthlyRevenue: number;
+  averageMonthlyProfit: number;
+  profitMargin: number;
+  totalCarsPurchased: number;
+  totalCarsPurchasedValue: number;
+  activeLeases: number;
+  totalLeaseValue: number;
 }
 
-export interface IKPIFunnelStage extends IKPIBreakdownItem {
-  stage?: string;
+export interface IKPIFinancialSection {
+  stats: IFinancialStats;
+  latestMonth?: IFinancialReportItem;
+  previousMonth?: IFinancialReportItem;
+  revenueByType: IKPIFinancialBreakdownItem[];
+  costsByType: IKPIFinancialBreakdownItem[];
+}
+
+export interface IKPIFunnelStage {
+  stage: string;
   count: number;
+  percentage: number;
 }
 
-export interface IKPIFunnelOverview {
+export interface IKPIFunnelSection {
   totalLeads: number;
   convertedLeads: number;
+  declinedLeads: number;
   conversionRate: number;
   avgConversionDays: number;
+  averageRequestedAmount: number;
   stageBreakdown: IKPIFunnelStage[];
 }
 
-export interface IKPITechnicianOverview {
-  totalInspections: number;
+export interface IFunnelTechnikStats {
+  totalHandedToTechnician: number;
   approved: number;
-  declined: number;
+  rejected: number;
+  inProgress: number;
   approvalRate: number;
-  avgInspectionTimeHours: number;
-  queueSize: number;
-  statusBreakdown: IKPIBreakdownItem[];
-  declinedReasons: IKPIBreakdownItem[];
+  rejectionRate: number;
+  averageDaysInReview: number;
+}
+
+export interface IKPITechnicianReason {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
+export interface IKPITechnicianStatus {
+  status: string;
+  count: number;
+  percentage: number;
+}
+
+export interface IKPITechnicianSection {
+  stats: IFunnelTechnikStats;
+  declinedReasons: IKPITechnicianReason[];
+  statusBreakdown: IKPITechnicianStatus[];
+}
+
+export interface ICarStats {
+  totalCars: number;
+  totalPurchaseValue: number;
+  totalEstimatedValue: number;
+  averagePurchasePrice: number;
+  averageEstimatedValue: number;
+  averageMileage: number;
+  averageAge: number;
 }
 
 export interface IKPIFleetBrand {
   brand: string;
   count: number;
-  percentage?: number;
-  value?: number;
+  totalValue: number;
+  percentage: number;
 }
 
-export interface IKPIFleetOverview {
-  activeCars: number;
-  fleetValue: number;
-  utilizationRate: number;
-  carsInMaintenance: number;
-  avgMileage: number;
+export interface IKPIFleetMileageBucket {
+  range: string;
+  count: number;
+  percentage: number;
+}
+
+export interface IKPIFleetSection {
+  stats: ICarStats;
   topBrands: IKPIFleetBrand[];
-  mileageBreakdown: IKPIBreakdownItem[];
+  mileageBreakdown: IKPIFleetMileageBucket[];
 }
 
 export interface IKPIRiskOverview {
@@ -91,18 +126,13 @@ export interface IKPIRiskOverview {
 }
 
 export interface IKPIInvestorReportData {
-  generatedAt: string;
-  period: {
-    appliedPreset: Exclude<KPIReportPeriod, 'custom'> | null;
-    label: string;
-    dateFrom: string;
-    dateTo: string;
-  };
-  summary: IKPITrendItem[];
-  highlights: IKPIHighlight[];
-  financials: IKPIFinancialOverview;
-  funnel: IKPIFunnelOverview;
-  technician: IKPITechnicianOverview;
-  fleet: IKPIFleetOverview;
+  dateFrom: string;
+  dateTo: string;
+  summary: IKPIMetric[];
+  highlights: IKPIMetric[];
+  financial: IKPIFinancialSection;
+  funnel: IKPIFunnelSection;
+  technician: IKPITechnicianSection;
+  fleet: IKPIFleetSection;
   risk: IKPIRiskOverview;
 }

@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useKpiInvestorReport } from '@/hooks';
 import type {
-  IKPIBreakdownItem,
-  IKPIFinancialOverview,
-  IKPIHighlight,
-  IKPITrendItem,
+  IFinancialReportItem,
+  IKPIFinancialBreakdownItem,
+  IKPIMetric,
   KPIReportPeriod,
-  KPIValueUnit,
 } from '@/types';
 
 const PERIOD_OPTIONS: KPIReportPeriod[] = ['day', 'week', 'month', 'year', 'custom'];
@@ -17,12 +15,6 @@ const moneyFormatter = new Intl.NumberFormat('cs-CZ', {
   maximumFractionDigits: 0,
 });
 
-const percentFormatter = new Intl.NumberFormat('cs-CZ', {
-  style: 'percent',
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
-
 const numberFormatter = new Intl.NumberFormat('cs-CZ');
 
 const dateFormatter = new Intl.DateTimeFormat('cs-CZ', {
@@ -31,26 +23,39 @@ const dateFormatter = new Intl.DateTimeFormat('cs-CZ', {
   year: 'numeric',
 });
 
-const formatValue = (value: number, unit: KPIValueUnit) => {
+const monthFormatter = new Intl.DateTimeFormat('cs-CZ', {
+  month: 'long',
+  year: 'numeric',
+});
+
+const formatMetricValue = (value: number, unit?: string) => {
   if (value === undefined || value === null) {
     return '—';
   }
 
-  switch (unit) {
-    case 'czk':
-      return moneyFormatter.format(value);
-    case 'percentage':
-      return `${value.toFixed(1)} %`;
-    case 'ratio':
-      return percentFormatter.format(value);
-    case 'days':
-    case 'hours':
-      return `${numberFormatter.format(value)} ${unit === 'days' ? 'dnù' : 'hod'}`;
-    case 'items':
-    case 'count':
-    default:
-      return numberFormatter.format(value);
+  if (!unit) {
+    return numberFormatter.format(value);
   }
+
+  const normalized = unit.toLowerCase();
+
+  if (normalized.includes('kè') || normalized === 'czk') {
+    return moneyFormatter.format(value);
+  }
+
+  if (normalized.includes('%') || normalized === 'percent' || normalized === 'percentage') {
+    return `${value.toFixed(1)} %`;
+  }
+
+  if (normalized.includes('den')) {
+    return `${value.toFixed(1)} dnù`;
+  }
+
+  if (normalized.includes('hod')) {
+    return `${value.toFixed(1)} hod`;
+  }
+
+  return `${numberFormatter.format(value)}${unit.trim() ? ` ${unit}` : ''}`.trim();
 };
 
 const TrendPill = ({ value }: { value?: number }) => {
@@ -78,7 +83,7 @@ const BreakdownList = ({
   items,
   emptyLabel,
 }: {
-  items: IKPIBreakdownItem[];
+  items: Array<{ label: string; value: number; percentage?: number }>;
   emptyLabel: string;
 }) => {
   if (!items || items.length === 0) {
@@ -112,7 +117,7 @@ const SummaryGrid = ({
   items,
 }: {
   title: string;
-  items: IKPITrendItem[] | IKPIHighlight[];
+  items: IKPIMetric[];
 }) => (
   <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
     <div className="flex items-center justify-between mb-4">
@@ -121,20 +126,13 @@ const SummaryGrid = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {items.map((item) => (
         <div key={item.label} className="p-4 rounded-lg bg-gray-50 border border-gray-100 space-y-2">
-          <p className="text-sm font-medium text-gray-500 flex items-center gap-2">
-            {item.label}
-            {'helperText' in item && item.helperText ? (
-              <span className="text-xs text-gray-400">{item.helperText}</span>
-            ) : null}
-          </p>
+          <p className="text-sm font-medium text-gray-500">{item.label}</p>
           <p className="text-2xl font-semibold text-gray-900">
-            {formatValue(item.value, item.unit)}
+            {formatMetricValue(item.value, item.unit)}
           </p>
           <div className="flex items-center justify-between text-xs text-gray-500">
             <TrendPill value={item.changePercentage} />
-            {'description' in item && item.description ? (
-              <span className="text-right text-gray-600">{item.description}</span>
-            ) : null}
+            {item.description && <span className="text-right text-gray-600">{item.description}</span>}
           </div>
         </div>
       ))}
@@ -147,38 +145,48 @@ const ComparisonCard = ({
   dataset,
 }: {
   label: string;
-  dataset: IKPIFinancialOverview['latestMonth'];
+  dataset?: IFinancialReportItem;
 }) => (
   <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
     <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
-    <p className="text-xl font-semibold text-gray-900 mb-4">{dataset.label}</p>
-    <dl className="space-y-2 text-sm">
-      <div className="flex items-center justify-between">
-        <dt className="text-gray-500">Pøíjmy</dt>
-        <dd className="font-medium">{moneyFormatter.format(dataset.revenue)}</dd>
-      </div>
-      <div className="flex items-center justify-between">
-        <dt className="text-gray-500">Náklady</dt>
-        <dd className="font-medium">{moneyFormatter.format(dataset.costs)}</dd>
-      </div>
-      <div className="flex items-center justify-between">
-        <dt className="text-gray-500">Zisk</dt>
-        <dd className="font-medium">{moneyFormatter.format(dataset.netProfit)}</dd>
-      </div>
-      {typeof dataset.marginPercentage === 'number' && (
-        <div className="flex items-center justify-between">
-          <dt className="text-gray-500">Marže</dt>
-          <dd className="font-medium">{dataset.marginPercentage.toFixed(1)} %</dd>
-        </div>
-      )}
-    </dl>
+    {dataset ? (
+      <>
+        <p className="text-xl font-semibold text-gray-900 mb-4">{formatMonthLabel(dataset.month)}</p>
+        <dl className="space-y-2 text-sm">
+          <div className="flex items-center justify-between">
+            <dt className="text-gray-500">Pøíjmy</dt>
+            <dd className="font-medium">{moneyFormatter.format(dataset.totalRevenue)}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-gray-500">Náklady</dt>
+            <dd className="font-medium">{moneyFormatter.format(dataset.totalCosts)}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-gray-500">Zisk</dt>
+            <dd className="font-medium">{moneyFormatter.format(dataset.netProfit)}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-gray-500">Marže</dt>
+            <dd className="font-medium">{dataset.profitMargin.toFixed(1)} %</dd>
+          </div>
+          {typeof dataset.paymentSuccessRate === 'number' && (
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500">Úspìšnost plateb</dt>
+              <dd className="font-medium">{dataset.paymentSuccessRate.toFixed(1)} %</dd>
+            </div>
+          )}
+        </dl>
+      </>
+    ) : (
+      <p className="text-sm text-gray-500">Žádná dostupná data</p>
+    )}
   </div>
 );
 
 const MetricsGrid = ({
   metrics,
 }: {
-  metrics: Array<{ label: string; value: string | number }>; 
+  metrics: Array<{ label: string; value: string | number }>;
 }) => (
   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
     {metrics.map((metric) => (
@@ -192,12 +200,39 @@ const MetricsGrid = ({
   </div>
 );
 
-function buildDateTime(dateValue?: string) {
-  if (!dateValue) return '—';
+function mapFinancialBreakdown(items: IKPIFinancialBreakdownItem[] = []) {
+  return items.map((item) => ({
+    label: item.type,
+    value: item.amount,
+    percentage: item.percentage,
+  }));
+}
+
+function formatMonthLabel(month?: string) {
+  if (!month) {
+    return '—';
+  }
+
   try {
-    return dateFormatter.format(new Date(dateValue));
+    const normalized = month.length === 7 ? `${month}-01T00:00:00.000Z` : month;
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) {
+      return month;
+    }
+    return monthFormatter.format(date);
   } catch {
-    return dateValue;
+    return month;
+  }
+}
+
+function buildDateTime(value?: string) {
+  if (!value) {
+    return '—';
+  }
+  try {
+    return dateFormatter.format(new Date(value));
+  } catch {
+    return value;
   }
 }
 
@@ -206,7 +241,7 @@ export default function ReportsKPIInvestor() {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
 
-  const customFilters = useMemo(() => {
+  const filters = useMemo(() => {
     if (period !== 'custom') {
       return { period } as const;
     }
@@ -218,13 +253,9 @@ export default function ReportsKPIInvestor() {
     } as const;
   }, [period, customDateFrom, customDateTo]);
 
-  const { data, loading, error, refetch } = useKpiInvestorReport(customFilters);
-  const isCustomReady =
-    period !== 'custom' || (Boolean(customFilters.dateFrom) && Boolean(customFilters.dateTo));
-
-  const activeRangeLabel = data
-    ? `${buildDateTime(data.period.dateFrom)} – ${buildDateTime(data.period.dateTo)}`
-    : undefined;
+  const { data, loading, error, refetch } = useKpiInvestorReport(filters);
+  const isCustomReady = period !== 'custom' || (Boolean(filters.dateFrom) && Boolean(filters.dateTo));
+  const activeRangeLabel = data ? `${buildDateTime(data.dateFrom)} – ${buildDateTime(data.dateTo)}` : undefined;
 
   return (
     <div className="space-y-6">
@@ -236,11 +267,6 @@ export default function ReportsKPIInvestor() {
               Kompletní pøehled výkonu firmy pro investory. {activeRangeLabel && `Období: ${activeRangeLabel}.`}
             </p>
           </div>
-          {data?.generatedAt && (
-            <p className="text-xs text-gray-500">
-              Aktualizováno: {dateFormatter.format(new Date(data.generatedAt))}
-            </p>
-          )}
         </div>
       </div>
 
@@ -291,9 +317,7 @@ export default function ReportsKPIInvestor() {
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
-            <p className="text-xs text-gray-500">
-              Vyberte celé období. Data se naètou automaticky po zadání obou dat.
-            </p>
+            <p className="text-xs text-gray-500">Vyberte celé období. Data se naètou automaticky po zadání obou dat.</p>
           </div>
         )}
       </section>
@@ -343,32 +367,34 @@ export default function ReportsKPIInvestor() {
 
             <MetricsGrid
               metrics={[
-                { label: 'Pøíjmy', value: moneyFormatter.format(data.financials.totals.revenue) },
-                { label: 'Náklady', value: moneyFormatter.format(data.financials.totals.costs) },
-                { label: 'Zisk', value: moneyFormatter.format(data.financials.totals.netProfit) },
-                {
-                  label: 'Marže',
-                  value:
-                    typeof data.financials.totals.marginPercentage === 'number'
-                      ? `${data.financials.totals.marginPercentage.toFixed(1)} %`
-                      : '—',
-                },
+                { label: 'Celkové pøíjmy', value: moneyFormatter.format(data.financial.stats.totalRevenue) },
+                { label: 'Celkové náklady', value: moneyFormatter.format(data.financial.stats.totalCosts) },
+                { label: 'Celkový zisk', value: moneyFormatter.format(data.financial.stats.totalProfit) },
+                { label: 'Zisková marže', value: `${data.financial.stats.profitMargin.toFixed(1)} %` },
+                { label: 'Aktivní leasingy', value: data.financial.stats.activeLeases },
+                { label: 'Hodnota leasingù', value: moneyFormatter.format(data.financial.stats.totalLeaseValue) },
               ]}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ComparisonCard label="Poslední mìsíc" dataset={data.financials.latestMonth} />
-              <ComparisonCard label="Pøedchozí mìsíc" dataset={data.financials.previousMonth} />
+              <ComparisonCard label="Poslední mìsíc" dataset={data.financial.latestMonth} />
+              <ComparisonCard label="Pøedchozí mìsíc" dataset={data.financial.previousMonth} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Pøíjmy podle typu</h3>
-                <BreakdownList items={data.financials.revenueByType} emptyLabel="Žádná data o pøíjmech" />
+                <BreakdownList
+                  items={mapFinancialBreakdown(data.financial.revenueByType)}
+                  emptyLabel="Žádná data o pøíjmech"
+                />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Náklady podle typu</h3>
-                <BreakdownList items={data.financials.costsByType} emptyLabel="Žádná data o nákladech" />
+                <BreakdownList
+                  items={mapFinancialBreakdown(data.financial.costsByType)}
+                  emptyLabel="Žádná data o nákladech"
+                />
               </div>
             </div>
           </section>
@@ -385,31 +411,33 @@ export default function ReportsKPIInvestor() {
               metrics={[
                 { label: 'Celkem leadù', value: data.funnel.totalLeads },
                 { label: 'Konvertováno', value: data.funnel.convertedLeads },
+                { label: 'Zamítnuto', value: data.funnel.declinedLeads },
                 { label: 'Konverzní pomìr', value: `${data.funnel.conversionRate.toFixed(1)} %` },
                 { label: 'Prùmìrná konverze (dny)', value: data.funnel.avgConversionDays.toFixed(1) },
+                { label: 'Prùmìrná požadovaná èástka', value: moneyFormatter.format(data.funnel.averageRequestedAmount) },
               ]}
             />
 
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Rozpad podle fází</h3>
               <div className="space-y-3">
-                {data.funnel.stageBreakdown.map((stage) => {
-                  const stageLabel = stage.label || (stage as { stage?: string }).stage || 'Neznámá fáze';
-                  return (
-                    <div key={stageLabel} className="p-3 rounded-lg border border-gray-100">
-                      <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                        <span>{stageLabel}</span>
-                        <span>{stage.count} leadù</span>
-                      </div>
-                      <div className="mt-2 h-2 rounded-full bg-gray-200">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
-                          style={{ width: `${Math.min(stage.percentage ?? 0, 100)}%` }}
-                        />
-                      </div>
+                {data.funnel.stageBreakdown.map((stage) => (
+                  <div key={stage.stage} className="p-3 rounded-lg border border-gray-100">
+                    <div className="flex items-center justify-between text-sm font-medium text-gray-700">
+                      <span>{stage.stage}</span>
+                      <span>{numberFormatter.format(stage.count)} leadù</span>
                     </div>
-                  );
-                })}
+                    <div className="mt-2 h-2 rounded-full bg-gray-200">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                        style={{ width: `${Math.min(stage.percentage ?? 0, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {data.funnel.stageBreakdown.length === 0 && (
+                  <p className="text-sm text-gray-500">Žádná data o fázích</p>
+                )}
               </div>
             </div>
           </section>
@@ -424,23 +452,37 @@ export default function ReportsKPIInvestor() {
 
             <MetricsGrid
               metrics={[
-                { label: 'Celkem kontrol', value: data.technician.totalInspections },
-                { label: 'Schváleno', value: data.technician.approved },
-                { label: 'Zamítnuto', value: data.technician.declined },
-                { label: 'Míra schválení', value: `${data.technician.approvalRate.toFixed(1)} %` },
-                { label: 'Prùmìrný èas (h)', value: data.technician.avgInspectionTimeHours.toFixed(1) },
-                { label: 'Fronta', value: data.technician.queueSize },
+                { label: 'Pøedáno technikùm', value: data.technician.stats.totalHandedToTechnician },
+                { label: 'Schváleno', value: data.technician.stats.approved },
+                { label: 'Zamítnuto', value: data.technician.stats.rejected },
+                { label: 'V procesu', value: data.technician.stats.inProgress },
+                { label: 'Míra schválení', value: `${data.technician.stats.approvalRate.toFixed(1)} %` },
+                { label: 'Prùmìrná doba (dny)', value: data.technician.stats.averageDaysInReview.toFixed(1) },
               ]}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Statusy</h3>
-                <BreakdownList items={data.technician.statusBreakdown} emptyLabel="Žádná data o statusech" />
+                <BreakdownList
+                  items={data.technician.statusBreakdown.map((item) => ({
+                    label: item.status,
+                    value: item.count,
+                    percentage: item.percentage,
+                  }))}
+                  emptyLabel="Žádná data o statusech"
+                />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Dùvody zamítnutí</h3>
-                <BreakdownList items={data.technician.declinedReasons} emptyLabel="Žádná data o dùvodech" />
+                <BreakdownList
+                  items={data.technician.declinedReasons.map((item) => ({
+                    label: item.reason,
+                    value: item.count,
+                    percentage: item.percentage,
+                  }))}
+                  emptyLabel="Žádná data o dùvodech"
+                />
               </div>
             </div>
           </section>
@@ -455,57 +497,61 @@ export default function ReportsKPIInvestor() {
 
             <MetricsGrid
               metrics={[
-                { label: 'Aktivní auta', value: data.fleet.activeCars },
-                { label: 'Hodnota floty', value: moneyFormatter.format(data.fleet.fleetValue) },
-                { label: 'Využití', value: `${data.fleet.utilizationRate.toFixed(1)} %` },
-                { label: 'Auta v servisu', value: data.fleet.carsInMaintenance },
-                { label: 'Prùmìrný nájezd', value: `${numberFormatter.format(data.fleet.avgMileage)} km` },
+                { label: 'Celkem vozù', value: data.fleet.stats.totalCars },
+                { label: 'Nákupní hodnota', value: moneyFormatter.format(data.fleet.stats.totalPurchaseValue) },
+                { label: 'Odhadní hodnota', value: moneyFormatter.format(data.fleet.stats.totalEstimatedValue) },
+                { label: 'Prùmìrná poøiz. cena', value: moneyFormatter.format(data.fleet.stats.averagePurchasePrice) },
+                { label: 'Prùmìrná odhadní hodnota', value: moneyFormatter.format(data.fleet.stats.averageEstimatedValue) },
+                { label: 'Prùmìrný nájezd', value: `${numberFormatter.format(Math.round(data.fleet.stats.averageMileage))} km` },
+                { label: 'Prùmìrné stáøí', value: `${data.fleet.stats.averageAge.toFixed(1)} roku` },
               ]}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="overflow-x-auto">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Top znaèky</h3>
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-gray-500 font-medium">Znaèka</th>
-                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Poèet</th>
-                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Podíl</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.fleet.topBrands.map((brand) => (
-                      <tr key={brand.brand} className="border-b last:border-none">
-                        <td className="px-3 py-2 font-medium text-gray-800">{brand.brand}</td>
-                        <td className="px-3 py-2 text-right">{numberFormatter.format(brand.count)}</td>
-                        <td className="px-3 py-2 text-right">
-                          {typeof brand.percentage === 'number' ? `${brand.percentage.toFixed(1)} %` : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {data.fleet.topBrands.length === 0 && (
+                {data.fleet.topBrands.length === 0 ? (
                   <p className="text-sm text-gray-500">Žádná data o znaèkách</p>
+                ) : (
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">Znaèka</th>
+                        <th className="px-3 py-2 text-right text-gray-500 font-medium">Poèet</th>
+                        <th className="px-3 py-2 text-right text-gray-500 font-medium">Hodnota</th>
+                        <th className="px-3 py-2 text-right text-gray-500 font-medium">Podíl</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.fleet.topBrands.map((brand) => (
+                        <tr key={brand.brand} className="border-b last:border-none">
+                          <td className="px-3 py-2 font-medium text-gray-800">{brand.brand}</td>
+                          <td className="px-3 py-2 text-right">{numberFormatter.format(brand.count)}</td>
+                          <td className="px-3 py-2 text-right">{moneyFormatter.format(brand.totalValue)}</td>
+                          <td className="px-3 py-2 text-right">{brand.percentage.toFixed(1)} %</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Nájezd vozidel</h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.fleet.mileageBreakdown.map((bucket) => (
-                    <span
-                      key={bucket.label}
-                      className="px-3 py-1.5 rounded-full border border-gray-200 text-sm bg-gray-50"
-                    >
-                      {bucket.label}: {bucket.value}
-                    </span>
-                  ))}
-                  {data.fleet.mileageBreakdown.length === 0 && (
-                    <p className="text-sm text-gray-500">Žádná data o nájezdech</p>
-                  )}
-                </div>
+                {data.fleet.mileageBreakdown.length === 0 ? (
+                  <p className="text-sm text-gray-500">Žádná data o nájezdech</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {data.fleet.mileageBreakdown.map((bucket) => (
+                      <span
+                        key={bucket.range}
+                        className="px-3 py-1.5 rounded-full border border-gray-200 text-sm bg-gray-50"
+                      >
+                        {bucket.range}: {numberFormatter.format(bucket.count)} ({bucket.percentage.toFixed(1)} %)
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>
