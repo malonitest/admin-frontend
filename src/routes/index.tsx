@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AdminLayout } from '@/layouts';
-import { Login, Dashboard, Settings, DriveBot, ReportsCC, ReportsOS, ReportsMarketing, LogsPage } from '@/pages';
+import { Login, Dashboard, Settings, DriveBot, ReportsCC, ReportsOS, ReportsMarketing, LogsPage, ReportsKPIInvestor } from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
 import Leads from '@/pages/Leads';
@@ -12,6 +12,7 @@ import ReportsCCFunnelTechnik from '@/pages/ReportsCCFunnelTechnik';
 import ReportsCars from '@/pages/ReportsCars';
 
 // Placeholder komponenty pro chybějící stránky
+// eslint-disable-next-line react-refresh/only-export-components
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-6">
     <h1 className="text-2xl font-bold text-gray-900 mb-4">{title}</h1>
@@ -106,6 +107,10 @@ export const router = createBrowserRouter([
       {
         path: 'reports/finance',
         element: <PlaceholderPage title="Reporty Finance" />,
+      },
+      {
+        path: 'reports/kpi',
+        element: <ReportsKPIInvestor />,
       },
       {
         path: 'reports/cars',

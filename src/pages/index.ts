@@ -8,3 +8,4 @@ export { default as ReportsCC } from "./ReportsCC";
 export { default as ReportsOS } from "./ReportsOS";
 export { default as ReportsMarketing } from "./ReportsMarketing";
 export { default as LogsPage } from "./LogsPage";
+export { default as ReportsKPIInvestor } from "./ReportsKPIInvestor";

@@ -47,6 +47,7 @@ const navigation: NavItem[] = [
         ]
       },
       { name: 'Finance', href: '/reports/finance' },
+      { name: 'KPI Investor', href: '/reports/kpi' },
       { name: 'Auta', href: '/reports/cars' },
       { name: 'Sklad', href: 'https://green-grass-00b59b203.3.azurestaticapps.net', external: true },
       { name: 'Collection', href: '/reports/collection' },
