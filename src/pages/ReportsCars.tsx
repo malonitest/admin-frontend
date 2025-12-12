@@ -13,97 +13,138 @@ import {
   Cell,
 } from 'recharts';
 
-interface ICarCustomer {
-  name?: string;
-  phone?: string;
-}
-
-interface ICarLeaseInfo {
-  monthlyPayment?: number;
-}
-
 interface ICarItem {
-  id: string;
-  carId?: string;
-  brand: string;
-  model: string;
-  year: number;
-  mileage: number;
+  carId: string;
+  leadId?: string;
+  leaseId?: string;
+  customerName: string;
+  customerPhone: string;
+  carBrand: string;
+  carModel: string;
+  carVIN: string;
+  carSPZ: string;
+  carYear: number;
+  carMileage: number;
   purchasePrice: number;
   estimatedValue: number;
-  vin?: string;
-  licensePlate?: string;
+  convertedDate: string;
+  currentStatus: string;
   hasPhotos: boolean;
   hasDocuments: boolean;
-  notes?: string;
-  status: string;
-  customer?: ICarCustomer;
-  conversionDate?: string;
   monthlyPayment?: number;
-  lease?: ICarLeaseInfo;
+  leaseDuration?: number;
+  notes: string;
+}
+
+interface ICarStatsSummary {
+  totalCars: number;
+  totalPurchaseValue: number;
+  totalEstimatedValue: number;
+  averagePurchasePrice: number;
+  averageEstimatedValue: number;
+  averageMileage: number;
+  averageAge: number;
 }
 
 interface IBrandDistributionItem {
   brand: string;
   count: number;
-  percentage?: number;
-  totalValue?: number;
-  averagePrice?: number;
+  totalValue: number;
+  avgPrice: number;
+  percentage: number;
 }
 
 interface IYearDistributionItem {
   year: number;
   count: number;
-  averageMileage?: number;
-  averagePrice?: number;
+  avgMileage: number;
+  avgPrice: number;
 }
 
-interface IMileageDistributionItem {
+interface IMileageRangeItem {
   range: string;
   count: number;
-  averagePrice?: number;
-}
-
-interface ICarStats {
-  totalCars: number;
-  totalPurchaseValue?: number;
-  totalEstimatedValue?: number;
-  totalValue?: number;
-  averagePurchasePrice?: number;
-  averageEstimatedValue?: number;
-  averagePrice?: number;
-  averageYear?: number;
-  averageMileage?: number;
-  averageAge?: number;
-  brandDistribution?: IBrandDistributionItem[];
-  yearDistribution?: IYearDistributionItem[];
-  mileageDistribution?: IMileageDistributionItem[];
-  completeness?: {
-    withPhotos: number;
-    withDocuments: number;
-    complete: number;
-  };
+  percentage: number;
 }
 
 interface ICarReportData {
-  stats: ICarStats;
+  dateFrom: string;
+  dateTo: string;
+  stats: ICarStatsSummary;
   cars: ICarItem[];
+  byBrand: IBrandDistributionItem[];
+  byYear: IYearDistributionItem[];
+  byMileageRange: IMileageRangeItem[];
 }
 
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';
 
 const CHART_COLORS = ['#C41E3A', '#8B1A1A', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2', '#65A30D', '#EA580C'];
 
-const MILEAGE_OPTIONS: Array<{ value: string; label: string; from?: number; to?: number }> = [
-  { value: '0-50000', label: '0 - 50 000 km', from: 0, to: 50000 },
-  { value: '50000-100000', label: '50 000 - 100 000 km', from: 50000, to: 100000 },
-  { value: '100000-150000', label: '100 000 - 150 000 km', from: 100000, to: 150000 },
-  { value: '150000-200000', label: '150 000 - 200 000 km', from: 150000, to: 200000 },
-  { value: '200000+', label: '200 000+ km', from: 200000 },
-];
-
 const DEFAULT_CURL = `curl "https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/stats/car-stats?period=month" -H "Authorization: Bearer YOUR_TOKEN"`;
 const FILTERED_CURL = `curl "https://backrent-itx754fut5nry-app.purplepond-bd8ec00c.westeurope.azurecontainerapps.io/v1/stats/car-stats?brand=Škoda&yearFrom=2018&mileageTo=150000" -H "Authorization: Bearer YOUR_TOKEN"`;
+
+const numberFromValue = (value: number | string | null | undefined): number | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const resolveCarYear = (car: ICarItem): number | null => {
+  const extendedCar = car as ICarItem & {
+    year?: number | string | null;
+    registration?: number | string | null;
+    car?: { year?: number | string | null; registration?: number | string | null };
+    carDetails?: { year?: number | string | null; registration?: number | string | null };
+  };
+
+  const candidates = [
+    car.carYear,
+    extendedCar.year,
+    extendedCar.registration,
+    extendedCar.car?.year,
+    extendedCar.car?.registration,
+    extendedCar.carDetails?.year,
+    extendedCar.carDetails?.registration,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = numberFromValue(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const resolveCarMileage = (car: ICarItem): number | null => {
+  const extendedCar = car as ICarItem & {
+    mileage?: number | string | null;
+    car?: { mileage?: number | string | null };
+    carDetails?: { mileage?: number | string | null };
+  };
+
+  const candidates = [
+    car.carMileage,
+    extendedCar.mileage,
+    extendedCar.car?.mileage,
+    extendedCar.carDetails?.mileage,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = numberFromValue(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+  return null;
+};
 
 const ReportsCars: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -114,8 +155,10 @@ const ReportsCars: React.FC = () => {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
-  const [yearFilter, setYearFilter] = useState('');
-  const [mileageFilter, setMileageFilter] = useState('');
+  const [yearFromFilter, setYearFromFilter] = useState('');
+  const [yearToFilter, setYearToFilter] = useState('');
+  const [mileageFromFilter, setMileageFromFilter] = useState('');
+  const [mileageToFilter, setMileageToFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchReportData = async () => {
@@ -133,15 +176,10 @@ const ReportsCars: React.FC = () => {
       }
 
       if (brandFilter) params.append('brand', brandFilter);
-      if (yearFilter) {
-        params.append('yearFrom', yearFilter);
-        params.append('yearTo', yearFilter);
-      }
-      if (mileageFilter) {
-        const range = MILEAGE_OPTIONS.find(option => option.value === mileageFilter);
-        if (range?.from !== undefined) params.append('mileageFrom', `${range.from}`);
-        if (range?.to !== undefined) params.append('mileageTo', `${range.to}`);
-      }
+      if (yearFromFilter) params.append('yearFrom', yearFromFilter);
+      if (yearToFilter) params.append('yearTo', yearToFilter);
+      if (mileageFromFilter) params.append('mileageFrom', mileageFromFilter);
+      if (mileageToFilter) params.append('mileageTo', mileageToFilter);
 
       const query = params.toString();
       const response = await axiosClient.get(query ? `/stats/car-stats?${query}` : '/stats/car-stats');
@@ -159,7 +197,7 @@ const ReportsCars: React.FC = () => {
       return;
     }
     fetchReportData();
-  }, [period, customDateFrom, customDateTo, brandFilter, yearFilter, mileageFilter]);
+  }, [period, customDateFrom, customDateTo, brandFilter, yearFromFilter, yearToFilter, mileageFromFilter, mileageToFilter]);
 
   const filteredCars = useMemo(() => {
     if (!reportData) return [];
@@ -167,32 +205,50 @@ const ReportsCars: React.FC = () => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       return (
-        car.brand?.toLowerCase().includes(q) ||
-        car.model?.toLowerCase().includes(q) ||
-        car.vin?.toLowerCase().includes(q) ||
-        car.licensePlate?.toLowerCase().includes(q)
+        car.carBrand?.toLowerCase().includes(q) ||
+        car.carModel?.toLowerCase().includes(q) ||
+        car.carVIN?.toLowerCase().includes(q) ||
+        car.carSPZ?.toLowerCase().includes(q)
       );
     });
   }, [reportData, searchQuery]);
 
   const uniqueBrands = useMemo(() => {
     if (!reportData) return [] as string[];
-    return Array.from(new Set(reportData.cars.map(car => car.brand))).sort();
+    return Array.from(new Set(reportData.cars.map(car => car.carBrand))).sort();
   }, [reportData]);
 
   const uniqueYears = useMemo(() => {
     if (!reportData) return [] as number[];
-    return Array.from(new Set(reportData.cars.map(car => car.year))).sort((a, b) => b - a);
+    const resolvedYears = reportData.cars
+      .map(car => resolveCarYear(car))
+      .filter((year): year is number => year !== null);
+    return Array.from(new Set(resolvedYears)).sort((a, b) => b - a);
   }, [reportData]);
 
-  const formatCurrency = (value: number | undefined): string => {
-    if (value === undefined || value === null || Number.isNaN(value)) return '0 Kè';
-    return `${value.toLocaleString('cs-CZ')} Kè`;
+  const brandChartData = useMemo<Array<Record<string, number | string>>>(() => {
+    return (reportData?.byBrand ?? []).map(item => ({
+      brand: item.brand,
+      count: item.count,
+      percentage: item.percentage,
+      totalValue: item.totalValue,
+      avgPrice: item.avgPrice,
+    }));
+  }, [reportData]);
+
+  const yearChartData = useMemo(() => reportData?.byYear ?? [], [reportData]);
+  const mileageChartData = useMemo(() => reportData?.byMileageRange ?? [], [reportData]);
+
+  const formatCurrency = (value: number | string | null | undefined): string => {
+    const numericValue = numberFromValue(value);
+    if (numericValue === null) return '-';
+    return `${numericValue.toLocaleString('cs-CZ')} Kè`;
   };
 
-  const formatNumber = (value: number | undefined, suffix = ''): string => {
-    if (value === undefined || value === null || Number.isNaN(value)) return '-';
-    return `${value.toLocaleString('cs-CZ')}${suffix}`;
+  const formatNumber = (value: number | string | null | undefined, suffix = ''): string => {
+    const numericValue = numberFromValue(value);
+    if (numericValue === null) return '-';
+    return `${numericValue.toLocaleString('cs-CZ')}${suffix}`;
   };
 
   const formatDate = (value?: string): string => {
@@ -213,6 +269,15 @@ const ReportsCars: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const renderBrandLabel = (entry: { payload?: Partial<IBrandDistributionItem> }) => {
+    const brand = entry.payload?.brand;
+    const percentage = entry.payload?.percentage;
+    if (!brand || typeof percentage !== 'number') {
+      return '';
+    }
+    return `${brand} (${percentage.toFixed(1)}%)`;
   };
 
   const renderInstructionList = () => (
@@ -239,14 +304,13 @@ const ReportsCars: React.FC = () => {
     if (!stats) return null;
 
     const cards = [
-      { label: 'Celkem aut v systému', value: formatNumber(stats.totalCars) },
-      { label: 'Celková odkupní hodnota', value: formatCurrency(stats.totalPurchaseValue ?? stats.totalValue) },
-      { label: 'Celková odhadovaná hodnota', value: formatCurrency(stats.totalEstimatedValue) },
-      { label: 'Prùmìrná odkupní cena', value: formatCurrency(stats.averagePurchasePrice ?? stats.averagePrice) },
-      { label: 'Prùmìrná odhadovaná hodnota', value: formatCurrency(stats.averageEstimatedValue) },
-      { label: 'Prùmìrný nájezd', value: formatNumber(stats.averageMileage, ' km') },
-      { label: 'Prùmìrné stáøí vozidel', value: stats.averageAge ? `${stats.averageAge.toFixed(1)} roku` : '-' },
-      { label: 'Prùmìrný rok výroby', value: stats.averageYear ? Math.round(stats.averageYear).toString() : '-' },
+      { label: 'Celkem aut v systému', value: stats.totalCars.toLocaleString('cs-CZ') },
+      { label: 'Celková odkupní hodnota', value: `${stats.totalPurchaseValue.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Celková odhadovaná hodnota', value: `${stats.totalEstimatedValue.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Prùmìrná odkupní cena', value: `${stats.averagePurchasePrice.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Prùmìrná odhadovaná hodnota', value: `${stats.averageEstimatedValue.toLocaleString('cs-CZ')} Kè` },
+      { label: 'Prùmìrný nájezd', value: `${stats.averageMileage.toLocaleString('cs-CZ')} km` },
+      { label: 'Prùmìrné stáøí vozidel', value: `${stats.averageAge.toFixed(1)} roku` },
     ];
 
     return (
@@ -262,56 +326,52 @@ const ReportsCars: React.FC = () => {
   };
 
   const renderCompleteness = () => {
-    if (!reportData?.stats.completeness || !reportData.stats.totalCars) return null;
-    const { withPhotos = 0, withDocuments = 0, complete = 0 } = reportData.stats.completeness;
-    const total = reportData.stats.totalCars || 0;
+    if (!reportData) return null;
+    const total = reportData.stats.totalCars;
+    const withPhotos = reportData.cars.filter(car => car.hasPhotos).length;
+    const withDocuments = reportData.cars.filter(car => car.hasDocuments).length;
+    const complete = reportData.cars.filter(car => car.hasPhotos && car.hasDocuments).length;
 
     const cards = [
       {
         label: 'S fotografiemi',
         value: withPhotos,
-        bg: 'bg-blue-50',
-        text: 'text-blue-700',
-        valueText: 'text-blue-900',
         trackBg: 'bg-blue-200',
         fillBg: 'bg-blue-600',
+        accent: 'text-blue-700',
       },
       {
         label: 'S dokumenty',
         value: withDocuments,
-        bg: 'bg-green-50',
-        text: 'text-green-700',
-        valueText: 'text-green-900',
         trackBg: 'bg-green-200',
         fillBg: 'bg-green-600',
+        accent: 'text-green-700',
       },
       {
-        label: 'Kompletní složka',
+        label: 'Kompletní složky',
         value: complete,
-        bg: 'bg-purple-50',
-        text: 'text-purple-700',
-        valueText: 'text-purple-900',
         trackBg: 'bg-purple-200',
         fillBg: 'bg-purple-600',
+        accent: 'text-purple-700',
       },
     ];
 
     return (
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Kontrola kompletnosti dokumentace</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Dokumentace a fotografie</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {cards.map(card => (
-            <div key={card.label} className={`${card.bg} rounded-lg p-4`}>
-              <div className="flex items-center justify-between">
-                <span className={`text-sm ${card.text}`}>{card.label}</span>
-                <span className={`text-2xl font-bold ${card.valueText}`}>{formatNumber(card.value)}</span>
+            <div key={card.label} className="rounded-lg p-4 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <span className={`text-sm font-medium ${card.accent}`}>{card.label}</span>
+                <span className="text-xl font-bold text-gray-900">{card.value}</span>
               </div>
               <div className="mt-2">
                 <div className={`${card.trackBg} w-full rounded-full h-2`}>
                   <div
                     className={`${card.fillBg} h-2 rounded-full`}
                     style={{ width: `${total > 0 ? (card.value / total) * 100 : 0}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
@@ -322,19 +382,26 @@ const ReportsCars: React.FC = () => {
   };
 
   const renderCharts = () => {
-    const stats = reportData?.stats;
-    if (!stats) return null;
+    if (!reportData) return null;
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {stats.brandDistribution?.length ? (
+        {brandChartData.length ? (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Rozložení podle znaèky</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={stats.brandDistribution as unknown as Record<string, unknown>[]} dataKey="count" cx="50%" cy="50%" labelLine={false} outerRadius={85}>
-                  {stats.brandDistribution.map((_, index) => (
-                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                <Pie
+                  data={brandChartData}
+                  dataKey="count"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  labelLine={false}
+                  label={renderBrandLabel}
+                >
+                  {brandChartData.map((_, index) => (
+                    <Cell key={`brand-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => `${value.toLocaleString('cs-CZ')} ks`} />
@@ -343,11 +410,11 @@ const ReportsCars: React.FC = () => {
           </div>
         ) : null}
 
-        {stats.yearDistribution?.length ? (
+        {yearChartData.length ? (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuce podle roku výroby</h3>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={stats.yearDistribution}>
+              <BarChart data={yearChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" tick={{ fontSize: 10 }} />
                 <YAxis />
@@ -358,11 +425,11 @@ const ReportsCars: React.FC = () => {
           </div>
         ) : null}
 
-        {stats.mileageDistribution?.length ? (
+        {mileageChartData.length ? (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuce podle nájezdu</h3>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={stats.mileageDistribution} layout="vertical">
+              <BarChart data={mileageChartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="range" width={120} tick={{ fontSize: 11 }} />
@@ -378,7 +445,7 @@ const ReportsCars: React.FC = () => {
 
   const renderAdvancedTables = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {reportData?.stats.brandDistribution?.length ? (
+      {reportData?.byBrand.length ? (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle znaèky</h3>
           <div className="overflow-x-auto">
@@ -393,13 +460,13 @@ const ReportsCars: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportData.stats.brandDistribution.map(item => (
+                {reportData.byBrand.map(item => (
                   <tr key={item.brand}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.brand}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatNumber(item.count)}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item.totalValue)}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item.averagePrice)}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{item.percentage ? `${item.percentage.toFixed(1)} %` : '-'}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.totalValue.toLocaleString('cs-CZ')} Kè</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.avgPrice.toLocaleString('cs-CZ')} Kè</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.percentage.toFixed(1)} %</td>
                   </tr>
                 ))}
               </tbody>
@@ -408,7 +475,7 @@ const ReportsCars: React.FC = () => {
         </div>
       ) : null}
 
-      {reportData?.stats.yearDistribution?.length ? (
+      {reportData?.byYear.length ? (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle roku výroby</h3>
           <div className="overflow-x-auto">
@@ -422,12 +489,12 @@ const ReportsCars: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportData.stats.yearDistribution.map(item => (
+                {reportData.byYear.map(item => (
                   <tr key={item.year}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.year}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatNumber(item.count)}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{item.averageMileage ? `${item.averageMileage.toLocaleString('cs-CZ')} km` : '-'}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item.averagePrice)}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.avgMileage.toLocaleString('cs-CZ')} km</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.avgPrice.toLocaleString('cs-CZ')} Kè</td>
                   </tr>
                 ))}
               </tbody>
@@ -436,7 +503,7 @@ const ReportsCars: React.FC = () => {
         </div>
       ) : null}
 
-      {reportData?.stats.mileageDistribution?.length ? (
+      {reportData?.byMileageRange.length ? (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiky podle nájezdu</h3>
           <div className="overflow-x-auto">
@@ -445,15 +512,15 @@ const ReportsCars: React.FC = () => {
                 <tr className="text-gray-500 uppercase text-xs">
                   <th className="px-3 py-2">Rozsah</th>
                   <th className="px-3 py-2 text-right">Poèet</th>
-                  <th className="px-3 py-2 text-right">Prùmìrná cena</th>
+                  <th className="px-3 py-2 text-right">Podíl</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportData.stats.mileageDistribution.map(item => (
+                {reportData.byMileageRange.map(item => (
                   <tr key={item.range}>
                     <td className="px-3 py-2 font-medium text-gray-900">{item.range}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatNumber(item.count)}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item.averagePrice)}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.count}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{item.percentage.toFixed(1)} %</td>
                   </tr>
                 ))}
               </tbody>
@@ -490,7 +557,7 @@ const ReportsCars: React.FC = () => {
               <th className="px-4 py-3 text-left">Poznámky</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100 text-sm">
+          <tbody className="bg-white divide-y divide-gray-200 text-sm">
             {filteredCars.length === 0 ? (
               <tr>
                 <td colSpan={14} className="px-4 py-8 text-center text-gray-500">
@@ -499,28 +566,28 @@ const ReportsCars: React.FC = () => {
               </tr>
             ) : (
               filteredCars.map((car, index) => (
-                <tr key={car.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{car.carId || car.id}</td>
+                <tr key={car.carId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-4 py-3 font-medium text-gray-900">{car.carId}</td>
                   <td className="px-4 py-3">
-                    <div className="text-gray-900 font-semibold">{car.brand} {car.model}</div>
-                    {car.status && (
-                      <span className={`inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-[11px] font-medium ${getStatusColor(car.status)}`}>
-                        {car.status}
+                    <div className="text-gray-900 font-semibold">{car.carBrand} {car.carModel}</div>
+                    {car.currentStatus && (
+                      <span className={`inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-[11px] font-medium ${getStatusColor(car.currentStatus)}`}>
+                        {car.currentStatus}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700">{car.year ?? '-'}</td>
-                  <td className="px-4 py-3 text-right text-gray-700">{formatNumber(car.mileage, ' km')}</td>
-                  <td className="px-4 py-3 text-gray-700">{car.licensePlate || '-'}</td>
-                  <td className="px-4 py-3 text-gray-700">{car.vin || '-'}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{formatNumber(resolveCarYear(car))}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{formatNumber(resolveCarMileage(car), ' km')}</td>
+                  <td className="px-4 py-3 text-gray-700">{car.carSPZ || '-'}</td>
+                  <td className="px-4 py-3 text-gray-700">{car.carVIN || '-'}</td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">{formatCurrency(car.purchasePrice)}</td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">{formatCurrency(car.estimatedValue)}</td>
                   <td className="px-4 py-3 text-gray-700">
-                    {car.customer?.name || '-'}
+                    {car.customerName || '-'}
 
-                    {car.customer?.phone && <div className="text-xs text-gray-500">{car.customer.phone}</div>}
+                    {car.customerPhone && <div className="text-xs text-gray-500">{car.customerPhone}</div>}
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{formatDate(car.conversionDate)}</td>
+                  <td className="px-4 py-3 text-gray-700">{formatDate(car.convertedDate)}</td>
                   <td className="px-4 py-3 text-center">
                     {car.hasPhotos ? <span className="text-green-600">?</span> : <span className="text-red-600">?</span>}
                   </td>
@@ -528,9 +595,7 @@ const ReportsCars: React.FC = () => {
                     {car.hasDocuments ? <span className="text-green-600">?</span> : <span className="text-red-600">?</span>}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">
-                    {car.monthlyPayment || car.lease?.monthlyPayment
-                      ? formatCurrency(car.monthlyPayment || car.lease?.monthlyPayment)
-                      : '-'}
+                    {car.monthlyPayment ? formatCurrency(car.monthlyPayment) : '-'}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {car.notes ? `${car.notes.slice(0, 60)}${car.notes.length > 60 ? '…' : ''}` : '-'}
@@ -598,7 +663,7 @@ const ReportsCars: React.FC = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Znaèka</label>
             <select
@@ -616,15 +681,15 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rok výroby</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rok výroby (od)</label>
             <select
-              value={yearFilter}
-              onChange={e => setYearFilter(e.target.value)}
+              value={yearFromFilter}
+              onChange={e => setYearFromFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Všechny roky</option>
+              <option value="">Žádný filtr</option>
               {uniqueYears.map(year => (
-                <option key={year} value={year}>
+                <option key={`from-${year}`} value={year}>
                   {year}
                 </option>
               ))}
@@ -632,19 +697,41 @@ const ReportsCars: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nájezd</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rok výroby (do)</label>
             <select
-              value={mileageFilter}
-              onChange={e => setMileageFilter(e.target.value)}
+              value={yearToFilter}
+              onChange={e => setYearToFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Všechny</option>
-              {MILEAGE_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              <option value="">Žádný filtr</option>
+              {uniqueYears.map(year => (
+                <option key={`to-${year}`} value={year}>
+                  {year}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nájezd (od)</label>
+            <input
+              type="number"
+              value={mileageFromFilter}
+              onChange={e => setMileageFromFilter(e.target.value)}
+              placeholder="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nájezd (do)</label>
+            <input
+              type="number"
+              value={mileageToFilter}
+              onChange={e => setMileageToFilter(e.target.value)}
+              placeholder="200000"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
           </div>
 
           <div className="md:col-span-2">
@@ -659,12 +746,14 @@ const ReportsCars: React.FC = () => {
           </div>
         </div>
 
-        {(brandFilter || yearFilter || mileageFilter || searchQuery || period === 'custom') && (
+        {(brandFilter || yearFromFilter || yearToFilter || mileageFromFilter || mileageToFilter || searchQuery || period === 'custom') && (
           <button
             onClick={() => {
               setBrandFilter('');
-              setYearFilter('');
-              setMileageFilter('');
+              setYearFromFilter('');
+              setYearToFilter('');
+              setMileageFromFilter('');
+              setMileageToFilter('');
               setSearchQuery('');
               setPeriod('month');
               setCustomDateFrom('');
