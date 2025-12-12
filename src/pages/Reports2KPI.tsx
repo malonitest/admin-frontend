@@ -84,8 +84,8 @@ export function Reports2KPI() {
         params.append('period', period);
       }
       
-      console.log('Fetching KPI data with URL:', `/stats/kpi-investor?${params.toString()}`);
-      const response = await axiosClient.get(`/stats/kpi-investor?${params.toString()}`);
+      console.log('Fetching KPI data with URL:', `/stats/kpi-report?${params.toString()}`);
+      const response = await axiosClient.get(`/stats/kpi-report?${params.toString()}`);
       setReportData(response.data);
     } catch (err) {
       console.error('KPI Report API error:', err);
