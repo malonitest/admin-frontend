@@ -143,16 +143,8 @@ export function Reports2Financial() {
     // Filter invoices for selected month
     const monthInvoices = reportData.invoices?.filter(inv => inv.month === month) || [];
     
-    // Debug logging
-    console.log('=== MONTH DETAIL DEBUG ===');
-    console.log('Selected month:', month);
-    console.log('All invoices:', reportData.invoices);
-    console.log('Filtered invoices for month:', monthInvoices);
-    
     // Find monthly data for totals
     const monthData = reportData.monthlyData.find(m => m.month === month);
-    
-    console.log('Monthly data:', monthData);
     
     if (!monthData) {
       console.error('No monthly data found for month:', month);
@@ -161,7 +153,6 @@ export function Reports2Financial() {
     
     // Transform invoices to revenues
     const revenues: IMonthDetailRevenue[] = monthInvoices.map(inv => {
-      console.log('Processing invoice:', inv);
       return {
         id: inv.invoiceId,
         type: inv.type,
@@ -174,7 +165,11 @@ export function Reports2Financial() {
       };
     });
     
-    console.log('Transformed revenues:', revenues);
+    // If no invoices or all have "Neuvedeno", show warning
+    const hasValidData = revenues.some(r => r.customerName !== 'Neuvedeno' && r.amount > 0);
+    if (!hasValidData && revenues.length > 0) {
+      console.warn('?? Backend still returning incomplete data. Waiting for deployment...');
+    }
 
     // For costs, we'll create entries based on monthly data
     const costs: IMonthDetailCost[] = [];
@@ -477,104 +472,124 @@ export function Reports2Financial() {
               )}
 
               {monthDetailData && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Revenues Table */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="bg-green-50 border-b border-green-200 px-4 py-3">
-                      <h4 className="text-lg font-semibold text-green-900">
-                        Prijmy ({monthDetailData.revenues.length})
-                      </h4>
+                <>
+                  {/* Warning if data is incomplete */}
+                  {monthDetailData.revenues.length > 0 && 
+                   monthDetailData.revenues.every(r => r.customerName === 'Neuvedeno' || r.amount === 0) && (
+                    <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                          <h4 className="text-sm font-semibold text-yellow-800">Cekame na aktualizaci dat z backendu</h4>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            Backend tým prave nasazuje opravu. Data by mela byt k dispozici behem par minut.
+                            Zkuste obnovit stranku za chvili.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="overflow-x-auto max-h-[600px]">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Zakaznik</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
-                            <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {monthDetailData.revenues.map((revenue, index) => (
-                            <tr key={revenue.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              <td className="px-3 py-2 text-xs text-gray-900">
-                                {new Date(revenue.date).toLocaleDateString('cs-CZ')}
-                              </td>
-                              <td className="px-3 py-2 text-xs">
-                                <div className="font-medium text-gray-900">{revenue.customerName || 'N/A'}</div>
-                                {revenue.customerId && (
-                                  <div className="text-xs text-gray-500">ID: {revenue.customerId.substring(0, 8)}...</div>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-xs text-gray-700">{revenue.type}</td>
-                              <td className="px-3 py-2 text-xs text-right font-semibold text-green-600">
-                                {revenue.amount.toLocaleString('cs-CZ')} Kc
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot className="bg-green-50">
-                          <tr>
-                            <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-900">Celkem</td>
-                            <td className="px-3 py-2 text-sm text-right font-bold text-green-700">
-                              {monthDetailData.totalRevenue.toLocaleString('cs-CZ')} Kc
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Costs Table */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="bg-red-50 border-b border-red-200 px-4 py-3">
-                      <h4 className="text-lg font-semibold text-red-900">
-                        Naklady ({monthDetailData.costs.length})
-                      </h4>
-                    </div>
-                    <div className="overflow-x-auto max-h-[600px]">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Popis</th>
-                            <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {monthDetailData.costs.map((cost, index) => (
-                            <tr key={cost.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              <td className="px-3 py-2 text-xs text-gray-900">
-                                {new Date(cost.date).toLocaleDateString('cs-CZ')}
-                              </td>
-                              <td className="px-3 py-2 text-xs font-medium text-gray-900">{cost.type}</td>
-                              <td className="px-3 py-2 text-xs text-gray-700">
-                                {cost.description}
-                                {cost.supplierName && (
-                                  <div className="text-xs text-gray-500 mt-0.5">{cost.supplierName}</div>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-xs text-right font-semibold text-red-600">
-                                {cost.amount.toLocaleString('cs-CZ')} Kc
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Revenues Table */}
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-green-50 border-b border-green-200 px-4 py-3">
+                        <h4 className="text-lg font-semibold text-green-900">
+                          Prijmy ({monthDetailData.revenues.length})
+                        </h4>
+                      </div>
+                      <div className="overflow-x-auto max-h-[600px]">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Zakaznik</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
+                              <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {monthDetailData.revenues.map((revenue, index) => (
+                              <tr key={revenue.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="px-3 py-2 text-xs text-gray-900">
+                                  {new Date(revenue.date).toLocaleDateString('cs-CZ')}
+                                </td>
+                                <td className="px-3 py-2 text-xs">
+                                  <div className="font-medium text-gray-900">{revenue.customerName || 'N/A'}</div>
+                                  {revenue.customerId && (
+                                    <div className="text-xs text-gray-500">ID: {revenue.customerId.substring(0, 8)}...</div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-xs text-gray-700">{revenue.type}</td>
+                                <td className="px-3 py-2 text-xs text-right font-semibold text-green-600">
+                                  {revenue.amount.toLocaleString('cs-CZ')} Kc
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-green-50">
+                            <tr>
+                              <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-900">Celkem</td>
+                              <td className="px-3 py-2 text-sm text-right font-bold text-green-700">
+                                {monthDetailData.totalRevenue.toLocaleString('cs-CZ')} Kc
                               </td>
                             </tr>
-                          ))}
-                        </tbody>
-                        <tfoot className="bg-red-50">
-                          <tr>
-                            <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-900">Celkem</td>
-                            <td className="px-3 py-2 text-sm text-right font-bold text-red-700">
-                              {monthDetailData.totalCosts.toLocaleString('cs-CZ')} Kc
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Costs Table */}
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-red-50 border-b border-red-200 px-4 py-3">
+                        <h4 className="text-lg font-semibold text-red-900">
+                          Naklady ({monthDetailData.costs.length})
+                        </h4>
+                      </div>
+                      <div className="overflow-x-auto max-h-[600px]">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Datum</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Typ</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Popis</th>
+                              <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Castka</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {monthDetailData.costs.map((cost, index) => (
+                              <tr key={cost.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="px-3 py-2 text-xs text-gray-900">
+                                  {new Date(cost.date).toLocaleDateString('cs-CZ')}
+                                </td>
+                                <td className="px-3 py-2 text-xs font-medium text-gray-900">{cost.type}</td>
+                                <td className="px-3 py-2 text-xs text-gray-700">
+                                  {cost.description}
+                                  {cost.supplierName && (
+                                    <div className="text-xs text-gray-500 mt-0.5">{cost.supplierName}</div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-xs text-right font-semibold text-red-600">
+                                  {cost.amount.toLocaleString('cs-CZ')} Kc
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-red-50">
+                            <tr>
+                              <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-900">Celkem</td>
+                              <td className="px-3 py-2 text-sm text-right font-bold text-red-700">
+                                {monthDetailData.totalCosts.toLocaleString('cs-CZ')} Kc
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>
