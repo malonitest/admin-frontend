@@ -312,13 +312,13 @@ export function NewReportsKPIInvestor() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={(entry) => `${entry.type} (${entry.percentage.toFixed(0)}%)`}
                     >
                       {data.financial.revenueByType.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-revenue-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -335,13 +335,13 @@ export function NewReportsKPIInvestor() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={(entry) => `${entry.type} (${entry.percentage.toFixed(0)}%)`}
                     >
                       {data.financial.costsByType.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-costs-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
