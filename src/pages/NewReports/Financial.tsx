@@ -145,7 +145,8 @@ export function NewReportsFinancial() {
           <div className="flex gap-2">
             {/**
              * Period buttons configuration
-             */
+             */}
+            { [
               { value: 'day', label: 'Den' },
               { value: 'week', label: 'Týden' },
               { value: 'month', label: 'Mìsíc' },
