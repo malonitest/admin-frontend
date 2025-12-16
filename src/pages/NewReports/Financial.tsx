@@ -143,8 +143,10 @@ export function NewReportsFinancial() {
         <div className="flex flex-wrap items-center gap-4">
           <span className="text-sm font-medium text-gray-700">Období:</span>
           <div className="flex gap-2">
-            {{
-              value: 'day', label: 'Den' },
+            {/**
+             * Period buttons configuration
+             */
+              { value: 'day', label: 'Den' },
               { value: 'week', label: 'Týden' },
               { value: 'month', label: 'Mìsíc' },
               { value: 'year', label: 'Rok' },
