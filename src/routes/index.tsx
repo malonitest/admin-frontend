@@ -14,6 +14,10 @@ import Reports2KPI from '@/pages/Reports2KPI';
 import Reports2Financial from '@/pages/Reports2Financial';
 import Reports2FunnelTechnik from '@/pages/Reports2FunnelTechnik';
 import Reports2CarStats from '@/pages/Reports2CarStats';
+import Reports3KPI from '@/pages/Reports3KPI';
+import Reports3Financial from '@/pages/Reports3Financial';
+import Reports3Funnel from '@/pages/Reports3Funnel';
+import Reports3Cars from '@/pages/Reports3Cars';
 
 // Placeholder komponenty pro chybějící stránky
 // eslint-disable-next-line react-refresh/only-export-components
@@ -140,6 +144,23 @@ export const router = createBrowserRouter([
       {
         path: 'reports2/cars',
         element: <Reports2CarStats />,
+      },
+      // Reports3 routes - reporting database pages
+      {
+        path: 'reports3/kpi',
+        element: <Reports3KPI />,
+      },
+      {
+        path: 'reports3/financial',
+        element: <Reports3Financial />,
+      },
+      {
+        path: 'reports3/funnel',
+        element: <Reports3Funnel />,
+      },
+      {
+        path: 'reports3/cars',
+        element: <Reports3Cars />,
       },
       {
         path: 'calculator',
