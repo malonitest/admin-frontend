@@ -4,7 +4,7 @@
  */
 
 import { IFunnelTechnikReportData, IFunnelTechnikLeadItem } from '../../../types/reporting';
-import { formatCzk, formatDate, formatDateTime, getFullVin, formatCarName } from './formatters';
+import { formatDate, formatDateTime, getFullVin, formatCarName } from './formatters';
 import { getLastNote } from './calculations';
 
 /**
