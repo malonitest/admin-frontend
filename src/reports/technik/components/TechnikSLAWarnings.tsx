@@ -5,8 +5,15 @@
 
 import React from 'react';
 import { IFunnelTechnikLeadItem } from '../../../types/reporting';
-import { computeSlaBuckets, SLABucket } from '../utils/calculations';
+import { computeSlaBuckets } from '../utils/calculations';
 import { formatDate, getSLAColor } from '../utils/formatters';
+
+interface SLABucket {
+  label: string;
+  threshold: number;
+  count: number;
+  leads: IFunnelTechnikLeadItem[];
+}
 
 interface Props {
   leads: IFunnelTechnikLeadItem[];
@@ -17,7 +24,7 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
   const buckets = computeSlaBuckets(leads, thresholds);
 
   // Get total leads over threshold
-  const totalOverThreshold = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
+  const totalOverThreshold = buckets.reduce((sum: number, bucket: SLABucket) => sum + bucket.count, 0);
 
   if (totalOverThreshold === 0) {
     return (
@@ -50,7 +57,7 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {buckets.map((bucket, index) => (
+        {buckets.map((bucket: SLABucket, index: number) => (
           <div
             key={index}
             className={`p-4 rounded-lg border-2 ${
@@ -98,7 +105,7 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
       )}
 
       {/* Detailed List */}
-      {buckets.map((bucket, bucketIndex) => {
+      {buckets.map((bucket: SLABucket, bucketIndex: number) => {
         if (bucket.count === 0) return null;
 
         return (
@@ -131,7 +138,7 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {bucket.leads.slice(0, 10).map((lead, index) => (
+                  {bucket.leads.slice(0, 10).map((lead: IFunnelTechnikLeadItem, index: number) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-sm font-medium text-blue-600">

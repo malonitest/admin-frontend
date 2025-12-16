@@ -148,3 +148,65 @@ export interface ReportingFilters {
   period?: 'day' | 'week' | 'month' | 'year' | '30d' | '90d';
   groupBy?: string[];
 }
+
+// Funnel Technik Types
+
+export interface FunnelTechnikNote {
+  text: string;
+  date: string;
+  author: string;
+}
+
+export interface FunnelTechnikLeadItem {
+  leadId: string;
+  uniqueId: number;
+  customerName: string;
+  customerPhone: string;
+  carBrand: string;
+  carModel: string;
+  carVIN: string;
+  requestedAmount: number;
+  handedToTechnicianDate: string;
+  currentStatus: string;
+  currentStatusLabel: string;
+  declinedReason?: string;
+  declinedReasonLabel?: string;
+  notes?: FunnelTechnikNote[];
+  daysInTechnicianReview: number;
+}
+
+export interface FunnelTechnikStats {
+  totalHandedToTechnician: number;
+  approved: number;
+  rejected: number;
+  inProgress: number;
+  approvalRate: number;
+  rejectionRate: number;
+  averageDaysInReview: number;
+}
+
+export interface FunnelTechnikDeclinedReason {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
+export interface FunnelTechnikStatusBreakdown {
+  status: string;
+  count: number;
+  percentage: number;
+}
+
+export interface FunnelTechnikReportData {
+  dateFrom: string;
+  dateTo: string;
+  stats: FunnelTechnikStats;
+  leads: FunnelTechnikLeadItem[];
+  declinedReasons: FunnelTechnikDeclinedReason[];
+  statusBreakdown: FunnelTechnikStatusBreakdown[];
+}
+
+// Type aliases with I prefix for compatibility
+export type IFunnelTechnikReportData = FunnelTechnikReportData;
+export type IFunnelTechnikLeadItem = FunnelTechnikLeadItem;
+export type IFunnelTechnikStats = FunnelTechnikStats;

@@ -21,7 +21,7 @@ export const exportToJson = (data: IFunnelTechnikReportData): string => {
     stats: data.stats,
     statusBreakdown: data.statusBreakdown,
     declinedReasons: data.declinedReasons,
-    leads: data.leads.map(lead => ({
+    leads: data.leads.map((lead: IFunnelTechnikLeadItem) => ({
       ...lead,
       carVIN: getFullVin(lead.carVIN), // Full VIN in export
       requestedAmount: lead.requestedAmount,
@@ -70,7 +70,7 @@ export const exportToCsv = (data: IFunnelTechnikReportData): string => {
     'Posledni poznamka'
   ];
 
-  const rows = data.leads.map(lead => {
+  const rows = data.leads.map((lead: IFunnelTechnikLeadItem) => {
     const lastNote = getLastNote(lead.notes);
     
     return [
@@ -90,7 +90,7 @@ export const exportToCsv = (data: IFunnelTechnikReportData): string => {
 
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...rows.map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
   ].join('\n');
 
   return csvContent;
@@ -140,13 +140,13 @@ Prumerny pocet dni v kontrole: ${stats.averageDaysInReview}
 
 ROZPAD PODLE STATUSU
 --------------------
-${data.statusBreakdown?.map(item => 
+${data.statusBreakdown?.map((item: { status: string; count: number; percentage: number }) => 
   `${item.status}: ${item.count} (${item.percentage.toFixed(1)}%)`
 ).join('\n') || 'Neni k dispozici'}
 
 NEJCASTEJSI DUVODY ZAMITNUTI
 ----------------------------
-${data.declinedReasons?.map(item => 
+${data.declinedReasons?.map((item: { reason: string; count: number; percentage: number }) => 
   `${item.reason}: ${item.count} (${item.percentage.toFixed(1)}%)`
 ).join('\n') || 'Neni k dispozici'}
 `.trim();
