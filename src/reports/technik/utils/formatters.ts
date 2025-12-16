@@ -3,8 +3,6 @@
  * No Czech diacritics - ASCII only
  */
 
-import { format } from 'date-fns';
-
 /**
  * Format amount to CZK with thousand separators
  * @example formatCzk(1234567) => "1 234 567 Kc"
@@ -29,7 +27,12 @@ export const formatDate = (date: Date | string | undefined | null): string => {
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '-';
-    return format(dateObj, 'dd.MM.yyyy');
+    
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    
+    return `${day}.${month}.${year}`;
   } catch {
     return '-';
   }
@@ -45,7 +48,14 @@ export const formatDateTime = (date: Date | string | undefined | null): string =
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '-';
-    return format(dateObj, 'dd.MM.yyyy HH:mm');
+    
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
   } catch {
     return '-';
   }
@@ -77,7 +87,7 @@ export const getFullVin = (vin: string | undefined | null): string => {
  * @example formatPercentage(54.5555) => "54.6%"
  */
 export const formatPercentage = (value: number | undefined | null): string => {
-  if (value === undefined || value === null || isNaN(value)) {
+  if (value === undefined || value === null | isNaN(value)) {
     return '0.0%';
   }
   return `${value.toFixed(1)}%`;
