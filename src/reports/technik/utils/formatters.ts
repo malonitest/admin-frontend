@@ -87,18 +87,19 @@ export const getFullVin = (vin: string | undefined | null): string => {
  * @example formatPercentage(54.5555) => "54.6%"
  */
 export const formatPercentage = (value: number | undefined | null): string => {
-  if (value === undefined || value === null | isNaN(value)) {
+  if (value === undefined || value === null || isNaN(value)) {
     return '0.0%';
   }
-  return `${value.toFixed(1)}%`;
+  const safeValue: number = value;
+  return `${safeValue.toFixed(1)}%`;
 };
 
 /**
  * Format car name (brand + model)
  */
-export const formatCarName = (brand: string | undefined, model: string | undefined): string => {
-  const b = brand || '';
-  const m = model || '';
+export const formatCarName = (brand?: string, model?: string): string => {
+  const b = brand ?? '';
+  const m = model ?? '';
   
   if (!b && !m) return 'Neuvedeno';
   if (!b) return m;

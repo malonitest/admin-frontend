@@ -5,6 +5,7 @@ import type {
   LeasesAnalytics,
   FinancialAnalytics,
   ReportingFilters,
+  FunnelTechnikReportData,
 } from '@/types/reporting';
 
 export const reportingApi = {
@@ -104,6 +105,23 @@ export const reportingApi = {
     
     const response = await axiosClient.get<FinancialAnalytics>(
       '/admin/reporting/analytics/financial',
+      { params }
+    );
+    return response.data;
+  },
+
+  /**
+   * Funnel Technik report - pøehled kontroly vozidel technikem
+   */
+  async getFunnelTechnik(filters: ReportingFilters): Promise<FunnelTechnikReportData> {
+    const params: Record<string, any> = {};
+    
+    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+    if (filters.dateTo) params.dateTo = filters.dateTo;
+    if (filters.period) params.period = filters.period;
+    
+    const response = await axiosClient.get<FunnelTechnikReportData>(
+      '/stats/funnel-technik',
       { params }
     );
     return response.data;
