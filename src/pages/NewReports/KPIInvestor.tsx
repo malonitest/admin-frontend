@@ -100,7 +100,7 @@ export function NewReportsKPIInvestor() {
       const response = await axiosClient.get(`/stats/kpi-report?${params.toString()}`);
       setData(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data');
+      setError(err instanceof Error ? err.message : 'Nepodarilo se nactit data');
     } finally {
       setLoading(false);
     }
@@ -153,12 +153,12 @@ export function NewReportsKPIInvestor() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">KPI Investor Report</h1>
-      <p className="text-sm text-gray-600 mb-6">Executive dashboard s klíèovými ukazateli pro investory</p>
+      <p className="text-sm text-gray-600 mb-6">Executive dashboard s klicovymi ukazateli pro investory</p>
 
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">Obdobi:</span>
           <div className="flex gap-2">
             {(['day', 'week', 'month', 'year', 'custom'] as PeriodType[]).map((p) => (
               <button
@@ -171,10 +171,10 @@ export function NewReportsKPIInvestor() {
                 }`}
               >
                 {p === 'day' && 'Den'}
-                {p === 'week' && 'Týden'}
-                {p === 'month' && 'Mìsíc'}
+                {p === 'week' && 'Tyden'}
+                {p === 'month' && 'Mesic'}
                 {p === 'year' && 'Rok'}
-                {p === 'custom' && 'Vlastní'}
+                {p === 'custom' && 'Vlastni'}
               </button>
             ))}
           </div>
@@ -208,13 +208,13 @@ export function NewReportsKPIInvestor() {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-          <p className="mt-2 text-gray-600">Naèítání...</p>
+          <p className="mt-2 text-gray-600">Nacitani...</p>
         </div>
       )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          <p className="font-medium">Chyba pøi naèítání dat:</p>
+          <p className="font-medium">Chyba pri nacteni dat:</p>
           <p>{error}</p>
         </div>
       )}
@@ -223,7 +223,7 @@ export function NewReportsKPIInvestor() {
         <div className="space-y-6">
           {/* Summary KPIs */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Hlavní KPI</h2>
+            <h2 className="text-xl font-semibold mb-4">Hlavni KPI</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.summary.map((metric, index) => (
                 <div
@@ -233,8 +233,8 @@ export function NewReportsKPIInvestor() {
                   <div className="text-sm font-medium text-gray-600 mb-1">{metric.label}</div>
                   <div className="flex items-baseline justify-between">
                     <span className="text-2xl font-bold text-gray-900">
-                      {metric.unit === 'Kè' ? formatCurrency(metric.value) : formatNumber(metric.value)}
-                      {metric.unit && metric.unit !== 'Kè' && ` ${metric.unit}`}
+                      {metric.unit === 'Kc' ? formatCurrency(metric.value) : formatNumber(metric.value)}
+                      {metric.unit && metric.unit !== 'Kc' && ` ${metric.unit}`}
                     </span>
                     {metric.changePercentage !== undefined && (
                       <span className={`text-sm font-medium ${getTrendColor(metric.trend)}`}>
@@ -254,7 +254,7 @@ export function NewReportsKPIInvestor() {
           {/* Highlights */}
           {data.highlights && data.highlights.length > 0 && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Dùležité ukazatele</h2>
+              <h2 className="text-xl font-semibold mb-4">Dulezite ukazatele</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {data.highlights.map((metric, index) => (
                   <div key={index} className="bg-white rounded-lg shadow p-4">
@@ -271,28 +271,28 @@ export function NewReportsKPIInvestor() {
 
           {/* Financial Overview */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Finanèní pøehled</h2>
+            <h2 className="text-xl font-semibold mb-4">Financni prehled</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div>
-                <div className="text-sm text-gray-600">Celkové pøíjmy</div>
+                <div className="text-sm text-gray-600">Celkove prijmy</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {formatCurrency(data.financial.stats.totalRevenue)}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Celkové náklady</div>
+                <div className="text-sm text-gray-600">Celkove naklady</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {formatCurrency(data.financial.stats.totalCosts)}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Celkový zisk</div>
+                <div className="text-sm text-gray-600">Celkovy zisk</div>
                 <div className="text-2xl font-bold text-green-600">
                   {formatCurrency(data.financial.stats.totalProfit)}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Marže</div>
+                <div className="text-sm text-gray-600">Marze</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {data.financial.stats.profitMargin.toFixed(1)}%
                 </div>
@@ -302,7 +302,7 @@ export function NewReportsKPIInvestor() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Revenue by Type */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Pøíjmy podle typu</h3>
+                <h3 className="text-lg font-medium mb-3">Prijmy podle typu</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
@@ -325,7 +325,7 @@ export function NewReportsKPIInvestor() {
 
               {/* Costs by Type */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Náklady podle typu</h3>
+                <h3 className="text-lg font-medium mb-3">Naklady podle typu</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
@@ -353,20 +353,20 @@ export function NewReportsKPIInvestor() {
             <h2 className="text-xl font-semibold mb-4">Lead Funnel</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div>
-                <div className="text-sm text-gray-600">Celkem leadù</div>
+                <div className="text-sm text-gray-600">Celkem leadu</div>
                 <div className="text-2xl font-bold text-gray-900">{data.funnel.totalLeads}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Konvertováno</div>
+                <div className="text-sm text-gray-600">Konvertovano</div>
                 <div className="text-2xl font-bold text-green-600">{data.funnel.convertedLeads}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Konverzní pomìr</div>
+                <div className="text-sm text-gray-600">Konverzni pomer</div>
                 <div className="text-2xl font-bold text-gray-900">{data.funnel.conversionRate.toFixed(1)}%</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Prùmìrná doba konverze</div>
-                <div className="text-2xl font-bold text-gray-900">{data.funnel.avgConversionDays.toFixed(0)} dní</div>
+                <div className="text-sm text-gray-600">Prumerna doba konverze</div>
+                <div className="text-2xl font-bold text-gray-900">{data.funnel.avgConversionDays.toFixed(0)} dni</div>
               </div>
             </div>
 
@@ -377,36 +377,36 @@ export function NewReportsKPIInvestor() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#C41E3A" name="Poèet leadù" />
+                <Bar dataKey="count" fill="#C41E3A" name="Pocet leadu" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Technician Review */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Technická kontrola</h2>
+            <h2 className="text-xl font-semibold mb-4">Technicka kontrola</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div>
-                <div className="text-sm text-gray-600">Pøedáno technikovi</div>
+                <div className="text-sm text-gray-600">Predano technikovi</div>
                 <div className="text-2xl font-bold text-gray-900">{data.technician.stats.totalHandedToTechnician}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Schváleno</div>
+                <div className="text-sm text-gray-600">Schvaleno</div>
                 <div className="text-2xl font-bold text-green-600">{data.technician.stats.approved}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Míra schválení</div>
+                <div className="text-sm text-gray-600">Mira schvaleni</div>
                 <div className="text-2xl font-bold text-gray-900">{data.technician.stats.approvalRate.toFixed(1)}%</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Prùmìrná doba kontroly</div>
-                <div className="text-2xl font-bold text-gray-900">{data.technician.stats.averageDaysInReview.toFixed(0)} dní</div>
+                <div className="text-sm text-gray-600">Prumerna doba kontroly</div>
+                <div className="text-2xl font-bold text-gray-900">{data.technician.stats.averageDaysInReview.toFixed(0)} dni</div>
               </div>
             </div>
 
             {data.technician.declinedReasons.length > 0 && (
               <div>
-                <h3 className="text-lg font-medium mb-3">Dùvody zamítnutí</h3>
+                <h3 className="text-lg font-medium mb-3">Duvody zamitnuti</h3>
                 <div className="space-y-2">
                   {data.technician.declinedReasons.map((reason, index) => (
                     <div key={index} className="flex items-center justify-between">
@@ -423,26 +423,26 @@ export function NewReportsKPIInvestor() {
 
           {/* Fleet Overview */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Vozový park</h2>
+            <h2 className="text-xl font-semibold mb-4">Vozovy park</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div>
                 <div className="text-sm text-gray-600">Celkem vozidel</div>
                 <div className="text-2xl font-bold text-gray-900">{data.fleet.stats.totalCars}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Celková hodnota</div>
+                <div className="text-sm text-gray-600">Celkova hodnota</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {formatCurrency(data.fleet.stats.totalPurchaseValue)}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Prùmìrný nájezd</div>
+                <div className="text-sm text-gray-600">Prumerny najezd</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {formatNumber(data.fleet.stats.averageMileage)} km
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Prùmìrné stáøí</div>
+                <div className="text-sm text-gray-600">Prumerne stari</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {data.fleet.stats.averageAge.toFixed(1)} let
                 </div>
@@ -452,7 +452,7 @@ export function NewReportsKPIInvestor() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Top Brands */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Top znaèky</h3>
+                <h3 className="text-lg font-medium mb-3">Top znacky</h3>
                 <div className="space-y-2">
                   {data.fleet.topBrands.slice(0, 5).map((brand, index) => (
                     <div key={index} className="flex items-center justify-between">
@@ -467,7 +467,7 @@ export function NewReportsKPIInvestor() {
 
               {/* Mileage Breakdown */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Rozložení podle nájezdu</h3>
+                <h3 className="text-lg font-medium mb-3">Rozlozeni podle najezdu</h3>
                 <div className="space-y-2">
                   {data.fleet.mileageBreakdown.map((range, index) => (
                     <div key={index} className="flex items-center justify-between">
@@ -484,28 +484,28 @@ export function NewReportsKPIInvestor() {
 
           {/* Risk Indicators */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Rizikové ukazatele</h2>
+            <h2 className="text-xl font-semibold mb-4">Rizikove ukazatele</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className={`p-4 rounded-lg ${data.risk.lateLeases > 0 ? 'bg-yellow-50' : 'bg-green-50'}`}>
-                <div className="text-sm text-gray-600">Pozdní leasingy</div>
+                <div className="text-sm text-gray-600">Pozdni leasingy</div>
                 <div className={`text-2xl font-bold ${data.risk.lateLeases > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
                   {data.risk.lateLeases}
                 </div>
               </div>
               <div className={`p-4 rounded-lg ${data.risk.unpaidInvoices > 10 ? 'bg-yellow-50' : 'bg-green-50'}`}>
-                <div className="text-sm text-gray-600">Nezaplacené faktury</div>
+                <div className="text-sm text-gray-600">Nezaplacene faktury</div>
                 <div className={`text-2xl font-bold ${data.risk.unpaidInvoices > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
                   {data.risk.unpaidInvoices}
                 </div>
               </div>
               <div className={`p-4 rounded-lg ${data.risk.debtCollectionCases > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
-                <div className="text-sm text-gray-600">Pøípady v inkasu</div>
+                <div className="text-sm text-gray-600">Pripady v inkasu</div>
                 <div className={`text-2xl font-bold ${data.risk.debtCollectionCases > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {data.risk.debtCollectionCases}
                 </div>
               </div>
               <div className="p-4 rounded-lg bg-blue-50">
-                <div className="text-sm text-gray-600">Úspìšnost plateb</div>
+                <div className="text-sm text-gray-600">Uspesnost plateb</div>
                 <div className="text-2xl font-bold text-blue-600">
                   {data.risk.paymentSuccessRate.toFixed(1)}%
                 </div>
