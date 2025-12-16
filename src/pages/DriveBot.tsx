@@ -114,12 +114,9 @@ export default function DriveBot() {
     setIsLoading(true);
 
     try {
-      const response = await axiosClient.post('/drivebot/chat', {
-        message: userMessage.content,
-        conversationHistory: updatedMessages.map(m => ({
-          role: m.role,
-          content: m.content
-        }))
+      // ✅ FIXED: Changed from /drivebot/chat to /bot/message
+      const response = await axiosClient.post('/bot/message', {
+        message: userMessage.content
       });
 
       const assistantMessage: Message = {
@@ -134,6 +131,7 @@ export default function DriveBot() {
       setCurrentConversation(finalConv);
       setConversations(prev => prev.map(c => c.id === finalConv.id ? finalConv : c));
     } catch (error: any) {
+      console.error('DriveBot error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
