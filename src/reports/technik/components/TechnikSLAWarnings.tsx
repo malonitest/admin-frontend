@@ -26,6 +26,11 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
   // Get total leads over threshold
   const totalOverThreshold = buckets.reduce((sum: number, bucket: SLABucket) => sum + bucket.count, 0);
 
+  const handleUniqueIdClick = (lead: IFunnelTechnikLeadItem) => {
+    // Navigate to lead detail page
+    window.location.href = `/leads/${lead.leadId}`;
+  };
+
   if (totalOverThreshold === 0) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
@@ -113,7 +118,7 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
             <h4 className="text-sm font-semibold text-gray-700 mb-3">
               Leady {bucket.label}
             </h4>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto;">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -141,9 +146,12 @@ const TechnikSLAWarnings: React.FC<Props> = ({ leads, thresholds = [3, 7] }) => 
                   {bucket.leads.slice(0, 10).map((lead: IFunnelTechnikLeadItem, index: number) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="text-sm font-medium text-blue-600">
+                        <button
+                          onClick={() => handleUniqueIdClick(lead)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        >
                           #{lead.uniqueId}
-                        </div>
+                        </button>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
