@@ -398,7 +398,7 @@ const ReportsCars: React.FC = () => {
   };
 
   const formatTooltipCount = (
-    value: number | string | Array<number | string> | ReadonlyArray<number | string> | null | undefined,
+    value: readonly (string | number)[] | string | number,
   ) => {
     const raw = Array.isArray(value) ? value[0] : value;
     const numericValue = numberFromValue(raw);
