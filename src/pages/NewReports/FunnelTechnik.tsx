@@ -1,5 +1,12 @@
+/**
+ * Funnel Technik Report Page
+ * No Czech diacritics - ASCII only
+ */
+
 import { useState, useEffect } from 'react';
-import { axiosClient } from '@/api/axiosClient';
+import { reportingApi } from '@/api/reportingApi';
+import type { FunnelTechnikReportData } from '@/types/reporting';
+import TechnikReport from '../../reports/technik/components/TechnikReport';
 
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';
 
@@ -9,26 +16,26 @@ export function NewReportsFunnelTechnik() {
   const [period, setPeriod] = useState<PeriodType>('month');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [data, setData] = useState<FunnelTechnikReportData | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const params = new URLSearchParams();
+      const filters: any = {};
       
       if (period === 'custom' && customDateFrom && customDateTo) {
-        params.append('dateFrom', customDateFrom);
-        params.append('dateTo', customDateTo);
+        filters.dateFrom = customDateFrom;
+        filters.dateTo = customDateTo;
       } else if (period !== 'custom') {
-        params.append('period', period);
+        filters.period = period;
       }
 
-      const response = await axiosClient.get(`/stats/funnel-technik?${params.toString()}`);
-      setData(response.data);
+      const response = await reportingApi.getFunnelTechnik(filters);
+      setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data');
+      setError(err instanceof Error ? err.message : 'Nepodarilo se nacist data');
     } finally {
       setLoading(false);
     }
@@ -47,13 +54,15 @@ export function NewReportsFunnelTechnik() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Funnel Technik Report</h1>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        Funnel Technik - Prehled kontroly vozidel
+      </h1>
 
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">Obdobi:</span>
           <div className="flex gap-2">
             <button
               onClick={() => setPeriod('day')}
@@ -73,7 +82,7 @@ export function NewReportsFunnelTechnik() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Týden
+              Tyden
             </button>
             <button
               onClick={() => setPeriod('month')}
@@ -83,7 +92,7 @@ export function NewReportsFunnelTechnik() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Mìsíc
+              Mesic
             </button>
             <button
               onClick={() => setPeriod('year')}
@@ -103,7 +112,7 @@ export function NewReportsFunnelTechnik() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Vlastní
+              Vlastni
             </button>
           </div>
 
@@ -133,27 +142,30 @@ export function NewReportsFunnelTechnik() {
         </div>
       </div>
 
+      {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-          <p className="mt-2 text-gray-600">Naèítání...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          <p className="mt-4 text-gray-600 text-lg">Nacitani...</p>
         </div>
       )}
 
+      {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          <p className="font-medium">Chyba pøi naèítání dat:</p>
-          <p>{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <span className="text-3xl mr-3">?</span>
+            <div>
+              <p className="font-medium text-red-800">Chyba pri nacitani dat:</p>
+              <p className="text-red-600 mt-1">{error}</p>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Report Content */}
       {!loading && !error && data && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Funnel Technik Data</h2>
-          <pre className="bg-gray-50 p-4 rounded overflow-auto text-xs">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </div>
+        <TechnikReport data={data} />
       )}
     </div>
   );
