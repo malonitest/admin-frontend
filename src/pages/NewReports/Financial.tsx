@@ -143,10 +143,7 @@ export function NewReportsFinancial() {
         <div className="flex flex-wrap items-center gap-4">
           <span className="text-sm font-medium text-gray-700">Období:</span>
           <div className="flex gap-2">
-            {/**
-             * Period buttons configuration
-             */}
-            { [
+            {[
               { value: 'day', label: 'Den' },
               { value: 'week', label: 'Týden' },
               { value: 'month', label: 'Mìsíc' },
@@ -341,16 +338,17 @@ export function NewReportsFinancial() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry) => `${entry.type}: ${formatPercent(entry.percentage)}`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="amount"
+                    nameKey="type"
                   >
-                    {data.revenueByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS.pieColors[index % COLORS.pieColors.length]} />
+                    {data.revenueByType.map((_, index) => (
+                      <Cell key={`cell-revenue-${index}`} fill={COLORS.pieColors[index % COLORS.pieColors.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
               <div className="mt-4 space-y-2">
@@ -382,16 +380,17 @@ export function NewReportsFinancial() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry) => `${entry.type}: ${formatPercent(entry.percentage)}`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="amount"
+                    nameKey="type"
                   >
-                    {data.costsByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS.pieColors[index % COLORS.pieColors.length]} />
+                    {data.costsByType.map((_, index) => (
+                      <Cell key={`cell-cost-${index}`} fill={COLORS.pieColors[index % COLORS.pieColors.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
               <div className="mt-4 space-y-2">
