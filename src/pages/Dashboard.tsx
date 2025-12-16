@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { axiosClient } from '@/api/axiosClient';
+import { reportingApi } from '@/api/reportingApi';
+import type { DailySummaryResponse } from '@/types/reporting';
 import { Card } from '@/components';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -16,6 +18,8 @@ interface LeadListItem {
   statusLabel: string;
   subStatus: string;
   subStatusLabel: string;
+  receivedAt?: string | null;
+  convertedAt?: string | null;
 }
 
 interface DashboardStats {
@@ -43,26 +47,82 @@ export function Dashboard() {
   const [period, setPeriod] = useState<PeriodType>('month');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
+  const [reportSummary, setReportSummary] = useState<DailySummaryResponse | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  const getDateRange = (): { from: string; to: string } | null => {
+    if (period === 'custom') {
+      if (!customDateFrom || !customDateTo) {
+        return null;
+      }
+      return {
+        from: new Date(customDateFrom).toISOString(),
+        to: new Date(customDateTo).toISOString(),
+      };
+    }
+
+    const now = new Date();
+    let from = new Date(now);
+    let to = new Date(now);
+
+    switch (period) {
+      case 'day':
+        from.setHours(0, 0, 0, 0);
+        to.setHours(23, 59, 59, 999);
+        break;
+      case 'year':
+        from = new Date(now.getFullYear(), 0, 1);
+        to = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        break;
+      case 'month':
+      default:
+        from = new Date(now.getFullYear(), now.getMonth(), 1);
+        to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        break;
+    }
+
+    return {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    };
+  };
 
   const fetchStats = async () => {
+    const dateRange = getDateRange();
+    if (period === 'custom' && !dateRange) {
+      return;
+    }
+
     setLoading(true);
+    setReportLoading(true);
+    setStatusFilter('ALL');
+
     try {
-      let url = '/stats/admin-dashboard';
+      const url = '/stats/admin-dashboard';
       const params = new URLSearchParams();
-      
-      if (period === 'custom' && customDateFrom && customDateTo) {
-        params.append('dateFrom', customDateFrom);
-        params.append('dateTo', customDateTo);
+
+      if (period === 'custom' && dateRange) {
+        params.append('dateFrom', dateRange.from);
+        params.append('dateTo', dateRange.to);
       } else {
         params.append('period', period);
       }
-      
-      const res = await axiosClient.get(`${url}?${params.toString()}`);
-      setStats(res.data);
+
+      const statsPromise = axiosClient.get(`${url}?${params.toString()}`);
+      const reportingPromise = dateRange
+        ? reportingApi.getDailySummary({ dateFrom: dateRange.from, dateTo: dateRange.to })
+        : reportingApi.getDailySummary({});
+
+      const [statsResponse, reportingResponse] = await Promise.all([statsPromise, reportingPromise]);
+      setStats(statsResponse.data);
+      setReportSummary(reportingResponse);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+      setReportSummary(null);
     } finally {
       setLoading(false);
+      setReportLoading(false);
     }
   };
 

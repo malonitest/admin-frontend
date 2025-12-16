@@ -16,3 +16,8 @@ export { default as Reports2KPI } from "./Reports2KPI";
 export { default as Reports2Financial } from "./Reports2Financial";
 export { default as Reports2FunnelTechnik } from "./Reports2FunnelTechnik";
 export { default as Reports2CarStats } from "./Reports2CarStats";
+// Reports3 pages
+export { default as Reports3KPI } from "./Reports3KPI";
+export { default as Reports3Financial } from "./Reports3Financial";
+export { default as Reports3Funnel } from "./Reports3Funnel";
+export { default as Reports3Cars } from "./Reports3Cars";

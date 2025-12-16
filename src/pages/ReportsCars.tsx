@@ -397,6 +397,14 @@ const ReportsCars: React.FC = () => {
     return `${numericValue.toLocaleString('cs-CZ')}${suffix}`;
   };
 
+  const formatTooltipCount = (
+    value: number | string | Array<number | string> | ReadonlyArray<number | string> | null | undefined,
+  ) => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    const numericValue = numberFromValue(raw);
+    return `${(numericValue ?? 0).toLocaleString('cs-CZ')} ks`;
+  };
+
   const formatDate = (value?: string): string => {
     if (!value) return '-';
     const date = new Date(value);
@@ -555,7 +563,7 @@ const ReportsCars: React.FC = () => {
                     <Cell key={`brand-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `${value.toLocaleString('cs-CZ')} ks`} />
+                <Tooltip formatter={(value) => formatTooltipCount(value)} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -569,7 +577,7 @@ const ReportsCars: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" tick={{ fontSize: 10 }} />
                 <YAxis />
-                <Tooltip formatter={(value: number) => `${value.toLocaleString('cs-CZ')} ks`} />
+                <Tooltip formatter={(value) => formatTooltipCount(value)} />
                 <Bar dataKey="count" fill="#10B981" name="Pocet vozidel" />
               </BarChart>
             </ResponsiveContainer>
@@ -584,7 +592,7 @@ const ReportsCars: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="range" width={120} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => `${value.toLocaleString('cs-CZ')} ks`} />
+                <Tooltip formatter={(value) => formatTooltipCount(value)} />
                 <Bar dataKey="count" fill="#F59E0B" name="Pocet vozidel" />
               </BarChart>
             </ResponsiveContainer>
