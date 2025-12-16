@@ -1,7 +1,79 @@
 import { useState, useEffect } from 'react';
 import { axiosClient } from '@/api/axiosClient';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';
+
+interface KPIMetric {
+  label: string;
+  value: number;
+  unit?: string;
+  changePercentage?: number;
+  trend?: 'up' | 'down' | 'flat';
+  target?: number;
+  status?: 'good' | 'warning' | 'critical';
+  description?: string;
+}
+
+interface KPIReportData {
+  dateFrom: string;
+  dateTo: string;
+  summary: KPIMetric[];
+  highlights: KPIMetric[];
+  financial: {
+    stats: {
+      totalRevenue: number;
+      totalCosts: number;
+      totalProfit: number;
+      profitMargin: number;
+      totalCarsPurchased: number;
+      totalCarsPurchasedValue: number;
+      activeLeases: number;
+      totalLeaseValue: number;
+    };
+    revenueByType: Array<{ type: string; amount: number; percentage: number }>;
+    costsByType: Array<{ type: string; amount: number; percentage: number }>;
+  };
+  funnel: {
+    totalLeads: number;
+    convertedLeads: number;
+    declinedLeads: number;
+    conversionRate: number;
+    avgConversionDays: number;
+    stageBreakdown: Array<{ stage: string; count: number; percentage: number }>;
+  };
+  technician: {
+    stats: {
+      totalHandedToTechnician: number;
+      approved: number;
+      rejected: number;
+      inProgress: number;
+      approvalRate: number;
+      rejectionRate: number;
+      averageDaysInReview: number;
+    };
+    declinedReasons: Array<{ reason: string; count: number; percentage: number }>;
+  };
+  fleet: {
+    stats: {
+      totalCars: number;
+      totalPurchaseValue: number;
+      averagePurchasePrice: number;
+      averageMileage: number;
+      averageAge: number;
+    };
+    topBrands: Array<{ brand: string; count: number; totalValue: number; percentage: number }>;
+    mileageBreakdown: Array<{ range: string; count: number; percentage: number }>;
+  };
+  risk: {
+    lateLeases: number;
+    unpaidInvoices: number;
+    debtCollectionCases: number;
+    paymentSuccessRate: number;
+  };
+}
+
+const COLORS = ['#C41E3A', '#8B1A1A', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DC2626'];
 
 export function NewReportsKPIInvestor() {
   const [loading, setLoading] = useState(true);
@@ -9,7 +81,7 @@ export function NewReportsKPIInvestor() {
   const [period, setPeriod] = useState<PeriodType>('month');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [data, setData] = useState<KPIReportData | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -25,7 +97,7 @@ export function NewReportsKPIInvestor() {
         params.append('period', period);
       }
 
-      const response = await axiosClient.get(`/stats/kpi-investor?${params.toString()}`);
+      const response = await axiosClient.get(`/stats/kpi-report?${params.toString()}`);
       setData(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data');
@@ -46,65 +118,65 @@ export function NewReportsKPIInvestor() {
     }
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('cs-CZ', {
+      style: 'currency',
+      currency: 'CZK',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('cs-CZ').format(value);
+  };
+
+  const getTrendIcon = (trend?: 'up' | 'down' | 'flat') => {
+    if (trend === 'up') return '?';
+    if (trend === 'down') return '?';
+    return '?';
+  };
+
+  const getTrendColor = (trend?: 'up' | 'down' | 'flat') => {
+    if (trend === 'up') return 'text-green-600';
+    if (trend === 'down') return 'text-red-600';
+    return 'text-gray-500';
+  };
+
+  const getStatusColor = (status?: 'good' | 'warning' | 'critical') => {
+    if (status === 'good') return 'border-green-500 bg-green-50';
+    if (status === 'warning') return 'border-yellow-500 bg-yellow-50';
+    if (status === 'critical') return 'border-red-500 bg-red-50';
+    return 'border-gray-200 bg-white';
+  };
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">KPI Investor Report</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">KPI Investor Report</h1>
+      <p className="text-sm text-gray-600 mb-6">Executive dashboard s klíèovými ukazateli pro investory</p>
 
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           <span className="text-sm font-medium text-gray-700">Období:</span>
           <div className="flex gap-2">
-            <button
-              onClick={() => setPeriod('day')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                period === 'day' 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Den
-            </button>
-            <button
-              onClick={() => setPeriod('week')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                period === 'week' 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Týden
-            </button>
-            <button
-              onClick={() => setPeriod('month')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                period === 'month' 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Mìsíc
-            </button>
-            <button
-              onClick={() => setPeriod('year')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                period === 'year' 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Rok
-            </button>
-            <button
-              onClick={() => setPeriod('custom')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                period === 'custom' 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Vlastní
-            </button>
+            {(['day', 'week', 'month', 'year', 'custom'] as PeriodType[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  period === p
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {p === 'day' && 'Den'}
+                {p === 'week' && 'Týden'}
+                {p === 'month' && 'Mìsíc'}
+                {p === 'year' && 'Rok'}
+                {p === 'custom' && 'Vlastní'}
+              </button>
+            ))}
           </div>
 
           {period === 'custom' && (
@@ -148,11 +220,298 @@ export function NewReportsKPIInvestor() {
       )}
 
       {!loading && !error && data && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">KPI Data</h2>
-          <pre className="bg-gray-50 p-4 rounded overflow-auto text-xs">
-            {JSON.stringify(data, null, 2)}
-          </pre>
+        <div className="space-y-6">
+          {/* Summary KPIs */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Hlavní KPI</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.summary.map((metric, index) => (
+                <div
+                  key={index}
+                  className={`rounded-lg border-2 p-4 ${getStatusColor(metric.status)}`}
+                >
+                  <div className="text-sm font-medium text-gray-600 mb-1">{metric.label}</div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {metric.unit === 'Kè' ? formatCurrency(metric.value) : formatNumber(metric.value)}
+                      {metric.unit && metric.unit !== 'Kè' && ` ${metric.unit}`}
+                    </span>
+                    {metric.changePercentage !== undefined && (
+                      <span className={`text-sm font-medium ${getTrendColor(metric.trend)}`}>
+                        {getTrendIcon(metric.trend)} {metric.changePercentage > 0 ? '+' : ''}
+                        {metric.changePercentage.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                  {metric.description && (
+                    <div className="text-xs text-gray-500 mt-1">{metric.description}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Highlights */}
+          {data.highlights && data.highlights.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Dùležité ukazatele</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {data.highlights.map((metric, index) => (
+                  <div key={index} className="bg-white rounded-lg shadow p-4">
+                    <div className="text-sm text-gray-600">{metric.label}</div>
+                    <div className="text-xl font-bold text-gray-900 mt-1">
+                      {metric.value.toFixed(metric.unit === '%' ? 1 : 0)}
+                      {metric.unit && ` ${metric.unit}`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Financial Overview */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Finanèní pøehled</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div>
+                <div className="text-sm text-gray-600">Celkové pøíjmy</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(data.financial.stats.totalRevenue)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Celkové náklady</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(data.financial.stats.totalCosts)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Celkový zisk</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(data.financial.stats.totalProfit)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Marže</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.financial.stats.profitMargin.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Revenue by Type */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Pøíjmy podle typu</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={data.financial.revenueByType}
+                      dataKey="amount"
+                      nameKey="type"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={(entry) => `${entry.type} (${entry.percentage.toFixed(0)}%)`}
+                    >
+                      {data.financial.revenueByType.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Costs by Type */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Náklady podle typu</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={data.financial.costsByType}
+                      dataKey="amount"
+                      nameKey="type"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={(entry) => `${entry.type} (${entry.percentage.toFixed(0)}%)`}
+                    >
+                      {data.financial.costsByType.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Funnel Overview */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Lead Funnel</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div>
+                <div className="text-sm text-gray-600">Celkem leadù</div>
+                <div className="text-2xl font-bold text-gray-900">{data.funnel.totalLeads}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Konvertováno</div>
+                <div className="text-2xl font-bold text-green-600">{data.funnel.convertedLeads}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Konverzní pomìr</div>
+                <div className="text-2xl font-bold text-gray-900">{data.funnel.conversionRate.toFixed(1)}%</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Prùmìrná doba konverze</div>
+                <div className="text-2xl font-bold text-gray-900">{data.funnel.avgConversionDays.toFixed(0)} dní</div>
+              </div>
+            </div>
+
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.funnel.stageBreakdown}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="stage" angle={-45} textAnchor="end" height={100} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#C41E3A" name="Poèet leadù" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Technician Review */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Technická kontrola</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div>
+                <div className="text-sm text-gray-600">Pøedáno technikovi</div>
+                <div className="text-2xl font-bold text-gray-900">{data.technician.stats.totalHandedToTechnician}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Schváleno</div>
+                <div className="text-2xl font-bold text-green-600">{data.technician.stats.approved}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Míra schválení</div>
+                <div className="text-2xl font-bold text-gray-900">{data.technician.stats.approvalRate.toFixed(1)}%</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Prùmìrná doba kontroly</div>
+                <div className="text-2xl font-bold text-gray-900">{data.technician.stats.averageDaysInReview.toFixed(0)} dní</div>
+              </div>
+            </div>
+
+            {data.technician.declinedReasons.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-3">Dùvody zamítnutí</h3>
+                <div className="space-y-2">
+                  {data.technician.declinedReasons.map((reason, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{reason.reason}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {reason.count} ({reason.percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Fleet Overview */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Vozový park</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div>
+                <div className="text-sm text-gray-600">Celkem vozidel</div>
+                <div className="text-2xl font-bold text-gray-900">{data.fleet.stats.totalCars}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Celková hodnota</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(data.fleet.stats.totalPurchaseValue)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Prùmìrný nájezd</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatNumber(data.fleet.stats.averageMileage)} km
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Prùmìrné stáøí</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.fleet.stats.averageAge.toFixed(1)} let
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Top Brands */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Top znaèky</h3>
+                <div className="space-y-2">
+                  {data.fleet.topBrands.slice(0, 5).map((brand, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{brand.brand}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {brand.count} ks ({brand.percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mileage Breakdown */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Rozložení podle nájezdu</h3>
+                <div className="space-y-2">
+                  {data.fleet.mileageBreakdown.map((range, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{range.range} km</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {range.count} ({range.percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Indicators */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Rizikové ukazatele</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className={`p-4 rounded-lg ${data.risk.lateLeases > 0 ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                <div className="text-sm text-gray-600">Pozdní leasingy</div>
+                <div className={`text-2xl font-bold ${data.risk.lateLeases > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {data.risk.lateLeases}
+                </div>
+              </div>
+              <div className={`p-4 rounded-lg ${data.risk.unpaidInvoices > 10 ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                <div className="text-sm text-gray-600">Nezaplacené faktury</div>
+                <div className={`text-2xl font-bold ${data.risk.unpaidInvoices > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {data.risk.unpaidInvoices}
+                </div>
+              </div>
+              <div className={`p-4 rounded-lg ${data.risk.debtCollectionCases > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
+                <div className="text-sm text-gray-600">Pøípady v inkasu</div>
+                <div className={`text-2xl font-bold ${data.risk.debtCollectionCases > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {data.risk.debtCollectionCases}
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-blue-50">
+                <div className="text-sm text-gray-600">Úspìšnost plateb</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {data.risk.paymentSuccessRate.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
