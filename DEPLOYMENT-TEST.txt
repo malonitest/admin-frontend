@@ -1,0 +1,4 @@
+Deployment test - 2025-12-16 20:45 CET
+This file triggers frontend deployment workflow.
+Workflow should: checkout ? build ? deploy to Azure Static Web Apps
+Last successful: checking...
