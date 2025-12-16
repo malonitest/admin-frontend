@@ -1,6 +1,26 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AdminLayout } from '@/layouts';
-import { Login, Dashboard, Settings, DriveBot, ReportsCC, ReportsOS, ReportsMarketing, LogsPage, ReportsKPIInvestor, ReportsFinancial, ReportsCollection, Reports3KPI, Reports3Financial, Reports3Funnel, Reports3Cars } from '@/pages';
+import { 
+  Login, 
+  Dashboard, 
+  Settings, 
+  DriveBot, 
+  ReportsCC, 
+  ReportsOS, 
+  ReportsMarketing, 
+  LogsPage, 
+  ReportsKPIInvestor, 
+  ReportsFinancial, 
+  ReportsCollection, 
+  Reports3KPI, 
+  Reports3Financial, 
+  Reports3Funnel, 
+  Reports3Cars,
+  NewReportsKPIInvestor,
+  NewReportsFinancial,
+  NewReportsFunnelTechnik,
+  NewReportsCarStats
+} from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
 import Leads from '@/pages/Leads';
@@ -156,6 +176,39 @@ export const router = createBrowserRouter([
       {
         path: 'reports3/cars',
         element: <Reports3Cars />,
+      },
+      // New Reports routes - based on FRONTEND-REPORTS-AND-DRIVEBOT-GUIDE.md
+      {
+        path: 'new-reports/kpi',
+        element: <NewReportsKPIInvestor />,
+      },
+      {
+        path: 'new-reports/financial',
+        element: <NewReportsFinancial />,
+      },
+      {
+        path: 'new-reports/funnel-technik',
+        element: <NewReportsFunnelTechnik />,
+      },
+      {
+        path: 'new-reports/car-stats',
+        element: <NewReportsCarStats />,
+      },
+      {
+        path: 'new-reports/admin-dashboard',
+        element: <PlaceholderPage title="Admin Dashboard" />,
+      },
+      {
+        path: 'new-reports/cc',
+        element: <PlaceholderPage title="CC Report" />,
+      },
+      {
+        path: 'new-reports/marketing',
+        element: <PlaceholderPage title="Marketing Report" />,
+      },
+      {
+        path: 'new-reports/funnel',
+        element: <PlaceholderPage title="Funnel General" />,
       },
       {
         path: 'calculator',
