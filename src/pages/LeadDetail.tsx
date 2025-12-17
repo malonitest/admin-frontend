@@ -378,6 +378,10 @@ export function LeadDetail() {
   const totalInsuranceForDuration = rentDurationMonths > 0 && yearlyInsuranceFee > 0
     ? Math.round((rentDurationMonths / 12) * yearlyInsuranceFee)
     : 0;
+  const insurancePerMonthForDuration = rentDurationMonths > 0 && totalInsuranceForDuration > 0
+    ? Math.round(totalInsuranceForDuration / rentDurationMonths)
+    : 0;
+  const monthlyRentIncludingInsurance = (monthlyPayment > 0 ? monthlyPayment : 0) + insurancePerMonthForDuration;
   const totalRent = rentDurationMonths > 0 && monthlyPayment > 0
     ? (rentDurationMonths * monthlyPayment) + totalInsuranceForDuration
     : 0;
@@ -1022,7 +1026,19 @@ export function LeadDetail() {
               />
             </div>
 
-            {/* Monthly Rent Total */}
+            {/* Monthly Rent (including insurance) */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Měsíční nájem včetně pojištění (Kč)</label>
+              <input
+                type="text"
+                value={monthlyRentIncludingInsurance ? monthlyRentIncludingInsurance.toLocaleString('cs-CZ') : ''}
+                readOnly
+                placeholder="(měsíční nájemné) + poměrná část ročního pojištění"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-50"
+              />
+            </div>
+
+            {/* Total Rent for Duration */}
             <div>
               <label className="block text-xs text-gray-500 mb-1">Celkový nájem za dobu (Kč) vč. pojištění</label>
               <input
