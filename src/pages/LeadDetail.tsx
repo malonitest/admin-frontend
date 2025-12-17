@@ -389,6 +389,34 @@ export function LeadDetail() {
 
   const normalizeDecimal = (value: string): string => value.replace(',', '.').trim();
 
+  const toIntOrUndefined = (value: string): number | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number.parseInt(trimmed, 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+
+  const toFloatOrUndefined = (value: string): number | undefined => {
+    const normalized = normalizeDecimal(value);
+    if (!normalized) return undefined;
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+
+  const toISODateOrUndefined = (value: string): string | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    // Expect yyyy-mm-dd from <input type="date">.
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? undefined : trimmed;
+  };
+
+  const toObjectIdOrUndefined = (value: string): string | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    return /^[a-fA-F0-9]{24}$/.test(trimmed) ? trimmed : undefined;
+  };
+
   const handleCalculateRent = () => {
     const leaseAmount = Number.parseInt(formData.requestedAmount || '', 10) || 0;
     const percent = Number.parseFloat(normalizeDecimal(formData.yearlyInterestRate || '')) || 0;
@@ -421,7 +449,7 @@ export function LeadDetail() {
           name: formData.customerName,
           email: formData.email,
           phone: formData.phone,
-          birthday: formData.birthday || undefined,
+          birthday: toISODateOrUndefined(formData.birthday),
           birthNumber: formData.birthNumber || undefined,
           address: formData.address,
           city: formData.city,
@@ -433,24 +461,24 @@ export function LeadDetail() {
           bankAccount: formData.bankAccount,
         },
         car: {
-          VIN: formData.vin,
-          brand: formData.brand,
-          model: formData.model,
-          registration: formData.registration ? parseInt(formData.registration) : undefined,
-          carSPZ: formData.carSPZ,
-          mileage: formData.mileage ? parseInt(formData.mileage) : undefined,
+          VIN: formData.vin || undefined,
+          brand: formData.brand || undefined,
+          model: formData.model || undefined,
+          registration: toIntOrUndefined(formData.registration),
+          carSPZ: formData.carSPZ || undefined,
+          mileage: toIntOrUndefined(formData.mileage),
         },
         lease: {
-          leaseAmount: formData.requestedAmount ? parseInt(formData.requestedAmount) : undefined,
-          rentDuration: formData.rentDuration ? parseInt(formData.rentDuration) : undefined,
-          monthlyPayment: formData.monthlyPayment ? parseInt(formData.monthlyPayment) : undefined,
-          yearlyInterestRate: formData.yearlyInterestRate ? Number.parseFloat(normalizeDecimal(formData.yearlyInterestRate)) : undefined,
-          yearlyInsuranceFee: formData.yearlyInsuranceFee ? parseInt(formData.yearlyInsuranceFee) : undefined,
+          leaseAmount: toIntOrUndefined(formData.requestedAmount),
+          rentDuration: toIntOrUndefined(formData.rentDuration),
+          monthlyPayment: toIntOrUndefined(formData.monthlyPayment),
+          yearlyInterestRate: toFloatOrUndefined(formData.yearlyInterestRate),
+          yearlyInsuranceFee: toIntOrUndefined(formData.yearlyInsuranceFee),
           payoutInCash: formData.payoutInCash,
-          adminFee: formData.adminFee ? parseInt(formData.adminFee) : undefined,
+          adminFee: toIntOrUndefined(formData.adminFee),
         },
-        assignedSalesManager: formData.assignedOZ || undefined,
-        salesVisitAt: formData.salesVisitAt || undefined,
+        assignedSalesManager: toObjectIdOrUndefined(formData.assignedOZ),
+        salesVisitAt: toISODateOrUndefined(formData.salesVisitAt),
       });
 
       if (res?.data && typeof res.data === 'object' && 'success' in res.data && res.data.success === false) {
