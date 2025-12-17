@@ -266,6 +266,9 @@ export function LeadDetail() {
   // Form states
   const [formData, setFormData] = useState({
     // Customer
+    customerType: '',
+    companyID: '',
+    companyName: '',
     customerName: '',
     email: '',
     phone: '',
@@ -275,6 +278,9 @@ export function LeadDetail() {
     city: '',
     postalCode: '',
     enableAddress2: false,
+    address2: '',
+    city2: '',
+    postalCode2: '',
     salesVisitAt: '',
     // Car
     vin: '',
@@ -312,6 +318,9 @@ export function LeadDetail() {
 
         // Populate form data
         setFormData({
+          customerType: leadData.customer?.customerType || '',
+          companyID: leadData.customer?.companyID || '',
+          companyName: leadData.customer?.companyName || '',
           customerName: leadData.customer?.name || '',
           email: leadData.customer?.email || '',
           phone: leadData.customer?.phone || '',
@@ -321,6 +330,9 @@ export function LeadDetail() {
           city: leadData.customer?.city || '',
           postalCode: leadData.customer?.postalCode || '',
           enableAddress2: leadData.customer?.enableAddress2 || false,
+          address2: leadData.customer?.address2 || '',
+          city2: leadData.customer?.city2 || '',
+          postalCode2: leadData.customer?.postalCode2 || '',
           salesVisitAt: leadData.salesVisitAt ? leadData.salesVisitAt.split('T')[0] : '',
           vin: leadData.car?.VIN || '',
           brand: leadData.car?.brand || '',
@@ -354,11 +366,30 @@ export function LeadDetail() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const rentDurationMonths = Number.parseInt(formData.rentDuration || '', 10) || 0;
+  const monthlyPayment = Number.parseInt(formData.monthlyPayment || '', 10) || 0;
+  const yearlyInsuranceFee = Number.parseInt(formData.yearlyInsuranceFee || '', 10) || 0;
+  const totalInsuranceForDuration = rentDurationMonths > 0 && yearlyInsuranceFee > 0
+    ? Math.round((rentDurationMonths / 12) * yearlyInsuranceFee)
+    : 0;
+  const totalRent = rentDurationMonths > 0 && monthlyPayment > 0
+    ? (rentDurationMonths * monthlyPayment) + totalInsuranceForDuration
+    : 0;
+
+  const showCompanyFields =
+    formData.customerType === 'COMPANY' ||
+    (lead?.customer?.customerType === 'COMPANY') ||
+    Boolean(formData.companyID) ||
+    Boolean(formData.companyName);
+
   const handleSave = async () => {
     setSaving(true);
     try {
       await axiosClient.patch(`/leads/${id}`, {
         customer: {
+          customerType: formData.customerType || undefined,
+          companyID: showCompanyFields ? (formData.companyID || undefined) : undefined,
+          companyName: showCompanyFields ? (formData.companyName || undefined) : undefined,
           name: formData.customerName,
           email: formData.email,
           phone: formData.phone,
@@ -368,6 +399,9 @@ export function LeadDetail() {
           city: formData.city,
           postalCode: formData.postalCode,
           enableAddress2: formData.enableAddress2,
+          address2: formData.enableAddress2 ? (formData.address2 || undefined) : undefined,
+          city2: formData.enableAddress2 ? (formData.city2 || undefined) : undefined,
+          postalCode2: formData.enableAddress2 ? (formData.postalCode2 || undefined) : undefined,
           bankAccount: formData.bankAccount,
         },
         car: {
@@ -480,6 +514,33 @@ export function LeadDetail() {
               </div>
             </div>
 
+            {/* Company fields */}
+            {showCompanyFields && (
+              <>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">IČO</label>
+                  <input
+                    type="text"
+                    value={formData.companyID}
+                    onChange={(e) => handleInputChange('companyID', e.target.value)}
+                    placeholder="IČO"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Název firmy</label>
+                  <input
+                    type="text"
+                    value={formData.companyName}
+                    onChange={(e) => handleInputChange('companyName', e.target.value)}
+                    placeholder="Název firmy"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+              </>
+            )}
+
             {/* Email */}
             <div>
               <label className="block text-xs text-gray-500 mb-1">E-mail zákazníka</label>
@@ -531,9 +592,14 @@ export function LeadDetail() {
 
             {/* Birth Number */}
             <div>
-              <div className="px-3 py-2 bg-gray-200 rounded-lg text-gray-600">
-                Rodné číslo zákazníka
-              </div>
+              <label className="block text-xs text-gray-500 mb-1">Rodné číslo zákazníka</label>
+              <input
+                type="text"
+                value={formData.birthNumber}
+                onChange={(e) => handleInputChange('birthNumber', e.target.value)}
+                placeholder="Rodné číslo"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+              />
             </div>
 
             {/* Address */}
@@ -589,6 +655,51 @@ export function LeadDetail() {
                 className="w-4 h-4 text-red-600 border-gray-300 rounded"
               />
             </div>
+
+            {/* Correspondence address fields */}
+            {formData.enableAddress2 && (
+              <>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Korespondenční ulice</label>
+                  <AddressAutocomplete
+                    value={formData.address2}
+                    onChange={(value) => handleInputChange('address2', value)}
+                    onAddressSelect={(addr) => {
+                      handleInputChange('address2', addr.street);
+                      handleInputChange('city2', addr.city);
+                      handleInputChange('postalCode2', addr.postalCode);
+                    }}
+                    placeholder="Zadejte korespondenční adresu..."
+                    icon={<HomeIcon className="w-5 h-5 text-gray-400" />}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="px-3 py-2 bg-gray-50">
+                      <HomeIcon className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.city2}
+                      onChange={(e) => handleInputChange('city2', e.target.value)}
+                      placeholder="Korespondenční město"
+                      className="flex-1 px-3 py-2 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    value={formData.postalCode2}
+                    onChange={(e) => handleInputChange('postalCode2', e.target.value)}
+                    placeholder="Korespondenční PSČ"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+              </>
+            )}
 
 
           </div>
@@ -875,11 +986,13 @@ export function LeadDetail() {
 
             {/* Monthly Rent Total */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Celkový měsíční nájem (CZK)</label>
-              <input 
-                type="text" 
-                placeholder="Celkový měsíční nájem"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
+              <label className="block text-xs text-gray-500 mb-1">Celkový nájem za dobu (Kč) vč. pojištění</label>
+              <input
+                type="text"
+                value={totalRent ? totalRent.toLocaleString('cs-CZ') : ''}
+                readOnly
+                placeholder="(měsíční nájemné × měsíce) + poměrné roční pojištění"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-50"
               />
             </div>
 
