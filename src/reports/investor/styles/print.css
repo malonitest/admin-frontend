@@ -1,0 +1,183 @@
+/**
+ * Print CSS for Investor KPI Report
+ * A4 format, profesionalni layout
+ * Bez cestiny diakritiky
+ */
+
+/* Print-specific styles */
+@media print {
+  /* Global print settings */
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  /* Hide non-print elements */
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Cover page */
+  .report-cover {
+    page-break-after: always;
+    min-height: 100vh;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+
+  /* Section breaks */
+  .print\\:break-before-page {
+    page-break-before: always;
+  }
+
+  .print\\:break-inside-avoid {
+    page-break-inside: avoid;
+  }
+
+  /* Executive Summary */
+  .executive-summary {
+    background: white !important;
+    border: 1px solid #d1d5db !important;
+    page-break-inside: avoid;
+  }
+
+  /* KPI Cards */
+  .kpi-card {
+    page-break-inside: avoid;
+  }
+
+  /* Tables */
+  table {
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Charts */
+  .recharts-wrapper {
+    page-break-inside: avoid;
+  }
+
+  /* Sections */
+  .financial-section,
+  .funnel-section,
+  .technician-section,
+  .fleet-section,
+  .risk-section {
+    page-break-inside: avoid;
+  }
+
+  /* Links */
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Backgrounds */
+  .bg-gradient-to-br,
+  .bg-gradient-to-r {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Shadows */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  /* Borders for structure */
+  .bg-white {
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* Page numbers - footer */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10pt;
+    color: #6b7280;
+  }
+
+  /* Headings */
+  h1 {
+    font-size: 24pt;
+    margin-bottom: 12pt;
+  }
+
+  h2 {
+    font-size: 18pt;
+    margin-top: 18pt;
+    margin-bottom: 12pt;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 14pt;
+    margin-bottom: 8pt;
+    page-break-after: avoid;
+  }
+
+  /* Text */
+  p,
+  li {
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  /* Spacing */
+  .mb-8,
+  .mb-12 {
+    margin-bottom: 2rem !important;
+  }
+
+  /* Grid adjustments for print */
+  .grid {
+    display: grid !important;
+  }
+
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  /* No hover effects */
+  *:hover {
+    background: inherit !important;
+  }
+}
+
+/* Screen-only helpers */
+@media screen {
+  .print-footer {
+    display: none;
+  }
+}

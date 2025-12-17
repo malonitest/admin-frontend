@@ -28,6 +28,7 @@ const navigation: NavItem[] = [
     href: '/new-reports', 
     icon: ReportsIcon,
     children: [
+      { name: 'Investor Report', href: '/new-reports/investor' },
       { name: 'KPI Investor', href: '/new-reports/kpi' },
       { name: 'Financial P/L', href: '/new-reports/financial' },
       { name: 'Funnel Technik', href: '/new-reports/funnel-technik' },

@@ -6,6 +6,7 @@ import type {
   FinancialAnalytics,
   ReportingFilters,
   FunnelTechnikReportData,
+  IKPIInvestorReportData,
 } from '@/types/reporting';
 
 export const reportingApi = {
@@ -122,6 +123,23 @@ export const reportingApi = {
     
     const response = await axiosClient.get<FunnelTechnikReportData>(
       '/stats/funnel-technik',
+      { params }
+    );
+    return response.data;
+  },
+
+  /**
+   * KPI Investor Report - kompletni investor dashboard
+   */
+  async getKPIReport(filters: ReportingFilters): Promise<IKPIInvestorReportData> {
+    const params: Record<string, any> = {};
+    
+    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+    if (filters.dateTo) params.dateTo = filters.dateTo;
+    if (filters.period) params.period = filters.period;
+    
+    const response = await axiosClient.get<IKPIInvestorReportData>(
+      '/stats/kpi-report',
       { params }
     );
     return response.data;

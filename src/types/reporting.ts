@@ -210,3 +210,85 @@ export interface FunnelTechnikReportData {
 export type IFunnelTechnikReportData = FunnelTechnikReportData;
 export type IFunnelTechnikLeadItem = FunnelTechnikLeadItem;
 export type IFunnelTechnikStats = FunnelTechnikStats;
+
+// KPI Investor Report Types
+
+export interface IKPIMetric {
+  label: string;
+  value: number;
+  unit?: string;
+  changePercentage?: number;
+  trend?: 'up' | 'down' | 'flat';
+  description?: string;
+}
+
+export interface IFinancialStats {
+  totalRevenue: number;
+  totalCosts: number;
+  totalProfit: number;
+  averageMonthlyRevenue: number;
+  averageMonthlyProfit: number;
+  profitMargin: number;
+  totalCarsPurchased: number;
+  totalCarsPurchasedValue: number;
+  activeLeases: number;
+  totalLeaseValue: number;
+}
+
+export interface IFinancialReportItem {
+  month: string;
+  totalRevenue: number;
+  totalCosts: number;
+  netProfit: number;
+  profitMargin: number;
+  paymentSuccessRate: number;
+}
+
+export interface ICarStats {
+  totalCars: number;
+  totalPurchaseValue: number;
+  totalEstimatedValue: number;
+  averagePurchasePrice: number;
+  averageEstimatedValue: number;
+  averageMileage: number;
+  averageAge: number;
+}
+
+export interface IKPIInvestorReportData {
+  dateFrom: string;
+  dateTo: string;
+  summary: IKPIMetric[];
+  highlights: IKPIMetric[];
+  financial: {
+    stats: IFinancialStats;
+    latestMonth?: IFinancialReportItem;
+    previousMonth?: IFinancialReportItem;
+    revenueByType: Array<{ type: string; amount: number; percentage: number }>;
+    costsByType: Array<{ type: string; amount: number; percentage: number }>;
+  };
+  funnel: {
+    totalLeads: number;
+    convertedLeads: number;
+    declinedLeads: number;
+    conversionRate: number;
+    avgConversionDays: number;
+    averageRequestedAmount: number;
+    stageBreakdown: Array<{ stage: string; count: number; percentage: number }>;
+  };
+  technician: {
+    stats: FunnelTechnikStats;
+    declinedReasons: Array<{ reason: string; count: number; percentage: number }>;
+    statusBreakdown: Array<{ status: string; count: number; percentage: number }>;
+  };
+  fleet: {
+    stats: ICarStats;
+    topBrands: Array<{ brand: string; count: number; totalValue: number; percentage: number }>;
+    mileageBreakdown: Array<{ range: string; count: number; percentage: number }>;
+  };
+  risk: {
+    lateLeases: number;
+    unpaidInvoices: number;
+    debtCollectionCases: number;
+    paymentSuccessRate: number;
+  };
+}
