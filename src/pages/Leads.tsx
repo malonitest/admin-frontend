@@ -625,14 +625,14 @@ export function Leads() {
                     <td className="px-2 py-2 text-xs">
                       <div className="flex gap-1">
                         <button
-                          onClick={() => navigate(`/leads/${lead.id}`)}
+                          onClick={() => navigate(`/leads/${lead.id}/v2`)}
                           className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
                         >
                           Detail
                         </button>
                         {canOrder(lead.status) ? (
                           <button 
-                            onClick={() => navigate(`/leads/${lead.id}`)}
+                            onClick={() => navigate(`/leads/${lead.id}/v2`)}
                             className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
                           >
                             Objednávka

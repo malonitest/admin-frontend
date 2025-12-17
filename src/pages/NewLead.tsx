@@ -234,9 +234,26 @@ export function NewLead() {
     setSaving(true);
     try {
       const leadData = {
-        customer: { name: customerName, email: email || undefined, phone, address: { street: street || undefined, city: city || undefined, postalCode: postalCode || undefined }},
-        car: { vin: vin || undefined, brand: carBrand || undefined, model: carModel || undefined, year: carYear ? parseInt(carYear) : undefined, mileage: mileage ? parseInt(mileage) : undefined },
-        requestedAmount: requestedAmount ? parseInt(requestedAmount) : undefined, productType: productType || undefined, isCompany, status: 'CONCEPT',
+        customer: {
+          name: customerName,
+          email: email || undefined,
+          phone,
+          address: street || undefined,
+          city: city || undefined,
+          postalCode: postalCode || undefined,
+          customerType: isCompany ? 'COMPANY' : 'INDIVIDUAL',
+        },
+        car: {
+          VIN: vin || undefined,
+          brand: carBrand || undefined,
+          model: carModel || undefined,
+          registration: carYear ? parseInt(carYear) : undefined,
+          mileage: mileage ? parseInt(mileage) : undefined,
+        },
+        lease: {
+          leaseAmount: requestedAmount ? parseInt(requestedAmount) : undefined,
+        },
+        status: 'CONCEPT',
       };
       const response = await axiosClient.post('/leads', leadData);
       const leadId = response.data.id;
