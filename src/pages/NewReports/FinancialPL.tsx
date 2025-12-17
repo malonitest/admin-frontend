@@ -20,8 +20,27 @@ const Financial: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      // Calculate date range based on period
+      const now = new Date();
+      let dateFrom: Date;
+      let dateTo: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      
+      if (period === 'month') {
+        // Current month
+        dateFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      } else if (period === 'year') {
+        // Current year
+        dateFrom = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      } else {
+        // All time (last 5 years)
+        dateFrom = new Date(now.getFullYear() - 5, 0, 1, 0, 0, 0, 0);
+      }
+      
       const response = await axiosClient.get('/v1/stats/financial-report', {
-        params: { period }
+        params: { 
+          dateFrom: dateFrom.toISOString(),
+          dateTo: dateTo.toISOString()
+        }
       });
       
       setData(response.data);
