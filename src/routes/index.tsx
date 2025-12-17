@@ -25,7 +25,7 @@ import {
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
 import Leads from '@/pages/Leads';
-import NewLead from '@/pages/NewLead';
+import NewLeadV2 from '@/pages/NewLeadV2';
 import LeadDetail from '@/pages/LeadDetail';
 import LeadDetailV2 from '@/pages/LeadDetailV2';
 import ReportsCCFunnel1 from '@/pages/ReportsCCFunnel1';
@@ -63,7 +63,7 @@ export const router = createBrowserRouter([
     path: '/leads/new',
     element: (
       <ProtectedRoute>
-        <NewLead />
+        <NewLeadV2 />
       </ProtectedRoute>
     ),
   },
