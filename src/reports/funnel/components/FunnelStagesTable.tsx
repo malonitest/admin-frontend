@@ -4,8 +4,8 @@
  * Bez cestiny diakritiky
  */
 
-import type { IFunnelStageData, IDropOff } from '@/types/reporting';
-import { formatNumber, formatPercent, computeDropOff } from '../utils/formatters.js';
+import type { IFunnelStageData } from '@/types/reporting';
+import { formatNumber, formatPercent, computeDropOff } from '../utils/formatters';
 
 interface FunnelStagesTableProps {
   stages: IFunnelStageData[];

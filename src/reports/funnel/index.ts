@@ -2,11 +2,11 @@
  * Funnel Report Module Barrel Export
  */
 
-export { FunnelReportPage } from './FunnelReportPage.js';
-export { FunnelKPICards } from './components/FunnelKPICards.js';
-export { FunnelChart } from './components/FunnelChart.js';
-export { FunnelStagesTable } from './components/FunnelStagesTable.js';
-export { DeclinedReasonsSection } from './components/DeclinedReasonsSection.js';
-export { StageDeclinedReasons } from './components/StageDeclinedReasons.js';
-export { NotesSection } from './components/NotesSection.js';
-export { ActionItems } from './components/ActionItems.js';
+export { FunnelReportPage } from './FunnelReportPage';
+export { FunnelKPICards } from './components/FunnelKPICards';
+export { FunnelChart } from './components/FunnelChart';
+export { FunnelStagesTable } from './components/FunnelStagesTable';
+export { DeclinedReasonsSection } from './components/DeclinedReasonsSection';
+export { StageDeclinedReasons } from './components/StageDeclinedReasons';
+export { NotesSection } from './components/NotesSection';
+export { ActionItems } from './components/ActionItems';

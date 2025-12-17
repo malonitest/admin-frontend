@@ -5,7 +5,7 @@
  */
 
 import type { IFunnelStageData } from '@/types/reporting';
-import { getLatestNotes, formatDateTime, identifyBlockersFromNotes } from '../utils/formatters.js';
+import { getLatestNotes, formatDateTime, identifyBlockersFromNotes } from '../utils/formatters';
 
 interface NotesSectionProps {
   stages: IFunnelStageData[];

@@ -5,7 +5,7 @@
  */
 
 import type { IFunnelReportData } from '@/types/reporting';
-import { computeDropOff, getLargestDropOff, generateActionItems } from '../utils/formatters.js';
+import { computeDropOff, getLargestDropOff, generateActionItems } from '../utils/formatters';
 
 interface ActionItemsProps {
   data: IFunnelReportData;

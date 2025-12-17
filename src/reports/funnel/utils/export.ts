@@ -4,14 +4,14 @@
  * Bez cestiny diakritiky
  */
 
-import { generateExportFilename, exportToJSON } from './formatters.js';
+import { generateExportFilename, exportToJSON } from './formatters';
 import type { IFunnelReportData } from '@/types/reporting';
 
 /**
  * Export reportu do PDF pomocí browser print API
  */
 export async function exportToPDF(
-  data: IFunnelReportData
+  _data: IFunnelReportData
 ): Promise<void> {
   // Skrytí ovládacích prvkù
   const controls = document.querySelectorAll('.no-print');

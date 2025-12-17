@@ -5,7 +5,7 @@
  */
 
 import type { IFunnelStageData } from '@/types/reporting';
-import { formatNumber, formatPercent } from '../utils/formatters.js';
+import { formatNumber, formatPercent } from '../utils/formatters';
 
 interface StageDeclinedReasonsProps {
   stages: IFunnelStageData[];

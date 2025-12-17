@@ -5,7 +5,7 @@
  */
 
 import type { IFunnelReportData } from '@/types/reporting';
-import { formatNumber, formatPercent } from '../utils/formatters.js';
+import { formatNumber, formatPercent } from '../utils/formatters';
 
 interface FunnelKPICardsProps {
   data: IFunnelReportData;

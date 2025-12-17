@@ -5,7 +5,7 @@
  */
 
 import type { IFunnelDeclinedReason } from '@/types/reporting';
-import { formatNumber, formatPercent, validatePercentages } from '../utils/formatters.js';
+import { formatNumber, formatPercent, validatePercentages } from '../utils/formatters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface DeclinedReasonsSectionProps {

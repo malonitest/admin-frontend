@@ -12,15 +12,15 @@ import {
   formatDateTime, 
   normalizeStages,
   computeConversionRate 
-} from '../utils/formatters.js';
-import { exportToPDF, exportToJSONFile } from '../utils/export.js';
-import { FunnelKPICards } from '../components/FunnelKPICards.js';
-import { FunnelChart } from '../components/FunnelChart.js';
-import { FunnelStagesTable } from '../components/FunnelStagesTable.js';
-import { DeclinedReasonsSection } from '../components/DeclinedReasonsSection.js';
-import { StageDeclinedReasons } from '../components/StageDeclinedReasons.js';
-import { NotesSection } from '../components/NotesSection.js';
-import { ActionItems } from '../components/ActionItems.js';
+} from '../utils/formatters';
+import { exportToPDF, exportToJSONFile } from '../utils/export';
+import { FunnelKPICards } from '../components/FunnelKPICards';
+import { FunnelChart } from '../components/FunnelChart';
+import { FunnelStagesTable } from '../components/FunnelStagesTable';
+import { DeclinedReasonsSection } from '../components/DeclinedReasonsSection';
+import { StageDeclinedReasons } from '../components/StageDeclinedReasons';
+import { NotesSection } from '../components/NotesSection';
+import { ActionItems } from '../components/ActionItems';
 import { FileDown, Calendar, Download } from 'lucide-react';
 import '../styles/print.css';
 
