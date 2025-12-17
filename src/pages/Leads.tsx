@@ -9,6 +9,7 @@ interface Lead {
   createdAt: string;
   updatedAt?: string;
   statusUpdatedAt?: string;
+  noteMessage?: string;
   customer?: {
     name?: string;
     phone?: string;
@@ -237,6 +238,7 @@ export function Leads() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(() => parseInt(searchParams.get('page') || '1'));
+  const [limit, setLimit] = useState(() => parseInt(searchParams.get('limit') || '10'));
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   
@@ -257,13 +259,14 @@ export function Leads() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
+    if (limit !== 10) params.set('limit', limit.toString());
     if (searchQuery) params.set('search', searchQuery);
     if (appliedFilters.leadState) params.set('leadState', appliedFilters.leadState);
     if (appliedFilters.leadSubState) params.set('leadSubState', appliedFilters.leadSubState);
     if (appliedFilters.periodFilterType) params.set('periodFilterType', appliedFilters.periodFilterType);
     if (appliedFilters.dealerId) params.set('dealerId', appliedFilters.dealerId);
     setSearchParams(params, { replace: true });
-  }, [page, searchQuery, appliedFilters, setSearchParams]);
+  }, [page, limit, searchQuery, appliedFilters, setSearchParams]);
 
   const debouncedSearch = useDebounce(searchQuery, 400);
 
@@ -279,12 +282,12 @@ export function Leads() {
     fetchDealers();
   }, []);
 
-  const fetchLeads = useCallback(async () => {
+  const fetchLeads = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const params: Record<string, any> = { 
         page, 
-        limit: 10, 
+        limit, 
         sortBy: 'createdAt:desc' 
       };
       
@@ -306,10 +309,17 @@ export function Leads() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, appliedFilters]);
+  }, [page, limit, debouncedSearch, appliedFilters]);
 
   useEffect(() => {
     fetchLeads();
+    
+    // Auto-refresh every 30 seconds (silent to avoid spinner flicker)
+    const refreshInterval = setInterval(() => {
+      fetchLeads(true);
+    }, 30000);
+    
+    return () => clearInterval(refreshInterval);
   }, [fetchLeads]);
 
   useEffect(() => {
@@ -357,6 +367,10 @@ export function Leads() {
   const canOrder = (status: string) => {
     return ['SUPERVISOR_APPROVED', 'CUSTOMER_APPROVED', 'SALES_APPROVED', 'FINAL_APPROVAL'].includes(status);
   };
+  
+  const isDeclined = (status: string): boolean => {
+    return status === 'DECLINED';
+  };
 
   const getDealerName = (lead: Lead): string => {
     // Use lastModifiedBy (last dealer who made changes), fallback to dealer
@@ -380,7 +394,10 @@ export function Leads() {
 
   const getCustomerPhone = (lead: Lead): string => {
     const customer = getFirst(lead.customer);
-    return cleanString(customer?.phone);
+    if (!customer?.phone) return '-';
+    // Strip +420 area code and trim
+    const phone = customer.phone.replace(/^\+420\s*/, '').trim();
+    return phone || '-';
   };
 
   const getCarDisplay = (lead: Lead): string => {
@@ -396,6 +413,21 @@ export function Leads() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+  };
+  
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+  };
+  
+  const handleRestoreLead = async (leadId: string) => {
+    try {
+      await axiosClient.post(`/leads/${leadId}/restoreLead`);
+      await fetchLeads(true);
+    } catch (err: any) {
+      console.error('Failed to restore lead:', err);
+      alert('Chyba při obnovení leadu: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   if (error) {
@@ -466,6 +498,26 @@ export function Leads() {
           <PlusIcon className="w-5 h-5" />
           <span>Nový lead</span>
         </button>
+      </div>
+      
+      {/* Page size selector */}
+      <div className="flex items-center gap-2 text-sm text-gray-600">
+        <span>Počet na stránku:</span>
+        <div className="flex gap-1">
+          {[10, 20, 50].map(size => (
+            <button
+              key={size}
+              onClick={() => handleLimitChange(size)}
+              className={`px-3 py-1 rounded border ${
+                limit === size 
+                  ? 'bg-red-600 text-white border-red-600' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter Modal */}
@@ -564,15 +616,16 @@ export function Leads() {
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Substatus</th>
                 <th className="w-[70px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zdroj</th>
-                <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
+                <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zadal</th>
-                <th className="w-[140px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Poznámky</th>
+                <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="px-2 py-8 text-center">
+                  <td colSpan={12} className="px-2 py-8 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
                     </div>
@@ -580,7 +633,7 @@ export function Leads() {
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-2 py-8 text-center text-gray-500">
+                  <td colSpan={12} className="px-2 py-8 text-center text-gray-500">
                     {searchQuery || hasActiveFilters ? 'Žádné výsledky pro zadaný dotaz' : 'Žádné leady'}
                   </td>
                 </tr>
@@ -616,20 +669,22 @@ export function Leads() {
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
                       {getSourceDisplay(lead)}
                     </td>
-                    <td className="px-2 py-2 text-xs text-gray-900 break-words">
-                      {getDealerName(lead)}
+                    <td className="px-2 py-2 text-xs">
+                      <div className="text-gray-900 break-words">{getDealerName(lead)}</div>
+                      {lead.updatedAt && (
+                        <div className="text-[10px] text-gray-400 mt-0.5">
+                          {formatDateTime(lead.updatedAt)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
                       {getAuthorName(lead)}
                     </td>
+                    <td className="px-2 py-2 text-xs text-gray-500 break-words">
+                      {lead.noteMessage ? cleanString(lead.noteMessage) : '-'}
+                    </td>
                     <td className="px-2 py-2 text-xs">
                       <div className="flex gap-1">
-                        <button
-                          onClick={() => navigate(`/leads/${lead.id}/v2`)}
-                          className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
-                        >
-                          Detail
-                        </button>
                         {canOrder(lead.status) ? (
                           <button 
                             onClick={() => navigate(`/leads/${lead.id}/v2`)}
@@ -637,11 +692,14 @@ export function Leads() {
                           >
                             Objednávka
                           </button>
-                        ) : (
-                          <button className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">
+                        ) : isDeclined(lead.status) ? (
+                          <button 
+                            onClick={() => handleRestoreLead(lead.id)}
+                            className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                          >
                             Obnovit
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>
