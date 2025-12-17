@@ -292,3 +292,44 @@ export interface IKPIInvestorReportData {
     paymentSuccessRate: number;
   };
 }
+
+// Funnel General Report Types
+
+export interface IFunnelNote {
+  text: string;
+  date: Date;
+  author: string;
+}
+
+export interface IFunnelDeclinedReason {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
+export interface IFunnelStageData {
+  stage: string;
+  count: number;
+  percentage: number;
+  declinedReasons?: IFunnelDeclinedReason[];
+  notes?: IFunnelNote[];
+}
+
+export interface IFunnelReportData {
+  dateFrom: Date;
+  dateTo: Date;
+  stages: IFunnelStageData[];
+  totalLeads: number;
+  convertedLeads: number;
+  conversionRate: number;
+  declinedLeads: number;
+  declinedReasons: IFunnelDeclinedReason[];
+  averageTimeInStages: Record<string, number>;
+}
+
+export interface IDropOff {
+  from: string;
+  to: string;
+  dropCount: number;
+  dropRate: number;
+}

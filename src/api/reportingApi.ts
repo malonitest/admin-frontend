@@ -7,6 +7,7 @@ import type {
   ReportingFilters,
   FunnelTechnikReportData,
   IKPIInvestorReportData,
+  IFunnelReportData,
 } from '@/types/reporting';
 
 export const reportingApi = {
@@ -140,6 +141,23 @@ export const reportingApi = {
     
     const response = await axiosClient.get<IKPIInvestorReportData>(
       '/stats/kpi-report',
+      { params }
+    );
+    return response.data;
+  },
+
+  /**
+   * Funnel General Report - prehled funnelu podle stavu leadu
+   */
+  async getFunnelReport(filters: ReportingFilters): Promise<IFunnelReportData> {
+    const params: Record<string, any> = {};
+    
+    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+    if (filters.dateTo) params.dateTo = filters.dateTo;
+    if (filters.period) params.period = filters.period;
+    
+    const response = await axiosClient.get<IFunnelReportData>(
+      '/stats/funnel',
       { params }
     );
     return response.data;

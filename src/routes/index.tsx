@@ -35,6 +35,7 @@ import Reports2Financial from '@/pages/Reports2Financial';
 import Reports2FunnelTechnik from '@/pages/Reports2FunnelTechnik';
 import Reports2CarStats from '@/pages/Reports2CarStats';
 import { InvestorReport } from '@/reports/investor';
+import { FunnelReportPage } from '@/reports/funnel';
 
 // Placeholder komponenty pro chybějící stránky
 // eslint-disable-next-line react-refresh/only-export-components
@@ -209,7 +210,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'new-reports/funnel',
-        element: <PlaceholderPage title="Funnel General" />,
+        element: <FunnelReportPage />,
       },
       // Investor Report - Professional KPI Report
       {

@@ -1,0 +1,154 @@
+/**
+ * Funnel Report - Print Styles
+ * A4 format, professional print layout
+ */
+
+@media print {
+  /* Základní nastavení pro A4 */
+  @page {
+    size: A4;
+    margin: 15mm 10mm;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Skrytí elementù pøi tisku */
+  .no-print,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Hlavní container */
+  .funnel-report-container {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+
+  /* Zabránìní zlomùm uvnitø komponent */
+  .funnel-kpi-cards,
+  .funnel-chart,
+  .funnel-stages-table,
+  .declined-reasons-section,
+  .stage-declined-reasons,
+  .notes-section,
+  .action-items {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Hlavièka na každé stránce */
+  .report-header {
+    display: block;
+    page-break-after: avoid;
+  }
+
+  /* Tabulky */
+  table {
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tbody {
+    display: table-row-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Grafy */
+  .recharts-wrapper,
+  .recharts-surface {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* KPI Cards grid */
+  .funnel-kpi-cards .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* Font sizes */
+  h1 {
+    font-size: 24pt;
+  }
+
+  h2 {
+    font-size: 18pt;
+    margin-top: 12pt;
+    margin-bottom: 6pt;
+  }
+
+  h3 {
+    font-size: 14pt;
+  }
+
+  body,
+  p,
+  td,
+  th {
+    font-size: 10pt;
+    line-height: 1.3;
+  }
+
+  /* Stíny a rámy */
+  .shadow-sm,
+  .shadow,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  .rounded-lg {
+    border: 1px solid #e5e7eb;
+  }
+
+  /* Barvy */
+  .bg-white {
+    background-color: white !important;
+  }
+
+  .bg-gray-50 {
+    background-color: #f9fafb !important;
+  }
+
+  .text-gray-900 {
+    color: #111827 !important;
+  }
+
+  /* Footer na každé stránce */
+  .report-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #6b7280;
+    padding: 5mm 0;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Zarovnání stránek */
+  body.printing {
+    background: white;
+  }
+
+  /* Odstranìní margin u grafu pro tisk */
+  .recharts-wrapper {
+    margin: 0 !important;
+  }
+}
+
+/* Zobrazení pøi pøípravì na tisk */
+body.printing .no-print {
+  display: none !important;
+}
