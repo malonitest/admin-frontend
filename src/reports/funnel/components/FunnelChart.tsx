@@ -4,7 +4,7 @@
  * Bez cestiny diakritiky
  */
 
-import type { IFunnelStageData } from '@/types/reporting';
+import type { IFunnelStageData, IDropOff } from '@/types/reporting';
 import { formatNumber, formatPercent, computeDropOff, getLargestDropOff } from '../utils/formatters';
 
 interface FunnelChartProps {

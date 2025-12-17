@@ -4,7 +4,7 @@
  * Bez cestiny diakritiky
  */
 
-import type { IFunnelStageData, IDropOff, IFunnelNote, IFunnelDeclinedReason } from '@/types/reporting';
+import type { IFunnelStageData, IDropOff, IFunnelNote } from '@/types/reporting';
 
 /**
  * Formátování data do èeského formátu
