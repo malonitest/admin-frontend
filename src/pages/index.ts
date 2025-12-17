@@ -13,4 +13,10 @@ export { default as Reports3KPI } from './Reports3KPI';
 export { default as Reports3Financial } from './Reports3Financial';
 export { default as Reports3Funnel } from './Reports3Funnel';
 export { default as Reports3Cars } from './Reports3Cars';
-export { NewReportsKPIInvestor, NewReportsFinancial, NewReportsFunnelTechnik, NewReportsCarStats } from './NewReports';
+export { 
+  NewReportsKPIInvestor, 
+  NewReportsFinancial, 
+  NewReportsFunnelTechnik, 
+  NewReportsCarStats,
+  NewReportsMarketingCosts 
+} from './NewReports';

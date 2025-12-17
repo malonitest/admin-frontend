@@ -19,7 +19,8 @@ import {
   NewReportsKPIInvestor,
   NewReportsFinancial,
   NewReportsFunnelTechnik,
-  NewReportsCarStats
+  NewReportsCarStats,
+  NewReportsMarketingCosts
 } from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
@@ -196,6 +197,10 @@ export const router = createBrowserRouter([
       {
         path: 'new-reports/car-stats',
         element: <NewReportsCarStats />,
+      },
+      {
+        path: 'new-reports/marketing-costs',
+        element: <NewReportsMarketingCosts />,
       },
       {
         path: 'new-reports/admin-dashboard',
