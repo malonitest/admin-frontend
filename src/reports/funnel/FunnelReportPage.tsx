@@ -12,17 +12,17 @@ import {
   formatDateTime, 
   normalizeStages,
   computeConversionRate 
-} from '../utils/formatters';
-import { exportToPDF, exportToJSONFile } from '../utils/export';
-import { FunnelKPICards } from '../components/FunnelKPICards';
-import { FunnelChart } from '../components/FunnelChart';
-import { FunnelStagesTable } from '../components/FunnelStagesTable';
-import { DeclinedReasonsSection } from '../components/DeclinedReasonsSection';
-import { StageDeclinedReasons } from '../components/StageDeclinedReasons';
-import { NotesSection } from '../components/NotesSection';
-import { ActionItems } from '../components/ActionItems';
+} from './utils/formatters';
+import { exportToPDF, exportToJSONFile } from './utils/export';
+import { FunnelKPICards } from './components/FunnelKPICards';
+import { FunnelChart } from './components/FunnelChart';
+import { FunnelStagesTable } from './components/FunnelStagesTable';
+import { DeclinedReasonsSection } from './components/DeclinedReasonsSection';
+import { StageDeclinedReasons } from './components/StageDeclinedReasons';
+import { NotesSection } from './components/NotesSection';
+import { ActionItems } from './components/ActionItems';
 import { FileDown, Calendar, Download } from 'lucide-react';
-import '../styles/print.css';
+import './styles/print.css';
 
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';
 
