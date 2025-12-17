@@ -75,7 +75,8 @@ interface Lead {
 }
 
 interface Dealer {
-  id: string;
+  id?: string;
+  _id?: string;
   name?: string;
   user?: {
     name: string;
@@ -219,7 +220,7 @@ export function LeadDetail() {
       adminFee: leadData.lease?.adminFee?.toString() || '5000',
       assignedOZ:
         typeof leadData.assignedSalesManager === 'object'
-          ? leadData.assignedSalesManager?.id
+          ? (leadData.assignedSalesManager?.id || (leadData.assignedSalesManager as any)?._id || '')
           : (leadData.assignedSalesManager || ''),
       ozVisitDate: '',
       ozVisitTime: '',
@@ -1072,11 +1073,14 @@ export function LeadDetail() {
                     const name = dealer.name || dealer.user?.name || '';
                     return name.includes('Martin Dyntar') || name.includes('Michael Dyntar');
                   })
-                  .map((dealer, index) => (
-                    <option key={dealer.id || `dealer-${index}`} value={dealer.id}>
-                      {dealer.name || dealer.user?.name || 'Neznámý'}
-                    </option>
-                  ))}
+                  .map((dealer, index) => {
+                    const dealerId = dealer.id || dealer._id || '';
+                    return (
+                      <option key={dealerId || `dealer-${index}`} value={dealerId}>
+                        {dealer.name || dealer.user?.name || 'Neznámý'}
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
