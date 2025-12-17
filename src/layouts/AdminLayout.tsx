@@ -31,6 +31,7 @@ const navigation: NavItem[] = [
       { name: 'Investor Report', href: '/new-reports/investor' },
       { name: 'KPI Investor', href: '/new-reports/kpi' },
       { name: 'Financial P/L', href: '/new-reports/financial' },
+      { name: 'CFO P/L Report', href: '/new-reports/financial-pl' },
       { name: 'Funnel Technik', href: '/new-reports/funnel-technik' },
       { name: 'Car Stats', href: '/new-reports/car-stats' },
       { name: 'Admin Dashboard', href: '/new-reports/admin-dashboard' },
@@ -379,8 +380,8 @@ export function AdminLayout() {
           <nav className="flex-1 mt-2 px-2 overflow-y-auto">
             {navigation.map((item) => renderNavItem(item, false))}
           </nav>
-        </div>
-      </div>
+        </div
+      ></div>
 
       {/* Main content */}
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-56'}`}>

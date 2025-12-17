@@ -36,6 +36,7 @@ import Reports2FunnelTechnik from '@/pages/Reports2FunnelTechnik';
 import Reports2CarStats from '@/pages/Reports2CarStats';
 import { InvestorReport } from '@/reports/investor';
 import { FunnelReportPage } from '@/reports/funnel';
+import FinancialPL from '@/pages/NewReports/FinancialPL';
 
 // Placeholder komponenty pro chybějící stránky
 // eslint-disable-next-line react-refresh/only-export-components
@@ -216,6 +217,11 @@ export const router = createBrowserRouter([
       {
         path: 'new-reports/investor',
         element: <InvestorReport />,
+      },
+      // CFO P/L Report - NEW
+      {
+        path: 'new-reports/financial-pl',
+        element: <FinancialPL />,
       },
       {
         path: 'calculator',
