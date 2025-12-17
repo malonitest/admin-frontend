@@ -295,10 +295,10 @@ export function LeadDetail() {
     bankAccount: '',
     rentDuration: '',
     monthlyPayment: '',
+    yearlyInterestRate: '',
     yearlyInsuranceFee: '',
     payoutInCash: false,
     adminFee: '',
-    monthlyRent: '',
     // Assignment
     assignedOZ: '',
     ozVisitDate: '',
@@ -345,10 +345,10 @@ export function LeadDetail() {
           bankAccount: leadData.customer?.bankAccount || '',
           rentDuration: leadData.lease?.rentDuration?.toString() || '',
           monthlyPayment: leadData.lease?.monthlyPayment?.toString() || '',
+          yearlyInterestRate: leadData.lease?.yearlyInterestRate?.toString() || '',
           yearlyInsuranceFee: leadData.lease?.yearlyInsuranceFee?.toString() || '',
           payoutInCash: leadData.lease?.payoutInCash || false,
           adminFee: leadData.lease?.adminFee?.toString() || '5000',
-          monthlyRent: '',
           assignedOZ: typeof leadData.assignedSalesManager === 'object' ? leadData.assignedSalesManager?.id : leadData.assignedSalesManager || '',
           ozVisitDate: '',
           ozVisitTime: '',
@@ -375,6 +375,23 @@ export function LeadDetail() {
   const totalRent = rentDurationMonths > 0 && monthlyPayment > 0
     ? (rentDurationMonths * monthlyPayment) + totalInsuranceForDuration
     : 0;
+
+  const normalizeDecimal = (value: string): string => value.replace(',', '.').trim();
+
+  const handleCalculateRent = () => {
+    const leaseAmount = Number.parseInt(formData.requestedAmount || '', 10) || 0;
+    const percent = Number.parseFloat(normalizeDecimal(formData.yearlyInterestRate || '')) || 0;
+    const months = Number.parseInt(formData.rentDuration || '', 10) || 0;
+
+    if (leaseAmount <= 0 || percent <= 0 || months <= 0) {
+      alert('Vyplňte prosím: Žádaná částka, Výše nájemného (%) a Délka smlouvy (v měsících).');
+      return;
+    }
+
+    // Interpret "%" as yearly rate: monthlyPayment = (leaseAmount * percent) / 12
+    const calculatedMonthlyPayment = Math.round((leaseAmount * (percent / 100)) / 12);
+    handleInputChange('monthlyPayment', String(calculatedMonthlyPayment));
+  };
 
   const showCompanyFields =
     formData.customerType === 'COMPANY' ||
@@ -416,6 +433,7 @@ export function LeadDetail() {
           leaseAmount: formData.requestedAmount ? parseInt(formData.requestedAmount) : undefined,
           rentDuration: formData.rentDuration ? parseInt(formData.rentDuration) : undefined,
           monthlyPayment: formData.monthlyPayment ? parseInt(formData.monthlyPayment) : undefined,
+          yearlyInterestRate: formData.yearlyInterestRate ? Number.parseFloat(normalizeDecimal(formData.yearlyInterestRate)) : undefined,
           yearlyInsuranceFee: formData.yearlyInsuranceFee ? parseInt(formData.yearlyInsuranceFee) : undefined,
           payoutInCash: formData.payoutInCash,
           adminFee: formData.adminFee ? parseInt(formData.adminFee) : undefined,
@@ -943,6 +961,8 @@ export function LeadDetail() {
               <label className="block text-xs text-gray-500 mb-1">Výše nájemného (%)</label>
               <input 
                 type="text" 
+                value={formData.yearlyInterestRate}
+                onChange={(e) => handleInputChange('yearlyInterestRate', e.target.value)}
                 placeholder="Výše nájemného (%)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none" 
               />
@@ -995,6 +1015,14 @@ export function LeadDetail() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-50"
               />
             </div>
+
+            <button
+              type="button"
+              onClick={handleCalculateRent}
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Vypočítat nájem
+            </button>
 
             {/* Assigned Technician */}
             <div>
