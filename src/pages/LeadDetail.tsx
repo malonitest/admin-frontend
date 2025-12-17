@@ -184,6 +184,48 @@ export function LeadDetail() {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isDragging, setIsDragging] = useState<string | null>(null); // Track which drop zone is active
 
+  const hydrateFormDataFromLead = (leadData: any) => {
+    setFormData({
+      customerType: leadData.customer?.customerType || '',
+      companyID: leadData.customer?.companyID || '',
+      companyName: leadData.customer?.companyName || '',
+      customerName: leadData.customer?.name || '',
+      email: leadData.customer?.email || '',
+      phone: leadData.customer?.phone || '',
+      birthday: leadData.customer?.birthday ? String(leadData.customer.birthday).split('T')[0] : '',
+      birthNumber: leadData.customer?.birthNumber || '',
+      address: leadData.customer?.address || '',
+      city: leadData.customer?.city || '',
+      postalCode: leadData.customer?.postalCode || '',
+      enableAddress2: leadData.customer?.enableAddress2 || false,
+      address2: leadData.customer?.address2 || '',
+      city2: leadData.customer?.city2 || '',
+      postalCode2: leadData.customer?.postalCode2 || '',
+      salesVisitAt: leadData.salesVisitAt ? String(leadData.salesVisitAt).split('T')[0] : '',
+      vin: leadData.car?.VIN || '',
+      brand: leadData.car?.brand || '',
+      model: leadData.car?.model || '',
+      customerModel: leadData.car?.model || '',
+      registration: leadData.car?.registration?.toString() || '',
+      carSPZ: leadData.car?.carSPZ || '',
+      mileage: leadData.car?.mileage?.toString() || '',
+      requestedAmount: leadData.lease?.leaseAmount?.toString() || '',
+      bankAccount: leadData.customer?.bankAccount || '',
+      rentDuration: leadData.lease?.rentDuration?.toString() || '',
+      monthlyPayment: leadData.lease?.monthlyPayment?.toString() || '',
+      yearlyInterestRate: leadData.lease?.yearlyInterestRate?.toString() || '',
+      yearlyInsuranceFee: leadData.lease?.yearlyInsuranceFee?.toString() || '',
+      payoutInCash: leadData.lease?.payoutInCash || false,
+      adminFee: leadData.lease?.adminFee?.toString() || '5000',
+      assignedOZ:
+        typeof leadData.assignedSalesManager === 'object'
+          ? leadData.assignedSalesManager?.id
+          : (leadData.assignedSalesManager || ''),
+      ozVisitDate: '',
+      ozVisitTime: '',
+    });
+  };
+
   // Document category to documentType mapping according to backend API
   const getDocumentType = (category: string): string => {
     const mapping: Record<string, string> = {
@@ -316,43 +358,7 @@ export function LeadDetail() {
         setLead(leadData);
         setDealers(dealersRes.data.results || []);
 
-        // Populate form data
-        setFormData({
-          customerType: leadData.customer?.customerType || '',
-          companyID: leadData.customer?.companyID || '',
-          companyName: leadData.customer?.companyName || '',
-          customerName: leadData.customer?.name || '',
-          email: leadData.customer?.email || '',
-          phone: leadData.customer?.phone || '',
-          birthday: leadData.customer?.birthday ? leadData.customer.birthday.split('T')[0] : '',
-          birthNumber: leadData.customer?.birthNumber || '',
-          address: leadData.customer?.address || '',
-          city: leadData.customer?.city || '',
-          postalCode: leadData.customer?.postalCode || '',
-          enableAddress2: leadData.customer?.enableAddress2 || false,
-          address2: leadData.customer?.address2 || '',
-          city2: leadData.customer?.city2 || '',
-          postalCode2: leadData.customer?.postalCode2 || '',
-          salesVisitAt: leadData.salesVisitAt ? leadData.salesVisitAt.split('T')[0] : '',
-          vin: leadData.car?.VIN || '',
-          brand: leadData.car?.brand || '',
-          model: '',
-          customerModel: leadData.car?.model || '',
-          registration: leadData.car?.registration?.toString() || '',
-          carSPZ: leadData.car?.carSPZ || '',
-          mileage: leadData.car?.mileage?.toString() || '',
-          requestedAmount: leadData.lease?.leaseAmount?.toString() || '',
-          bankAccount: leadData.customer?.bankAccount || '',
-          rentDuration: leadData.lease?.rentDuration?.toString() || '',
-          monthlyPayment: leadData.lease?.monthlyPayment?.toString() || '',
-          yearlyInterestRate: leadData.lease?.yearlyInterestRate?.toString() || '',
-          yearlyInsuranceFee: leadData.lease?.yearlyInsuranceFee?.toString() || '',
-          payoutInCash: leadData.lease?.payoutInCash || false,
-          adminFee: leadData.lease?.adminFee?.toString() || '5000',
-          assignedOZ: typeof leadData.assignedSalesManager === 'object' ? leadData.assignedSalesManager?.id : leadData.assignedSalesManager || '',
-          ozVisitDate: '',
-          ozVisitTime: '',
-        });
+        hydrateFormDataFromLead(leadData);
       } catch (err) {
         console.error('Failed to fetch lead:', err);
       } finally {
@@ -402,7 +408,7 @@ export function LeadDetail() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axiosClient.patch(`/leads/${id}`, {
+      const res = await axiosClient.patch(`/leads/${id}`, {
         customer: {
           customerType: formData.customerType || undefined,
           companyID: showCompanyFields ? (formData.companyID || undefined) : undefined,
@@ -441,6 +447,18 @@ export function LeadDetail() {
         assignedSalesManager: formData.assignedOZ || undefined,
         salesVisitAt: formData.salesVisitAt || undefined,
       });
+
+      if (res?.data && typeof res.data === 'object' && 'success' in res.data && res.data.success === false) {
+        alert(res.data.message || 'Nepodařilo se uložit');
+        return;
+      }
+
+      const updatedLead = res?.data?.data ?? res?.data;
+      if (updatedLead) {
+        setLead(updatedLead);
+        hydrateFormDataFromLead(updatedLead);
+      }
+
       alert('Uloženo');
     } catch (err) {
       console.error('Failed to save:', err);
