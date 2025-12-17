@@ -1,0 +1,13 @@
+[1mdiff --git a/package.json b/package.json[m
+[1mindex eb0c4e7..b8f16fa 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -5,7 +5,7 @@[m
+   "type": "module",[m
+   "scripts": {[m
+     "dev": "vite",[m
+[31m-    "build": "tsc -b && vite build --mode production",[m
+[32m+[m[32m    "build": "vite build --mode production",[m
+     "lint": "eslint .",[m
+     "preview": "vite preview",[m
+     "test": "vitest",[m

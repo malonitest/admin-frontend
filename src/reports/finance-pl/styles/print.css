@@ -1,0 +1,403 @@
+/**
+ * Print CSS for CFO P/L Report
+ * A4 page format with headers and footers
+ * No Czech diacritics allowed
+ */
+
+@media print {
+  /* Reset page margins */
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm;
+  }
+  
+  /* Global print styles */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Hide non-essential elements */
+  .no-print,
+  .no-print-hide,
+  button,
+  .filter-section,
+  .export-buttons,
+  .table-hint {
+    display: none !important;
+  }
+  
+  /* Page container */
+  .cfo-pl-report {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  
+  /* Report header */
+  .report-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: white;
+    border-bottom: 2px solid #333;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .report-header h1 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: bold;
+  }
+  
+  .report-header .report-meta {
+    text-align: right;
+    font-size: 10px;
+    color: #666;
+  }
+  
+  /* Report footer */
+  .report-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: white;
+    border-top: 1px solid #ccc;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #666;
+  }
+  
+  .report-footer::after {
+    content: "Strana " counter(page);
+  }
+  
+  /* Content area */
+  .report-content {
+    margin-top: 80px;
+    margin-bottom: 60px;
+  }
+  
+  /* KPI Cards - grid layout for print */
+  .kpi-cards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+  
+  .kpi-card {
+    border: 1px solid #ddd;
+    padding: 10px;
+    background: #f9f9f9 !important;
+    page-break-inside: avoid;
+  }
+  
+  .kpi-card .kpi-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+  }
+  
+  .kpi-card .kpi-title {
+    font-size: 10px;
+    color: #666 !important;
+    margin-bottom: 5px;
+  }
+  
+  .kpi-card .kpi-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #000 !important;
+  }
+  
+  .kpi-card .kpi-subtitle {
+    font-size: 9px;
+    color: #666 !important;
+  }
+  
+  /* Sections */
+  .table-section,
+  .chart-section {
+    margin-bottom: 30px;
+    page-break-inside: avoid;
+  }
+  
+  .table-section h2,
+  .chart-section h2 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+  }
+  
+  /* Tables */
+  .financial-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8px;
+    page-break-inside: auto;
+  }
+  
+  .financial-table thead {
+    display: table-header-group;
+    background: #f0f0f0 !important;
+  }
+  
+  .financial-table thead th {
+    padding: 5px 3px;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    background: #e0e0e0 !important;
+  }
+  
+  .financial-table thead th.group-header {
+    background: #d0d0d0 !important;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  .financial-table thead th.sub-header {
+    background: #e8e8e8 !important;
+    font-size: 7px;
+  }
+  
+  .financial-table tbody tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  .financial-table tbody td {
+    padding: 4px 3px;
+    border: 1px solid #ddd;
+  }
+  
+  .financial-table tbody tr:nth-child(even) {
+    background: #f9f9f9 !important;
+  }
+  
+  .financial-table tbody tr.negative-profit {
+    background: #ffe0e0 !important;
+  }
+  
+  .financial-table tbody td.amount {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .financial-table tbody td.count {
+    text-align: center;
+  }
+  
+  .financial-table tbody td.positive {
+    color: #006600 !important;
+    font-weight: bold;
+  }
+  
+  .financial-table tbody td.negative {
+    color: #cc0000 !important;
+    font-weight: bold;
+  }
+  
+  .financial-table tbody td.warning {
+    color: #cc6600 !important;
+  }
+  
+  .financial-table tfoot {
+    display: table-footer-group;
+    background: #f0f0f0 !important;
+  }
+  
+  .financial-table tfoot tr {
+    page-break-inside: avoid;
+  }
+  
+  .financial-table tfoot td {
+    padding: 5px 3px;
+    border: 1px solid #ccc;
+    font-weight: bold;
+    background: #e0e0e0 !important;
+  }
+  
+  .financial-table tfoot tr.total-row {
+    background: #d0d0d0 !important;
+  }
+  
+  .financial-table tfoot tr.avg-row {
+    background: #e8e8e8 !important;
+    font-style: italic;
+  }
+  
+  /* Charts - hide or simplify */
+  .chart-section canvas {
+    max-height: 200px !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Validation warnings */
+  .validation-warning {
+    background: #fff3cd !important;
+    border: 1px solid #ffc107;
+    padding: 10px;
+    margin-bottom: 15px;
+    page-break-inside: avoid;
+  }
+  
+  .validation-warning h3 {
+    font-size: 11px;
+    color: #856404 !important;
+    margin: 0 0 5px 0;
+  }
+  
+  .validation-warning ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 9px;
+    color: #856404 !important;
+  }
+  
+  /* CFO Insights */
+  .cfo-insights {
+    page-break-before: always;
+    page-break-inside: avoid;
+  }
+  
+  .cfo-insights h2 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .cfo-insights ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .cfo-insights li {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-left: 3px solid #333;
+    background: #f9f9f9 !important;
+    font-size: 9px;
+    page-break-inside: avoid;
+  }
+  
+  .cfo-insights li.high-priority {
+    border-left-color: #cc0000 !important;
+    background: #ffe0e0 !important;
+  }
+  
+  .cfo-insights li.medium-priority {
+    border-left-color: #cc6600 !important;
+    background: #fff3cd !important;
+  }
+  
+  /* Page breaks */
+  .page-break {
+    page-break-before: always;
+  }
+  
+  .no-break {
+    page-break-inside: avoid;
+  }
+  
+  /* Invoice and Payment tables */
+  .invoices-section,
+  .payments-section {
+    page-break-before: always;
+  }
+  
+  .invoices-table,
+  .payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8px;
+  }
+  
+  .invoices-table th,
+  .payments-table th {
+    padding: 5px;
+    text-align: left;
+    background: #e0e0e0 !important;
+    border: 1px solid #ccc;
+  }
+  
+  .invoices-table td,
+  .payments-table td {
+    padding: 4px;
+    border: 1px solid #ddd;
+  }
+  
+  /* Breakdown sections */
+  .breakdown-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  
+  .breakdown-card {
+    border: 1px solid #ddd;
+    padding: 10px;
+  }
+  
+  .breakdown-card h3 {
+    font-size: 11px;
+    margin: 0 0 10px 0;
+  }
+  
+  .breakdown-table {
+    width: 100%;
+    font-size: 8px;
+    border-collapse: collapse;
+  }
+  
+  .breakdown-table th {
+    background: #f0f0f0 !important;
+    padding: 4px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  .breakdown-table td {
+    padding: 3px;
+    border: 1px solid #ddd;
+  }
+  
+  /* Utilities */
+  .text-right {
+    text-align: right;
+  }
+  
+  .text-center {
+    text-align: center;
+  }
+  
+  .font-bold {
+    font-weight: bold;
+  }
+  
+  .text-sm {
+    font-size: 9px;
+  }
+  
+  .text-xs {
+    font-size: 8px;
+  }
+}
