@@ -13,7 +13,7 @@ import { CFOInsights } from './components/CFOInsights';
 import { InvoicesSection } from './components/InvoicesSection';
 import { PaymentsSection } from './components/PaymentsSection';
 import { MonthDetailModal } from './components/MonthDetailModal';
-import { validateFinancialData } from './utils/validation';
+import { validateFinancialReport } from './utils/validation';
 import { exportToExcel, exportToCSV } from './export/excel';
 import { exportToPDF } from './export/pdf';
 import { formatDate } from './utils/formatters';
@@ -35,13 +35,17 @@ export const CfoPLReportPage: React.FC<CfoPLReportPageProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('detailed');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-  const [validationIssues, setValidationIssues] = useState<any[]>([]);
+  const [validationResult, setValidationResult] = useState<{
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+  }>({ valid: true, errors: [], warnings: [] });
   
   // Validate data on mount and when data changes
   useEffect(() => {
     if (data) {
-      const issues = validateFinancialData(data);
-      setValidationIssues(issues);
+      const result = validateFinancialReport(data);
+      setValidationResult(result);
     }
   }, [data]);
   
@@ -144,6 +148,9 @@ export const CfoPLReportPage: React.FC<CfoPLReportPageProps> = ({
   
   const { stats, monthlyData, dateFrom, dateTo } = data;
   
+  // Validation Warnings
+  const hasIssues = validationResult.errors.length > 0 || validationResult.warnings.length > 0;
+  
   return (
     <div className="cfo-pl-report">
       {/* Report Header */}
@@ -204,16 +211,33 @@ export const CfoPLReportPage: React.FC<CfoPLReportPageProps> = ({
       </div>
       
       {/* Validation Warnings */}
-      {validationIssues.length > 0 && (
+      {hasIssues && (
         <div className="validation-warning">
           <h3>?? Data Inconsistency</h3>
-          <ul>
-            {validationIssues.map((issue, index) => (
-              <li key={index} className={`issue-${issue.severity}`}>
-                <strong>[{issue.severity}]</strong> {issue.message}
-              </li>
-            ))}
-          </ul>
+          {validationResult.errors.length > 0 && (
+            <div className="errors">
+              <h4>Errors:</h4>
+              <ul>
+                {validationResult.errors.map((error, index) => (
+                  <li key={index} className="issue-error">
+                    <strong>[ERROR]</strong> {error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {validationResult.warnings.length > 0 && (
+            <div className="warnings">
+              <h4>Warnings:</h4>
+              <ul>
+                {validationResult.warnings.map((warning, index) => (
+                  <li key={index} className="issue-warning">
+                    <strong>[WARNING]</strong> {warning}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
       
