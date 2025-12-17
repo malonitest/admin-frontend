@@ -6,15 +6,15 @@
 import { useState, useEffect } from 'react';
 import { reportingApi } from '@/api/reportingApi';
 import type { IKPIInvestorReportData } from '@/types/reporting';
-import { formatDate, formatPeriod, formatDateTime } from '../utils/formatters';
-import { exportToPDF } from '../utils/export';
-import { ExecutiveSummary } from '../components/ExecutiveSummary';
-import { KPICards } from '../components/KPICards';
-import { FinancialSection } from '../components/FinancialSection';
-import { FunnelSection } from '../components/FunnelSection';
-import { TechnicianSection } from '../components/TechnicianSection';
-import { FleetSection } from '../components/FleetSection';
-import { RiskSection } from '../components/RiskSection';
+import { formatPeriod, formatDateTime } from './utils/formatters.js';
+import { exportToPDF } from './utils/export.js';
+import { ExecutiveSummary } from './components/ExecutiveSummary.js';
+import { KPICards } from './components/KPICards.js';
+import { FinancialSection } from './components/FinancialSection.js';
+import { FunnelSection } from './components/FunnelSection.js';
+import { TechnicianSection } from './components/TechnicianSection.js';
+import { FleetSection } from './components/FleetSection.js';
+import { RiskSection } from './components/RiskSection.js';
 import { FileDown, Calendar } from 'lucide-react';
 
 type PeriodType = 'day' | 'week' | 'month' | 'year' | 'custom';

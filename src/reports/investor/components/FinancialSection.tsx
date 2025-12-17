@@ -4,7 +4,7 @@
  * Bez cestiny diakritiky
  */
 
-import type { IKPIInvestorReportData } from '@/types/reporting';
+import type { IKPIInvestorReportData, IFinancialReportItem } from '@/types/reporting';
 import { formatCzk, formatPercent } from '../utils/formatters';
 import { calcMoMChange, validatePercentages } from '../utils/calculations';
 import {
@@ -168,7 +168,7 @@ export function FinancialSection({ data }: FinancialSectionProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={(entry) => `${entry.type} (${formatPercent(entry.percentage, 1)})`}
+                label={(entry: any) => `${entry.type} (${formatPercent(entry.percentage, 1)})`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="amount"
@@ -250,7 +250,7 @@ function MoMRow({ label, current, previous, highlight }: MoMRowProps) {
   );
 }
 
-function formatDelta(value: number, unit: string): JSX.Element {
+function formatDelta(value: number, unit: string): React.ReactElement {
   const isPositive = value > 0;
   const color = isPositive ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-500';
   const sign = isPositive ? '+' : '';
@@ -260,11 +260,9 @@ function formatDelta(value: number, unit: string): JSX.Element {
 }
 
 function generateMoMComment(
-  latest: IKPIInvestorReportData['financial']['latestMonth'],
-  previous: IKPIInvestorReportData['financial']['previousMonth']
+  latest: IFinancialReportItem,
+  previous: IFinancialReportItem
 ) {
-  if (!latest || !previous) return null;
-
   const change = calcMoMChange(latest.netProfit, previous.netProfit);
   let comment = '';
 

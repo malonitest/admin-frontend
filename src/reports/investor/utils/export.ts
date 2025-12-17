@@ -4,12 +4,10 @@
  * Bez cestiny diakritiky
  */
 
-import { formatPdfFilename } from './formatters';
-
 /**
  * Export stranky do PDF pomoci browser print dialog
  */
-export function exportToPDF(dateFrom: Date | string, dateTo: Date | string): void {
+export function exportToPDF(_dateFrom: Date | string, _dateTo: Date | string): void {
   // Priprava stranky pro tisk
   document.body.classList.add('printing');
   

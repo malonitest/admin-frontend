@@ -6,7 +6,7 @@
 
 import type { IKPIMetric } from '@/types/reporting';
 import { formatCzk, formatNumber, formatPercent } from '../utils/formatters';
-import { TrendUp, TrendDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface KPICardsProps {
   metrics: IKPIMetric[];
@@ -79,9 +79,9 @@ function getTrendIcon(trend?: 'up' | 'down' | 'flat') {
   
   switch (trend) {
     case 'up':
-      return <TrendUp className="w-5 h-5" />;
+      return <TrendingUp className="w-5 h-5" />;
     case 'down':
-      return <TrendDown className="w-5 h-5" />;
+      return <TrendingDown className="w-5 h-5" />;
     case 'flat':
       return <Minus className="w-5 h-5" />;
     default:

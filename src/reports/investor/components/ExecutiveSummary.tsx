@@ -6,7 +6,6 @@
 import type { IKPIInvestorReportData } from '@/types/reporting';
 import {
   findBestMetric,
-  findWorstMetric,
   computeRiskScore,
   findFunnelBottleneck,
 } from '../utils/calculations';

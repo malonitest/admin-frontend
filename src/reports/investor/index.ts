@@ -10,6 +10,3 @@ export { FunnelSection } from './components/FunnelSection';
 export { TechnicianSection } from './components/TechnicianSection';
 export { FleetSection } from './components/FleetSection';
 export { RiskSection } from './components/RiskSection';
-
-// Styles
-import './styles/print.css';
