@@ -38,6 +38,8 @@ import Reports2CarStats from '@/pages/Reports2CarStats';
 import { InvestorReport } from '@/reports/investor';
 import { FunnelReportPage } from '@/reports/funnel';
 import FinancialPL from '@/pages/NewReports/FinancialPL';
+import { Marketing } from '../pages/NewReports/Marketing';
+import { MarketingCosts } from '../pages/NewReports/MarketingCosts';
 
 // Placeholder komponenty pro chybějící stránky
 // eslint-disable-next-line react-refresh/only-export-components
@@ -212,7 +214,13 @@ export const router = createBrowserRouter([
       },
       {
         path: 'new-reports/marketing',
-        element: <PlaceholderPage title="Marketing Report" />,
+        element: (
+          <ProtectedRoute>
+            <AdminLayout>
+              <Marketing />
+            </AdminLayout>
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'new-reports/funnel',
