@@ -395,4 +395,18 @@ export const marketingApi = {
   },
 };
 
+// Export cost API separately for convenience
+export const marketingCostApi = {
+  getCosts: marketingApi.getCosts,
+  getCost: marketingApi.getCost,
+  createCost: marketingApi.createCost,
+  updateCost: marketingApi.updateCost,
+  deleteCost: marketingApi.deleteCost,
+  calculateROI: marketingApi.calculateROI,
+  getMonthlySummary: marketingApi.getMonthlySummary,
+  getCostRevenueComparison: marketingApi.getCostRevenueComparison,
+  bulkUpdateCosts: marketingApi.bulkUpdateCosts,
+  getCostBySourceMonth: marketingApi.getCostBySourceMonth,
+};
+
 export default marketingApi;
