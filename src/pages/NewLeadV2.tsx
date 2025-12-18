@@ -422,10 +422,11 @@ export function NewLeadV2() {
       if (!leadId) throw new Error('Missing lead id in response');
 
       for (const { photos, documentType } of [
-        { photos: interiorPhotos, documentType: 'carInterior' },
-        { photos: exteriorPhotos, documentType: 'carExterior' },
-        { photos: odometerPhotos, documentType: 'carMileage' },
-        { photos: vinPhotos, documentType: 'carVIN' },
+        // Must match backend DocumentType enum values (see apps/backend/src/modules/document/document.types.ts)
+        { photos: interiorPhotos, documentType: 'PHOTO_INTERIOR' },
+        { photos: exteriorPhotos, documentType: 'PHOTO_EXTERIOR' },
+        { photos: odometerPhotos, documentType: 'MILEAGE' },
+        { photos: vinPhotos, documentType: 'VIN' },
       ]) {
         for (const photo of photos) {
           const formData = new FormData();
