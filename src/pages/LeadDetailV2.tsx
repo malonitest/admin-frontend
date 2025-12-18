@@ -22,7 +22,24 @@ interface LeadResponse {
     city2?: string;
     postalCode2?: string;
     bankAccount?: string;
-  };
+  } | Array<{
+    customerType?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    birthday?: string;
+    birthNumber?: string;
+    companyID?: string;
+    companyName?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    enableAddress2?: boolean;
+    address2?: string;
+    city2?: string;
+    postalCode2?: string;
+    bankAccount?: string;
+  }>;
   car?: {
     VIN?: string;
     brand?: string;
@@ -30,7 +47,14 @@ interface LeadResponse {
     registration?: number | null;
     carSPZ?: string;
     mileage?: number | null;
-  };
+  } | Array<{
+    VIN?: string;
+    brand?: string;
+    model?: string;
+    registration?: number | null;
+    carSPZ?: string;
+    mileage?: number | null;
+  }>;
   lease?: {
     leaseAmount?: number | null;
     rentDuration?: number | null;
@@ -40,7 +64,16 @@ interface LeadResponse {
     yearlyInsuranceFee?: number | null;
     payoutInCash?: boolean;
     adminFee?: number | null;
-  };
+  } | Array<{
+    leaseAmount?: number | null;
+    rentDuration?: number | null;
+    monthlyPayment?: number | null;
+    rentOffer?: number | null;
+    yearlyInterestRate?: number | null;
+    yearlyInsuranceFee?: number | null;
+    payoutInCash?: boolean;
+    adminFee?: number | null;
+  }>;
   assignedSalesManager?: { id?: string; _id?: string; name?: string } | string;
   salesVisitAt?: string;
 }
@@ -165,49 +198,58 @@ const emptyFormState: FormState = {
   salesVisitAt: '',
 };
 
+const getFirst = <T,>(value: T | T[] | undefined): T | undefined => {
+  if (!value) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+};
+
 const leadToForm = (lead: LeadResponse): FormState => {
+  const customer = getFirst(lead.customer);
+  const car = getFirst(lead.car);
+  const lease = getFirst(lead.lease);
+
   const assignedId =
     typeof lead.assignedSalesManager === 'object'
       ? (lead.assignedSalesManager?.id || (lead.assignedSalesManager as any)?._id || '')
       : (lead.assignedSalesManager || '');
 
-  const monthlyPayment = lead.lease?.monthlyPayment ?? lead.lease?.rentOffer ?? null;
+  const monthlyPayment = lease?.monthlyPayment ?? lease?.rentOffer ?? null;
 
   return {
     ...emptyFormState,
-    customerType: lead.customer?.customerType || '',
-    companyID: lead.customer?.companyID || '',
-    companyName: lead.customer?.companyName || '',
-    customerName: lead.customer?.name || '',
-    email: lead.customer?.email || '',
-    phone: lead.customer?.phone || '',
-    birthday: lead.customer?.birthday ? String(lead.customer.birthday).split('T')[0] : '',
-    birthNumber: lead.customer?.birthNumber || '',
-    bankAccount: lead.customer?.bankAccount || '',
+    customerType: customer?.customerType || '',
+    companyID: customer?.companyID || '',
+    companyName: customer?.companyName || '',
+    customerName: customer?.name || '',
+    email: customer?.email || '',
+    phone: customer?.phone || '',
+    birthday: customer?.birthday ? String(customer.birthday).split('T')[0] : '',
+    birthNumber: customer?.birthNumber || '',
+    bankAccount: customer?.bankAccount || '',
 
-    address: cleanUndefinedAddress(lead.customer?.address),
-    city: lead.customer?.city || '',
-    postalCode: lead.customer?.postalCode || '',
+    address: cleanUndefinedAddress(customer?.address),
+    city: customer?.city || '',
+    postalCode: customer?.postalCode || '',
 
-    enableAddress2: Boolean(lead.customer?.enableAddress2),
-    address2: lead.customer?.address2 || '',
-    city2: lead.customer?.city2 || '',
-    postalCode2: lead.customer?.postalCode2 || '',
+    enableAddress2: Boolean(customer?.enableAddress2),
+    address2: customer?.address2 || '',
+    city2: customer?.city2 || '',
+    postalCode2: customer?.postalCode2 || '',
 
-    vin: lead.car?.VIN || '',
-    brand: lead.car?.brand || '',
-    model: lead.car?.model || '',
-    registration: lead.car?.registration != null ? String(lead.car.registration) : '',
-    carSPZ: lead.car?.carSPZ || '',
-    mileage: lead.car?.mileage != null ? String(lead.car.mileage) : '',
+    vin: car?.VIN || '',
+    brand: car?.brand || '',
+    model: car?.model || '',
+    registration: car?.registration != null ? String(car.registration) : '',
+    carSPZ: car?.carSPZ || '',
+    mileage: car?.mileage != null ? String(car.mileage) : '',
 
-    requestedAmount: lead.lease?.leaseAmount != null ? String(lead.lease.leaseAmount) : '',
-    rentDuration: lead.lease?.rentDuration != null ? String(lead.lease.rentDuration) : '',
+    requestedAmount: lease?.leaseAmount != null ? String(lease.leaseAmount) : '',
+    rentDuration: lease?.rentDuration != null ? String(lease.rentDuration) : '',
     monthlyPayment: monthlyPayment != null ? String(monthlyPayment) : '',
-    yearlyInterestRate: lead.lease?.yearlyInterestRate != null ? String(lead.lease.yearlyInterestRate) : '',
-    yearlyInsuranceFee: lead.lease?.yearlyInsuranceFee != null ? String(lead.lease.yearlyInsuranceFee) : '',
-    payoutInCash: Boolean(lead.lease?.payoutInCash),
-    adminFee: lead.lease?.adminFee != null ? String(lead.lease.adminFee) : '5000',
+    yearlyInterestRate: lease?.yearlyInterestRate != null ? String(lease.yearlyInterestRate) : '',
+    yearlyInsuranceFee: lease?.yearlyInsuranceFee != null ? String(lease.yearlyInsuranceFee) : '',
+    payoutInCash: Boolean(lease?.payoutInCash),
+    adminFee: lease?.adminFee != null ? String(lease.adminFee) : '5000',
 
     assignedTechnician: assignedId,
     salesVisitAt: lead.salesVisitAt ? String(lead.salesVisitAt).split('T')[0] : '',
@@ -349,10 +391,18 @@ export default function LeadDetailV2() {
         throw new Error(updateRes.data.message || 'Nepodařilo se uložit');
       }
 
-      const refreshed = await axiosClient.get(`/leads/${id}`);
-      const refreshedLead: LeadResponse = refreshed.data;
-      setLead(refreshedLead);
-      setForm(leadToForm(refreshedLead));
+      // Prefer using the updated lead returned by PATCH to avoid read-after-write staleness.
+      const updatedLead: LeadResponse | undefined = updateRes?.data?.data;
+      if (updatedLead) {
+        setLead(updatedLead);
+        setForm(leadToForm(updatedLead));
+      } else {
+        // Fallback to refetch if backend doesn't return the lead.
+        const refreshed = await axiosClient.get(`/leads/${id}`);
+        const refreshedLead: LeadResponse = refreshed.data;
+        setLead(refreshedLead);
+        setForm(leadToForm(refreshedLead));
+      }
 
       alert('Uloženo');
     } catch (e) {
