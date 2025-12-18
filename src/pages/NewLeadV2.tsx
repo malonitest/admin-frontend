@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
+import type { AxiosError } from 'axios';
 
 interface PhotoItem {
   file: File;
@@ -380,6 +381,13 @@ export function NewLeadV2() {
   };
 
   const handleSave = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Přihlášení vypršelo. Přihlaste se prosím znovu.');
+      navigate('/login');
+      return;
+    }
+
     if (!validate()) return;
 
     setSaving(true);
@@ -431,6 +439,15 @@ export function NewLeadV2() {
       navigate('/leads');
     } catch (err) {
       console.error('Failed to create lead:', err);
+
+      const maybeAxiosError = err as AxiosError<any>;
+      const status = maybeAxiosError?.response?.status;
+      if (status === 401) {
+        alert('Přihlášení vypršelo. Přihlaste se prosím znovu.');
+        navigate('/login');
+        return;
+      }
+
       alert('Nepodařilo se vytvořit lead');
     } finally {
       setSaving(false);

@@ -7,18 +7,40 @@ console.log('Using backend URL:', API_BASE_URL);
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Request interceptor - add auth token
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+
+    // Ensure headers exist and set auth header reliably (AxiosHeaders vs plain object)
+    if (token) {
+      config.headers = config.headers ?? {};
+      const headersAny = config.headers as any;
+      if (typeof headersAny.set === 'function') {
+        headersAny.set('Authorization', `Bearer ${token}`);
+      } else {
+        headersAny.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      const url = (config.url || '').toString();
+      if (!url.includes('/auth/')) {
+        console.warn('[Auth] Missing access token for request:', url);
+      }
     }
+
+    // Avoid forcing JSON for multipart/form-data requests.
+    // Axios will automatically set Content-Type for JSON bodies.
+    if (config.data instanceof FormData) {
+      const headersAny = (config.headers ?? {}) as any;
+      if (typeof headersAny.delete === 'function') {
+        headersAny.delete('Content-Type');
+      } else {
+        delete headersAny['Content-Type'];
+      }
+    }
+
     return config;
   },
   (error: AxiosError) => {
@@ -68,6 +90,7 @@ axiosClient.interceptors.response.use(
         }
       } else {
         // No refresh token - redirect to login
+        console.warn('[Auth] 401 and no refreshToken; redirecting to /login');
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
