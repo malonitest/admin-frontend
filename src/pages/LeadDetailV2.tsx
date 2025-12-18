@@ -302,7 +302,7 @@ export default function LeadDetailV2() {
     try {
       const monthlyPaymentNumber = toIntOrUndefined(form.monthlyPayment);
 
-      await axiosClient.patch(`/leads/${id}`, {
+      const updateRes = await axiosClient.patch(`/leads/${id}`, {
         customer: {
           customerType: form.customerType || undefined,
           companyID: showCompanyFields ? (form.companyID || undefined) : undefined,
@@ -343,6 +343,12 @@ export default function LeadDetailV2() {
         salesVisitAt: toISODateOrUndefined(form.salesVisitAt),
       });
 
+      // Some backend paths return HTTP 200 with { success: false }.
+      // Treat that as a real error so the user isn't told "Uloženo" when nothing changed.
+      if (updateRes?.data && updateRes.data.success === false) {
+        throw new Error(updateRes.data.message || 'Nepodařilo se uložit');
+      }
+
       const refreshed = await axiosClient.get(`/leads/${id}`);
       const refreshedLead: LeadResponse = refreshed.data;
       setLead(refreshedLead);
@@ -351,7 +357,8 @@ export default function LeadDetailV2() {
       alert('Uloženo');
     } catch (e) {
       console.error('Failed to save lead:', e);
-      alert('Nepodařilo se uložit');
+      const message = e instanceof Error ? e.message : 'Nepodařilo se uložit';
+      alert(message || 'Nepodařilo se uložit');
     } finally {
       setSaving(false);
     }
