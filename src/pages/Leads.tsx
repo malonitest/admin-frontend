@@ -365,7 +365,8 @@ export function Leads() {
   };
 
   const canOrder = (status: string) => {
-    return ['SUPERVISOR_APPROVED', 'CUSTOMER_APPROVED', 'SALES_APPROVED', 'FINAL_APPROVAL'].includes(status);
+    // Newly created leads are typically in CONCEPT (or NEW), but still need to be openable/editable.
+    return ['CONCEPT', 'NEW', 'SUPERVISOR_APPROVED', 'CUSTOMER_APPROVED', 'SALES_APPROVED', 'FINAL_APPROVAL'].includes(status);
   };
   
   const isDeclined = (status: string): boolean => {
