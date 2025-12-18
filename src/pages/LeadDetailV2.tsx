@@ -391,17 +391,16 @@ export default function LeadDetailV2() {
         throw new Error(updateRes.data.message || 'Nepodařilo se uložit');
       }
 
-      // Prefer using the updated lead returned by PATCH to avoid read-after-write staleness.
+      // Keep the user's edited values visible.
+      // Some environments can return stale data immediately after write, so
+      // overwriting the form from server response can make inputs "disappear".
       const updatedLead: LeadResponse | undefined = updateRes?.data?.data;
       if (updatedLead) {
         setLead(updatedLead);
-        setForm(leadToForm(updatedLead));
       } else {
-        // Fallback to refetch if backend doesn't return the lead.
         const refreshed = await axiosClient.get(`/leads/${id}`);
         const refreshedLead: LeadResponse = refreshed.data;
         setLead(refreshedLead);
-        setForm(leadToForm(refreshedLead));
       }
 
       alert('Uloženo');
