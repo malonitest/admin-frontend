@@ -90,9 +90,61 @@ const cleanString = (str: string | undefined): string => {
 };
 
 const getLeadNoteMessage = (lead: Lead): string => {
+  const latest = getLeadLatestNote(lead);
+  if (latest?.message) return cleanString(latest.message);
   if (lead.noteMessage) return cleanString(lead.noteMessage);
-  const firstNote = lead.note?.[0];
-  return cleanString(firstNote?.message || firstNote?.text || firstNote?.note);
+  return '-';
+};
+
+const getLeadLatestNote = (lead: Lead): { message?: string; createdAt?: string } | undefined => {
+  const notes = lead.note;
+  if (!notes || notes.length === 0) return undefined;
+
+  let latest: { message?: string; createdAt?: string } | undefined;
+  let latestMs = -1;
+
+  for (const n of notes) {
+    const createdAt = n.createdAt;
+    if (!createdAt) continue;
+    const ms = new Date(createdAt).getTime();
+    if (Number.isNaN(ms)) continue;
+    if (ms > latestMs) {
+      latestMs = ms;
+      latest = {
+        createdAt,
+        message: n.message || n.text || n.note,
+      };
+    }
+  }
+
+  // If we had notes but none with parsable createdAt, at least return message from first note.
+  if (!latest) {
+    const first = notes[0];
+    return { createdAt: first?.createdAt, message: first?.message || first?.text || first?.note };
+  }
+
+  return latest;
+};
+
+const getLeadLatestNoteAt = (lead: Lead): string | undefined => {
+  return getLeadLatestNote(lead)?.createdAt;
+};
+
+const formatHHMM = (totalMinutes: number): string => {
+  const minutes = Math.max(0, Math.floor(totalMinutes));
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+};
+
+const getContactDeltaHHMM = (lead: Lead): string => {
+  const lastNoteAt = getLeadLatestNoteAt(lead);
+  if (!lastNoteAt) return '-';
+  const lastMs = new Date(lastNoteAt).getTime();
+  if (Number.isNaN(lastMs)) return '-';
+  const nowMs = Date.now();
+  const diffMinutes = (nowMs - lastMs) / (1000 * 60);
+  return formatHHMM(diffMinutes);
 };
 
 const LEAD_STATES = [
@@ -631,6 +683,7 @@ export function Leads() {
                 <th className="w-[70px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zdroj</th>
                 <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zadal</th>
+                <th className="w-[80px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kontakt</th>
                 <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Poznámky</th>
                 <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"></th>
               </tr>
@@ -638,7 +691,7 @@ export function Leads() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="px-2 py-8 text-center">
+                  <td colSpan={13} className="px-2 py-8 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
                     </div>
@@ -646,7 +699,7 @@ export function Leads() {
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-2 py-8 text-center text-gray-500">
+                  <td colSpan={13} className="px-2 py-8 text-center text-gray-500">
                     {searchQuery || hasActiveFilters ? 'Žádné výsledky pro zadaný dotaz' : 'Žádné leady'}
                   </td>
                 </tr>
@@ -693,8 +746,16 @@ export function Leads() {
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
                       {getAuthorName(lead)}
                     </td>
+                    <td className="px-2 py-2 text-xs text-gray-500">
+                      {getContactDeltaHHMM(lead)}
+                    </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
-                      {getLeadNoteMessage(lead)}
+                      <div className="text-[10px] text-gray-400">
+                        {getLeadLatestNoteAt(lead) ? formatDateTime(getLeadLatestNoteAt(lead) as string) : '-'}
+                      </div>
+                      <div className="mt-0.5">
+                        {getLeadNoteMessage(lead)}
+                      </div>
                     </td>
                     <td className="px-2 py-2 text-xs">
                       <div className="flex gap-1">
