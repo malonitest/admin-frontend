@@ -10,6 +10,12 @@ interface Lead {
   updatedAt?: string;
   statusUpdatedAt?: string;
   noteMessage?: string;
+  note?: Array<{
+    message?: string;
+    text?: string;
+    note?: string;
+    createdAt?: string;
+  }>;
   customer?: {
     name?: string;
     phone?: string;
@@ -83,9 +89,15 @@ const cleanString = (str: string | undefined): string => {
   return lines[0]?.trim() || '-';
 };
 
+const getLeadNoteMessage = (lead: Lead): string => {
+  if (lead.noteMessage) return cleanString(lead.noteMessage);
+  const firstNote = lead.note?.[0];
+  return cleanString(firstNote?.message || firstNote?.text || firstNote?.note);
+};
+
 const LEAD_STATES = [
   { value: '', label: 'Všechny' },
-  { value: 'CONCEPT', label: 'Koncept' },
+  { value: 'CONCEPT', label: 'New' },
   { value: 'NEW', label: 'Nový lead' },
   { value: 'SUPERVISOR_APPROVED', label: 'Schválen AM' },
   { value: 'CUSTOMER_APPROVED', label: 'Schválen zákazníkem' },
@@ -132,7 +144,7 @@ const PERIOD_FILTERS = [
 
 const normalizeLeadState = (state: string): string => {
   const stateMap: Record<string, string> = {
-    CONCEPT: 'Koncept',
+    CONCEPT: 'New',
     NEW: 'Nový lead',
     SUPERVISOR_APPROVED: 'Schválen AM',
     CUSTOMER_APPROVED: 'Schválen zákazníkem',
@@ -682,7 +694,7 @@ export function Leads() {
                       {getAuthorName(lead)}
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
-                      {lead.noteMessage ? cleanString(lead.noteMessage) : '-'}
+                      {getLeadNoteMessage(lead)}
                     </td>
                     <td className="px-2 py-2 text-xs">
                       <div className="flex gap-1">
