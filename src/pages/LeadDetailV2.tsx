@@ -5,6 +5,19 @@ import { axiosClient } from '@/api/axiosClient';
 interface LeadResponse {
   id: string;
   uniqueId?: number;
+  note?: Array<{
+    message?: string;
+    createdAt?: string;
+    author?:
+      | {
+          id?: string;
+          _id?: string;
+          name?: string;
+          email?: string;
+        }
+      | string
+      | null;
+  }>;
   customer?: {
     customerType?: string;
     name?: string;
@@ -77,6 +90,8 @@ interface LeadResponse {
   assignedSalesManager?: { id?: string; _id?: string; name?: string } | string;
   salesVisitAt?: string;
 }
+
+type LeadNote = NonNullable<LeadResponse['note']>[number];
 
 interface Dealer {
   id?: string;
@@ -262,9 +277,11 @@ export default function LeadDetailV2() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
   const [lead, setLead] = useState<LeadResponse | null>(null);
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [form, setForm] = useState<FormState>(emptyFormState);
+  const [noteDraft, setNoteDraft] = useState('');
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -337,6 +354,59 @@ export default function LeadDetailV2() {
 
   const showCompanyFields =
     form.customerType === 'COMPANY' || Boolean(form.companyID) || Boolean(form.companyName);
+
+  const formatNoteAuthor = (author: LeadNote['author']): string => {
+    if (!author) return 'Neznámý';
+    if (typeof author === 'string') return author;
+    return author.name || author.email || author._id || author.id || 'Neznámý';
+  };
+
+  const formatNoteDateTime = (value?: string): string => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString('cs-CZ', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const handleAddNote = async () => {
+    if (!id) return;
+    const trimmed = noteDraft.trim();
+    if (!trimmed) return;
+
+    setAddingNote(true);
+    try {
+      const updateRes = await axiosClient.patch(`/leads/${id}`, {
+        noteMessage: trimmed,
+      });
+
+      if (updateRes?.data && updateRes.data.success === false) {
+        throw new Error(updateRes.data.message || 'Nepodařilo se přidat poznámku');
+      }
+
+      const updatedLead: LeadResponse | undefined = updateRes?.data?.data;
+      if (updatedLead) {
+        setLead(updatedLead);
+      } else {
+        const refreshed = await axiosClient.get(`/leads/${id}`);
+        const refreshedLead: LeadResponse = refreshed.data;
+        setLead(refreshedLead);
+      }
+
+      setNoteDraft('');
+    } catch (e) {
+      console.error('Failed to add note:', e);
+      const message = e instanceof Error ? e.message : 'Nepodařilo se přidat poznámku';
+      alert(message || 'Nepodařilo se přidat poznámku');
+    } finally {
+      setAddingNote(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!id) return;
@@ -546,6 +616,46 @@ export default function LeadDetailV2() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">Nájezd vozidla (km)</label>
               <input value={form.mileage} onChange={handleChange('mileage')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Poznámky</label>
+              <textarea
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder="Napište poznámku..."
+              />
+              <button
+                type="button"
+                onClick={handleAddNote}
+                disabled={addingNote || !noteDraft.trim()}
+                className="mt-2 w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {addingNote ? 'Ukládám poznámku...' : 'Přidat poznámku'}
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Historie poznámek</label>
+              <div className="border border-gray-200 rounded-lg p-2 max-h-64 overflow-auto bg-gray-50">
+                {lead.note && lead.note.length > 0 ? (
+                  <div className="space-y-2">
+                    {lead.note.map((n, idx) => (
+                      <div key={`${n.createdAt || idx}`} className="bg-white border border-gray-200 rounded-md p-2">
+                        <div className="text-xs text-gray-500 flex items-center justify-between gap-2">
+                          <span>{formatNoteAuthor(n.author)}</span>
+                          <span>{formatNoteDateTime(n.createdAt)}</span>
+                        </div>
+                        <div className="text-sm text-gray-800 whitespace-pre-wrap">{n.message || ''}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Zatím bez poznámek</div>
+                )}
+              </div>
             </div>
           </div>
 
