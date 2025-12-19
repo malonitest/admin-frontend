@@ -5,6 +5,7 @@ import { axiosClient } from '@/api/axiosClient';
 interface LeadResponse {
   id: string;
   uniqueId?: number;
+  estimatedValue?: number | null;
   note?: Array<{
     message?: string;
     createdAt?: string;
@@ -127,6 +128,8 @@ type FormState = {
   carSPZ: string;
   mileage: string;
 
+  marketPrice: string;
+
   requestedAmount: string;
   rentDuration: string;
   monthlyPayment: string;
@@ -137,6 +140,7 @@ type FormState = {
 
   assignedTechnician: string;
   salesVisitAt: string;
+  salesVisitTime: string;
 };
 
 const cleanUndefinedAddress = (value?: string): string => {
@@ -166,6 +170,18 @@ const toISODateOrUndefined = (value: string): string | undefined => {
   if (!trimmed) return undefined;
   const date = new Date(trimmed);
   return Number.isNaN(date.getTime()) ? undefined : trimmed;
+};
+
+const toISODateTimeOrUndefined = (dateValue: string, timeValue: string): string | undefined => {
+  const dateTrimmed = dateValue.trim();
+  if (!dateTrimmed) return undefined;
+
+  const timeTrimmed = timeValue.trim();
+  if (!timeTrimmed) return toISODateOrUndefined(dateTrimmed);
+
+  const combined = `${dateTrimmed}T${timeTrimmed}`;
+  const date = new Date(combined);
+  return Number.isNaN(date.getTime()) ? undefined : combined;
 };
 
 const toObjectIdOrUndefined = (value: string): string | undefined => {
@@ -201,6 +217,8 @@ const emptyFormState: FormState = {
   carSPZ: '',
   mileage: '',
 
+  marketPrice: '',
+
   requestedAmount: '',
   rentDuration: '',
   monthlyPayment: '',
@@ -211,6 +229,7 @@ const emptyFormState: FormState = {
 
   assignedTechnician: '',
   salesVisitAt: '',
+  salesVisitTime: '',
 };
 
 const getFirst = <T,>(value: T | T[] | undefined): T | undefined => {
@@ -229,6 +248,12 @@ const leadToForm = (lead: LeadResponse): FormState => {
       : (lead.assignedSalesManager || '');
 
   const monthlyPayment = lease?.monthlyPayment ?? lease?.rentOffer ?? null;
+
+  const salesVisitIso = lead.salesVisitAt ? String(lead.salesVisitAt) : '';
+  const salesVisitDate = salesVisitIso ? salesVisitIso.split('T')[0] : '';
+  const salesVisitTime = salesVisitIso && salesVisitIso.includes('T')
+    ? salesVisitIso.split('T')[1]?.slice(0, 5) || ''
+    : '';
 
   return {
     ...emptyFormState,
@@ -258,6 +283,8 @@ const leadToForm = (lead: LeadResponse): FormState => {
     carSPZ: car?.carSPZ || '',
     mileage: car?.mileage != null ? String(car.mileage) : '',
 
+    marketPrice: lead.estimatedValue != null ? String(lead.estimatedValue) : '',
+
     requestedAmount: lease?.leaseAmount != null ? String(lease.leaseAmount) : '',
     rentDuration: lease?.rentDuration != null ? String(lease.rentDuration) : '',
     monthlyPayment: monthlyPayment != null ? String(monthlyPayment) : '',
@@ -267,7 +294,8 @@ const leadToForm = (lead: LeadResponse): FormState => {
     adminFee: lease?.adminFee != null ? String(lease.adminFee) : '5000',
 
     assignedTechnician: assignedId,
-    salesVisitAt: lead.salesVisitAt ? String(lead.salesVisitAt).split('T')[0] : '',
+    salesVisitAt: salesVisitDate,
+    salesVisitTime,
   };
 };
 
@@ -415,6 +443,7 @@ export default function LeadDetailV2() {
       const monthlyPaymentNumber = toIntOrUndefined(form.monthlyPayment);
 
       const updateRes = await axiosClient.patch(`/leads/${id}`, {
+        estimatedValue: toIntOrUndefined(form.marketPrice),
         customer: {
           customerType: form.customerType || undefined,
           companyID: showCompanyFields ? (form.companyID || undefined) : undefined,
@@ -452,7 +481,7 @@ export default function LeadDetailV2() {
           adminFee: toIntOrUndefined(form.adminFee),
         },
         assignedSalesManager: toObjectIdOrUndefined(form.assignedTechnician),
-        salesVisitAt: toISODateOrUndefined(form.salesVisitAt),
+        salesVisitAt: toISODateTimeOrUndefined(form.salesVisitAt, form.salesVisitTime),
       });
 
       // Some backend paths return HTTP 200 with { success: false }.
@@ -677,6 +706,11 @@ export default function LeadDetailV2() {
 
           <div className="bg-white rounded-lg p-4 shadow space-y-3">
             <div>
+              <label className="block text-xs text-gray-500 mb-1">Tržní cena</label>
+              <input type="number" value={form.marketPrice} onChange={handleChange('marketPrice')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+            </div>
+
+            <div>
               <label className="block text-xs text-gray-500 mb-1">Žádaná částka</label>
               <input type="number" value={form.requestedAmount} onChange={handleChange('requestedAmount')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
             </div>
@@ -684,11 +718,6 @@ export default function LeadDetailV2() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">Číslo bankovního účtu</label>
               <input value={form.bankAccount} onChange={handleChange('bankAccount')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Datum návštěvy technika</label>
-              <input type="date" value={form.salesVisitAt} onChange={handleChange('salesVisitAt')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
             </div>
           </div>
 
@@ -751,6 +780,16 @@ export default function LeadDetailV2() {
                 onChange={(e) => setForm((prev) => ({ ...prev, assignedTechnician: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               >
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Datum návštěvy technika</label>
+              <input type="date" value={form.salesVisitAt} onChange={handleChange('salesVisitAt')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Čas návštěvy technika</label>
+              <input type="time" value={form.salesVisitTime} onChange={handleChange('salesVisitTime')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+            </div>
                 <option value="">Vyberte technika</option>
                 {technicianOptions.map((t) => (
                   <option key={t.id} value={t.id}>
