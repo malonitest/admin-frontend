@@ -10,6 +10,14 @@ interface LeadResponse {
   decidedAt?: string;
   amApprovedAt?: string;
   declinedAt?: string;
+  documents?: {
+    carDetectReport?: {
+      _id?: string;
+      file?: string;
+      name?: string;
+      documentType?: string;
+    } | null;
+  } | null;
   note?: Array<{
     message?: string;
     createdAt?: string;
@@ -507,9 +515,33 @@ export default function LeadDetailV2() {
       return;
     }
 
+    const downloadDocumentFile = async (documentFile: string, filename: string) => {
+      try {
+        const resp = await axiosClient.get(`/documents/download/${encodeURIComponent(documentFile)}`, {
+          responseType: 'blob',
+        });
+        const blob = resp.data instanceof Blob ? resp.data : new Blob([resp.data]);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Failed to download CarDetect PDF via blob:', err);
+
+        // Fallback: open download URL in a new tab (lets the browser handle the file).
+        const base = (axiosClient.defaults.baseURL || '').replace(/\/$/, '');
+        const url = `${base}/documents/download/${encodeURIComponent(documentFile)}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    };
+
     setGeneratingCarDetect(true);
     try {
-      await axiosClient.post(`/leads/${id}/generateCarDetectReport`, {
+      const genRes = await axiosClient.post(`/leads/${id}/generateCarDetectReport`, {
         vin: form.vin.trim(),
       });
 
@@ -517,6 +549,15 @@ export default function LeadDetailV2() {
       const refreshedLead: LeadResponse = refreshed.data;
       setLead(refreshedLead);
       setForm(leadToForm(refreshedLead));
+
+      const documentFile =
+        (genRes as any)?.data?.data?.file || (refreshedLead as any)?.documents?.carDetectReport?.file;
+
+      if (typeof documentFile === 'string' && documentFile) {
+        const fileNameBase = refreshedLead?.uniqueId ? `CarDetect_${refreshedLead.uniqueId}` : `CarDetect_${id}`;
+        const filename = fileNameBase.endsWith('.pdf') ? fileNameBase : `${fileNameBase}.pdf`;
+        await downloadDocumentFile(documentFile, filename);
+      }
 
       alert('CarDetect report byl vygenerován a uložen k leadu.');
     } catch (e) {
@@ -540,6 +581,12 @@ export default function LeadDetailV2() {
           setForm(leadToForm(refreshedLead));
 
           if ((refreshedLead as any)?.documents?.carDetectReport) {
+            const documentFile = (refreshedLead as any)?.documents?.carDetectReport?.file;
+            if (typeof documentFile === 'string' && documentFile) {
+              const fileNameBase = refreshedLead?.uniqueId ? `CarDetect_${refreshedLead.uniqueId}` : `CarDetect_${id}`;
+              const filename = fileNameBase.endsWith('.pdf') ? fileNameBase : `${fileNameBase}.pdf`;
+              await downloadDocumentFile(documentFile, filename);
+            }
             alert('CarDetect report byl vygenerován a uložen k leadu.');
           } else {
             alert('CarDetect report se nepodařilo vygenerovat. Zkuste nejdřív uložit lead a pak znovu.');
