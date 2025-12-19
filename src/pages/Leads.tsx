@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components';
 import { axiosClient } from '@/api/axiosClient';
+import { formatDateTimePrague, parseApiDate } from '@/utils/dateTime';
 
 interface Lead {
   id: string;
@@ -88,13 +89,6 @@ const cleanString = (str: string | undefined): string => {
   if (!str) return '-';
   const lines = str.split(/[\n\r]+/).filter(line => line.trim());
   return lines[0]?.trim() || '-';
-};
-
-const parseApiDate = (value: string): Date => {
-  // Some backend serializers historically returned ISO timestamps without timezone.
-  // Treat timezone-less values as UTC to keep consistent server/client interpretation.
-  const hasTimeZone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
-  return new Date(hasTimeZone ? value : `${value}Z`);
 };
 
 const getLeadNoteMessage = (lead: Lead): string => {
@@ -425,8 +419,7 @@ export function Leads() {
   const hasActiveFilters = appliedFilters.leadState || appliedFilters.leadSubState || appliedFilters.periodFilterType || appliedFilters.dealerId;
 
   const formatDateTime = (dateStr: string) => {
-    const date = parseApiDate(dateStr);
-    return `${date.toLocaleDateString('cs-CZ', { timeZone: 'Europe/Prague' })} ${date.toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit' })}`;
+    return formatDateTimePrague(dateStr);
   };
 
   const getStatusStyle = (status: string) => {

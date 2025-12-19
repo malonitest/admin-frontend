@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
+import { tryFormatDateTimePrague } from '@/utils/dateTime';
 
 interface LeadResponse {
   id: string;
@@ -443,23 +444,7 @@ export default function LeadDetailV2() {
   };
 
   const formatNoteDateTime = (value?: string): string => {
-    if (!value) return '';
-
-    // Backend historically returned ISO strings without timezone (no trailing Z).
-    // Treat those as UTC and always display in Europe/Prague.
-    const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
-    const normalized = hasTimezone ? value : `${value}Z`;
-
-    const d = new Date(normalized);
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toLocaleString('cs-CZ', {
-      timeZone: 'Europe/Prague',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return tryFormatDateTimePrague(value);
   };
 
   const formatLeadStatus = (status?: string): string => {

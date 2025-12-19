@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
+import { formatDateTimePrague, tryParseApiDate } from '@/utils/dateTime';
 
 interface Dealer {
   _id: string;
@@ -35,28 +36,11 @@ const toDateInputValue = (d: Date): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const isoWithoutTimezoneRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
-
-const parseApiDate = (dateString?: string | null): Date | null => {
-  if (!dateString) return null;
-  const normalized = isoWithoutTimezoneRegex.test(dateString) ? `${dateString}Z` : dateString;
-  const d = new Date(normalized);
-  if (Number.isNaN(d.getTime())) return null;
-  return d;
-};
-
 const formatDateTime = (dateString?: string | null): string => {
   if (!dateString) return '-';
-  const d = parseApiDate(dateString);
+  const d = tryParseApiDate(dateString);
   if (!d) return String(dateString);
-  return d.toLocaleString('cs-CZ', {
-    timeZone: 'Europe/Prague',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDateTimePrague(d);
 };
 
 const formatDuration = (minutes?: number | null): string => {
