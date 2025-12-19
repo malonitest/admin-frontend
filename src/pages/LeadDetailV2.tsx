@@ -364,6 +364,7 @@ export default function LeadDetailV2() {
   const [showSubStatusPicker, setShowSubStatusPicker] = useState(false);
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -1024,7 +1025,11 @@ export default function LeadDetailV2() {
               {generatingCarDetect ? 'Generuji CarDetect report...' : 'CarDetect Report'}
             </button>
 
-            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            <button
+              type="button"
+              onClick={() => setShowDocumentsModal(true)}
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
               Dokumenty
             </button>
 
@@ -1304,6 +1309,49 @@ export default function LeadDetailV2() {
             </div>
           </div>
         ) : null}
+
+        {showDocumentsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative w-full max-w-lg mx-4 bg-white rounded-lg shadow-lg border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <div className="text-sm font-semibold text-gray-900">Dokumenty</div>
+                <button
+                  type="button"
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="px-3 py-1 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                >
+                  Zavřít
+                </button>
+              </div>
+
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    'Fotografie auta',
+                    'Evidenční kontrola',
+                    'Technické průkazy',
+                    'Smlouvy',
+                    'Zelená karta',
+                    'Plná moc',
+                    'Pojištění',
+                    'Při prodeji',
+                    'CarDetect report',
+                    'Ostatni dokumenty',
+                  ].map((label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className="w-full px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
