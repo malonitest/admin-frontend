@@ -731,6 +731,28 @@ export default function LeadDetailV2() {
     [lead]
   );
 
+  const hasAllCarPhotoCategories = useMemo(() => {
+    const countDocsWithFile = (value: unknown): number => {
+      if (Array.isArray(value)) {
+        return value.filter((d) => d && typeof d === 'object' && typeof (d as any).file === 'string' && (d as any).file).length;
+      }
+      if (value && typeof value === 'object') {
+        return typeof (value as any).file === 'string' && (value as any).file ? 1 : 0;
+      }
+      return 0;
+    };
+
+    const docs = lead?.documents;
+    if (!docs) return false;
+
+    return (
+      countDocsWithFile(docs.carInterior) > 0 &&
+      countDocsWithFile(docs.carExterior) > 0 &&
+      countDocsWithFile(docs.carMileage) > 0 &&
+      countDocsWithFile(docs.carVIN) > 0
+    );
+  }, [lead]);
+
   const activeCarPhotoConfig = useMemo(
     () => carPhotoConfigs.find((c) => c.key === activePhotoModal) || null,
     [carPhotoConfigs, activePhotoModal]
@@ -1685,7 +1707,11 @@ export default function LeadDetailV2() {
                             setDocumentsView('carPhotos');
                           }
                         }}
-                        className="w-full px-3 py-3 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                        className={`w-full px-3 py-3 text-sm text-white rounded-lg ${
+                          label === 'Fotografie auta' && hasAllCarPhotoCategories
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : 'bg-red-600 hover:bg-red-700'
+                        }`}
                       >
                         {label}
                       </button>
