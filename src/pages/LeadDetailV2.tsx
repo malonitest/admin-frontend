@@ -10,6 +10,10 @@ type LeadDocument = {
   documentType?: string;
 };
 
+type PendingPhoto = { file: File; preview: string };
+
+const MAX_PHOTOS = 5;
+
 interface LeadResponse {
   id: string;
   uniqueId?: number;
@@ -243,24 +247,63 @@ function PhotoUploadModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
 
   if (!isOpen) return null;
 
-  const handleFiles = async (files: File[]) => {
-    if (files.length === 0) return;
-    const limited = allowMultiple ? files : files.slice(0, 1);
-    await onUploadFiles(limited);
+  useEffect(() => {
+    if (isOpen) setPending([]);
+  }, [isOpen]);
+
+  const addPending = async (files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    const limitedByMode = allowMultiple ? imageFiles : imageFiles.slice(0, 1);
+
+    const remainingSlots = MAX_PHOTOS - pending.length;
+    const limited = allowMultiple ? limitedByMode.slice(0, Math.max(0, remainingSlots)) : limitedByMode.slice(0, 1);
+    if (limited.length === 0) return;
+
+    await Promise.all(
+      limited.map(
+        (file) =>
+          new Promise<void>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setPending((prev) => {
+                if (!allowMultiple) {
+                  return [{ file, preview: String(reader.result || '') }];
+                }
+                return prev.length >= MAX_PHOTOS ? prev : [...prev, { file, preview: String(reader.result || '') }];
+              });
+              resolve();
+            };
+            reader.readAsDataURL(file);
+          })
+      )
+    );
+  };
+
+  const saveAndClose = async () => {
+    try {
+      if (pending.length > 0) {
+        await onUploadFiles(pending.map((p) => p.file));
+      }
+    } finally {
+      onClose();
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
-    await handleFiles(files);
+    await addPending(files);
   };
 
   const handleCameraCapture = async (file: File) => {
     setShowCamera(false);
-    await handleFiles([file]);
+    await addPending([file]);
   };
 
   if (showCamera) return <CameraCapture onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} />;
@@ -269,13 +312,26 @@ function PhotoUploadModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold">{title}</h2>
             <button
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                void saveAndClose();
+              }}
+              disabled={uploading}
               className="px-3 py-1 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
             >
               Zavřít
@@ -296,7 +352,7 @@ function PhotoUploadModal({
                 e.preventDefault();
                 setDragActive(false);
                 const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith('image/'));
-                await handleFiles(files);
+                await addPending(files);
               }}
             >
               <div className="flex gap-3">
@@ -311,7 +367,7 @@ function PhotoUploadModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
+                  disabled={uploading || (!allowMultiple && pending.length >= 1) || pending.length >= MAX_PHOTOS}
                   className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700"
                 >
                   {uploading ? 'Nahrávám...' : 'Nahrát z počítače'}
@@ -319,7 +375,7 @@ function PhotoUploadModal({
                 <button
                   type="button"
                   onClick={() => setShowCamera(true)}
-                  disabled={uploading}
+                  disabled={uploading || (!allowMultiple && pending.length >= 1) || pending.length >= MAX_PHOTOS}
                   className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
                 >
                   Vyfotit
@@ -328,7 +384,33 @@ function PhotoUploadModal({
               <p className="text-xs text-gray-500 text-center mt-3">
                 {dragActive ? 'Pusťte fotky zde…' : 'nebo přetáhněte fotky sem (drag & drop)'}
               </p>
+              <p className="text-xs text-gray-500 text-center mt-1">
+                Připraveno {pending.length} z {MAX_PHOTOS} fotek
+              </p>
             </div>
+
+            {pending.length > 0 ? (
+              <div className="mb-4">
+                <div className="text-xs text-gray-600 mb-2">Nové fotky (uloží se po Hotovo/Zavřít)</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {pending.map((p, index) => (
+                    <div key={`${p.file.name}-${p.file.size}-${index}`} className="relative group">
+                      <img src={p.preview} alt={`Nová fotka ${index + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPending((prev) => prev.filter((_, i) => i !== index));
+                        }}
+                        className="absolute top-1 right-1 px-2 py-1 text-xs bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        X
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {existingWithFile.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -351,7 +433,14 @@ function PhotoUploadModal({
           </div>
 
           <div className="p-4 border-t border-gray-200">
-            <button onClick={onClose} className="w-full py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                void saveAndClose();
+              }}
+              disabled={uploading}
+              className="w-full py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50"
+            >
               Hotovo
             </button>
           </div>
@@ -616,7 +705,6 @@ export default function LeadDetailV2() {
   const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos'>('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [uploadingPhotoKey, setUploadingPhotoKey] = useState<string | null>(null);
-  const [draggingPhotoKey, setDraggingPhotoKey] = useState<string | null>(null);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -702,6 +790,50 @@ export default function LeadDetailV2() {
       }
     },
     [id, refreshLead]
+  );
+
+  const carPhotoConfigs = useMemo(
+    () =>
+      [
+        {
+          key: 'interior' as const,
+          title: 'Interiér',
+          subtitle: 'Nahrajte fotky interiéru',
+          category: 'carInterior' as const,
+          allowMultiple: true,
+          existing: (lead?.documents?.carInterior || []) as LeadDocument[],
+        },
+        {
+          key: 'exterior' as const,
+          title: 'Exteriér',
+          subtitle: 'Nahrajte fotky exteriéru',
+          category: 'carExterior' as const,
+          allowMultiple: true,
+          existing: (lead?.documents?.carExterior || []) as LeadDocument[],
+        },
+        {
+          key: 'mileage' as const,
+          title: 'Tachometr',
+          subtitle: 'Nahrajte fotku tachometru',
+          category: 'carMileage' as const,
+          allowMultiple: false,
+          existing: lead?.documents?.carMileage ? [lead.documents.carMileage] : ([] as LeadDocument[]),
+        },
+        {
+          key: 'vin' as const,
+          title: 'VIN',
+          subtitle: 'Nahrajte fotku VIN',
+          category: 'carVIN' as const,
+          allowMultiple: false,
+          existing: lead?.documents?.carVIN ? [lead.documents.carVIN] : ([] as LeadDocument[]),
+        },
+      ] as const,
+    [lead]
+  );
+
+  const activeCarPhotoConfig = useMemo(
+    () => carPhotoConfigs.find((c) => c.key === activePhotoModal) || null,
+    [carPhotoConfigs, activePhotoModal]
   );
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -1656,64 +1788,18 @@ export default function LeadDetailV2() {
                     <div className="text-sm font-medium text-gray-800 mb-3">Fotografie auta</div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      {([
-                        {
-                          key: 'interior',
-                          title: 'Interiér',
-                          subtitle: 'Nahrajte fotky interiéru',
-                          category: 'carInterior' as const,
-                          allowMultiple: true,
-                          existing: (lead?.documents?.carInterior || []) as LeadDocument[],
-                        },
-                        {
-                          key: 'exterior',
-                          title: 'Exteriér',
-                          subtitle: 'Nahrajte fotky exteriéru',
-                          category: 'carExterior' as const,
-                          allowMultiple: true,
-                          existing: (lead?.documents?.carExterior || []) as LeadDocument[],
-                        },
-                        {
-                          key: 'mileage',
-                          title: 'Tachometr',
-                          subtitle: 'Nahrajte fotku tachometru',
-                          category: 'carMileage' as const,
-                          allowMultiple: false,
-                          existing: lead?.documents?.carMileage ? [lead.documents.carMileage] : [],
-                        },
-                        {
-                          key: 'vin',
-                          title: 'VIN',
-                          subtitle: 'Nahrajte fotku VIN',
-                          category: 'carVIN' as const,
-                          allowMultiple: false,
-                          existing: lead?.documents?.carVIN ? [lead.documents.carVIN] : [],
-                        },
-                      ] as const).map((item) => {
+                      {carPhotoConfigs.map((item) => {
                         const existingFiles = (item.existing || []).filter((d) => typeof d?.file === 'string' && d.file);
                         const previews = existingFiles
                           .slice(0, 4)
                           .map((d) => downloadUrl(d.file as string));
-                        const isDragging = draggingPhotoKey === item.category;
 
                         return (
                           <div
                             key={item.key}
                             onClick={() => setActivePhotoModal(item.key)}
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              setDraggingPhotoKey(item.category);
-                            }}
-                            onDragLeave={() => setDraggingPhotoKey(null)}
-                            onDrop={async (e) => {
-                              e.preventDefault();
-                              setDraggingPhotoKey(null);
-                              const files = Array.from(e.dataTransfer.files || []);
-                              const limited = item.allowMultiple ? files : files.slice(0, 1);
-                              await uploadLeadPhotos(item.category, limited);
-                            }}
                             className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
-                              isDragging ? 'border-red-600 bg-red-50' : 'border-gray-300 bg-gray-50'
+                              'border-gray-300 bg-gray-50'
                             }`}
                           >
                             {previews.length > 0 ? (
@@ -1744,23 +1830,26 @@ export default function LeadDetailV2() {
                             {uploadingPhotoKey === item.category ? (
                               <div className="mt-2 text-xs text-gray-600 text-center">Nahrávám...</div>
                             ) : null}
-
-                            <PhotoUploadModal
-                              isOpen={activePhotoModal === item.key}
-                              onClose={() => setActivePhotoModal(null)}
-                              title={item.title}
-                              existing={item.existing as LeadDocument[]}
-                              allowMultiple={item.allowMultiple}
-                              uploading={uploadingPhotoKey === item.category}
-                              onUploadFiles={async (files) => {
-                                await uploadLeadPhotos(item.category, files);
-                              }}
-                              downloadUrl={downloadUrl}
-                            />
                           </div>
                         );
                       })}
                     </div>
+
+                    <PhotoUploadModal
+                      isOpen={Boolean(activeCarPhotoConfig)}
+                      onClose={() => setActivePhotoModal(null)}
+                      title={activeCarPhotoConfig?.title || ''}
+                      existing={(activeCarPhotoConfig?.existing || []) as LeadDocument[]}
+                      allowMultiple={Boolean(activeCarPhotoConfig?.allowMultiple)}
+                      uploading={
+                        Boolean(activeCarPhotoConfig?.category) && uploadingPhotoKey === activeCarPhotoConfig?.category
+                      }
+                      onUploadFiles={async (files) => {
+                        if (!activeCarPhotoConfig?.category) return;
+                        await uploadLeadPhotos(activeCarPhotoConfig.category, files);
+                      }}
+                      downloadUrl={downloadUrl}
+                    />
                   </>
                 )}
               </div>
