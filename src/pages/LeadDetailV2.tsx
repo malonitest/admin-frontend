@@ -317,6 +317,8 @@ export default function LeadDetailV2() {
   const [generatingCarDetect, setGeneratingCarDetect] = useState(false);
   const [settingAmApproved, setSettingAmApproved] = useState(false);
   const [settingDeclined, setSettingDeclined] = useState(false);
+  const [showDeclineReasons, setShowDeclineReasons] = useState(false);
+  const [declineType, setDeclineType] = useState<string>('OTHER');
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -442,6 +444,28 @@ export default function LeadDetailV2() {
     }
   };
 
+  const declineReasonOptions: Array<{ value: string; label: string }> = [
+    { value: 'CAR_NOT_OWNED', label: 'Vozidlo není ve vlastnictví' },
+    { value: 'CAR_LEASED', label: 'Vozidlo je na leasing' },
+    { value: 'CAR_LOW_VALUE', label: 'Nízká hodnota vozu' },
+    { value: 'CAR_OLD', label: 'Vozidlo je příliš staré' },
+    { value: 'CAR_BAD_TECHNICAL_STATE', label: 'Špatný technický stav' },
+    { value: 'CAR_HIGH_MILEAGE', label: 'Vysoký nájezd' },
+    { value: 'CAR_DENIED_BY_TECHNICIAN', label: 'Zamítnuto technikem' },
+    { value: 'CAR_BURDENED', label: 'Vozidlo je zatížené (břemeno/zástava)' },
+    { value: 'CUSTOMER_NOT_INTERESTED_BUY', label: 'Klient nemá zájem' },
+    { value: 'CUSTOMER_NOT_ELIGIBLE', label: 'Klient nesplňuje podmínky' },
+    { value: 'CUSTOMER_PRICE_DISADVANTAGEOUS', label: 'Cena je pro klienta nevýhodná' },
+    { value: 'CUSTOMER_SOLVED_ELSEWHERE', label: 'Klient to vyřešil jinde' },
+    { value: 'CAR_LOSS_RISK', label: 'Vysoké riziko ztráty' },
+    { value: 'HIGH_INSTALLMENTS', label: 'Příliš vysoké splátky' },
+    { value: 'OTHER', label: 'Jiný důvod' },
+  ];
+
+  const getDeclineReasonLabel = (value: string): string => {
+    return declineReasonOptions.find((o) => o.value === value)?.label || value;
+  };
+
   const handleAddNote = async () => {
     if (!id) return;
     const trimmed = noteDraft.trim();
@@ -562,17 +586,22 @@ export default function LeadDetailV2() {
   };
 
   const handleSetDeclined = async () => {
+    setShowDeclineReasons(true);
+  };
+
+  const handleConfirmDecline = async () => {
     if (!id) return;
     setSettingDeclined(true);
     try {
       await axiosClient.post(`/leads/${id}/decline`, {
-        type: 'OTHER',
-        reason: 'Zamítnuto',
+        type: declineType,
+        reason: getDeclineReasonLabel(declineType),
       });
+      setShowDeclineReasons(false);
       await refreshLead();
     } catch (e) {
       console.error('Failed to decline lead:', e);
-      alert('Nepodařilo se nastavit status "Zamítnuto"');
+      alert('Nepodařilo se zamítnout lead');
     } finally {
       setSettingDeclined(false);
     }
@@ -989,7 +1018,7 @@ export default function LeadDetailV2() {
               disabled={saving || settingDeclined || settingAmApproved}
               className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
             >
-              {settingDeclined ? 'Nastavuji...' : 'Zamítnout'}
+              Zamítnout
             </button>
 
             <button
@@ -1009,6 +1038,44 @@ export default function LeadDetailV2() {
             </button>
           </div>
         </div>
+
+        {showDeclineReasons ? (
+          <div className="mt-3 bg-white rounded-lg p-4 shadow border border-gray-200">
+            <div className="text-sm font-medium text-gray-800 mb-2">Důvod zamítnutí</div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <select
+                value={declineType}
+                onChange={(e) => setDeclineType(e.target.value)}
+                className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                {declineReasonOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeclineReasons(false)}
+                  disabled={settingDeclined}
+                  className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDecline}
+                  disabled={settingDeclined}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50"
+                >
+                  {settingDeclined ? 'Ukládám...' : 'Potvrdit zamítnutí'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
