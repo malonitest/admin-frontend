@@ -479,8 +479,8 @@ export function Leads() {
   };
 
   const canOrder = (status: string) => {
-    // Newly created leads are typically in CONCEPT (or NEW), but still need to be openable/editable.
-    return ['CONCEPT', 'NEW', 'SUPERVISOR_APPROVED', 'CUSTOMER_APPROVED', 'SALES_APPROVED', 'FINAL_APPROVAL'].includes(status);
+    // Detail should be accessible for all leads except declined.
+    return status !== 'DECLINED';
   };
   
   const isDeclined = (status: string): boolean => {
@@ -819,7 +819,7 @@ export function Leads() {
                             onClick={() => navigate(`/leads/${lead.id}/v2`)}
                             className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
                           >
-                            Objednávka
+                            Detail
                           </button>
                         ) : isDeclined(lead.status) ? (
                           <button 
