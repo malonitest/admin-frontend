@@ -90,6 +90,13 @@ const cleanString = (str: string | undefined): string => {
   return lines[0]?.trim() || '-';
 };
 
+const parseApiDate = (value: string): Date => {
+  // Some backend serializers historically returned ISO timestamps without timezone.
+  // Treat timezone-less values as UTC to keep consistent server/client interpretation.
+  const hasTimeZone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
+  return new Date(hasTimeZone ? value : `${value}Z`);
+};
+
 const getLeadNoteMessage = (lead: Lead): string => {
   const latest = getLeadLatestNote(lead);
   if (latest?.message) return cleanString(latest.message);
@@ -107,7 +114,7 @@ const getLeadLatestNote = (lead: Lead): { message?: string; createdAt?: string }
   for (const n of notes) {
     const createdAt = n.createdAt;
     if (!createdAt) continue;
-    const ms = new Date(createdAt).getTime();
+    const ms = parseApiDate(createdAt).getTime();
     if (Number.isNaN(ms)) continue;
     if (ms > latestMs) {
       latestMs = ms;
@@ -141,7 +148,7 @@ const formatHHMM = (totalMinutes: number): string => {
 const getContactDeltaHHMM = (lead: Lead): string => {
   const lastNoteAt = getLeadLatestNoteAt(lead);
   if (!lastNoteAt) return '-';
-  const lastMs = new Date(lastNoteAt).getTime();
+  const lastMs = parseApiDate(lastNoteAt).getTime();
   if (Number.isNaN(lastMs)) return '-';
   const nowMs = Date.now();
   const diffMinutes = (nowMs - lastMs) / (1000 * 60);
@@ -418,8 +425,8 @@ export function Leads() {
   const hasActiveFilters = appliedFilters.leadState || appliedFilters.leadSubState || appliedFilters.periodFilterType || appliedFilters.dealerId;
 
   const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return `${date.toLocaleDateString('cs-CZ')} ${date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}`;
+    const date = parseApiDate(dateStr);
+    return `${date.toLocaleDateString('cs-CZ', { timeZone: 'Europe/Prague' })} ${date.toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit' })}`;
   };
 
   const getStatusStyle = (status: string) => {
