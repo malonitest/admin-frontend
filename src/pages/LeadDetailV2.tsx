@@ -310,6 +310,7 @@ export default function LeadDetailV2() {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [form, setForm] = useState<FormState>(emptyFormState);
   const [noteDraft, setNoteDraft] = useState('');
+  const [generatingCarDetect, setGeneratingCarDetect] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -433,6 +434,31 @@ export default function LeadDetailV2() {
       alert(message || 'Nepodařilo se přidat poznámku');
     } finally {
       setAddingNote(false);
+    }
+  };
+
+  const handleGenerateCarDetectReport = async () => {
+    if (!id) return;
+    if (!form.vin.trim()) {
+      alert('Vyplňte prosím VIN vozu.');
+      return;
+    }
+
+    setGeneratingCarDetect(true);
+    try {
+      await axiosClient.post(`/leads/${id}/generateCarDetectReport`);
+
+      const refreshed = await axiosClient.get(`/leads/${id}`);
+      const refreshedLead: LeadResponse = refreshed.data;
+      setLead(refreshedLead);
+      setForm(leadToForm(refreshedLead));
+
+      alert('CarDetect report byl vygenerován a uložen k leadu.');
+    } catch (e) {
+      console.error('Failed to generate CarDetect report:', e);
+      alert('Nepodařilo se vygenerovat CarDetect report');
+    } finally {
+      setGeneratingCarDetect(false);
     }
   };
 
@@ -724,8 +750,13 @@ export default function LeadDetailV2() {
               Generovat nabídku
             </button>
 
-            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-              CarDetect Report
+            <button
+              type="button"
+              onClick={handleGenerateCarDetectReport}
+              disabled={generatingCarDetect}
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              {generatingCarDetect ? 'Generuji CarDetect report...' : 'CarDetect Report'}
             </button>
 
             <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
