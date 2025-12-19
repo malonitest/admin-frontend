@@ -39,6 +39,7 @@ interface LeadResponse {
     carVTP?: LeadDocument[] | null;
     carMTP?: LeadDocument[] | null;
     greenCard?: LeadDocument | null;
+    evidence?: LeadDocument[] | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -615,10 +616,13 @@ export default function LeadDetailV2() {
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
-  const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard'>('categories');
+  const [documentsView, setDocumentsView] = useState<
+    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence'
+  >('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
   const [showGreenCardModal, setShowGreenCardModal] = useState(false);
+  const [showEvidenceModal, setShowEvidenceModal] = useState(false);
   const [uploadingPhotoKey, setUploadingPhotoKey] = useState<string | null>(null);
   const [mtpNumberDraft, setMtpNumberDraft] = useState('');
   const [savingMtpNumber, setSavingMtpNumber] = useState(false);
@@ -689,7 +693,7 @@ export default function LeadDetailV2() {
 
   const uploadLeadPhotos = useCallback(
     async (
-      category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN' | 'carVTP' | 'carMTP' | 'greenCard',
+      category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN' | 'carVTP' | 'carMTP' | 'greenCard' | 'evidence',
       files: File[]
     ) => {
       if (!id) return;
@@ -834,6 +838,11 @@ export default function LeadDetailV2() {
   const hasGreenCard = useMemo(() => {
     const d = lead?.documents?.greenCard as any;
     return Boolean(d && typeof d === 'object' && typeof d.file === 'string' && d.file);
+  }, [lead]);
+
+  const hasEvidence = useMemo(() => {
+    const items = (lead?.documents?.evidence || []) as any[];
+    return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
   }, [lead]);
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -1747,6 +1756,7 @@ export default function LeadDetailV2() {
                         setActivePhotoModal(null);
                         setActiveTechnicalModal(null);
                         setShowGreenCardModal(false);
+                        setShowEvidenceModal(false);
                       }}
                       className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
                     >
@@ -1786,6 +1796,9 @@ export default function LeadDetailV2() {
                           if (label === 'Fotografie auta') {
                             setDocumentsView('carPhotos');
                           }
+                          if (label === 'Evidenční kontrola') {
+                            setDocumentsView('evidence');
+                          }
                           if (label === 'Technické průkazy') {
                             setDocumentsView('technicalPapers');
                           }
@@ -1798,6 +1811,10 @@ export default function LeadDetailV2() {
                             ? hasAllCarPhotoCategories
                               ? 'bg-green-600 hover:bg-green-700'
                               : 'bg-red-600 hover:bg-red-700'
+                            : label === 'Evidenční kontrola'
+                              ? hasEvidence
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-red-600 hover:bg-red-700'
                             : label === 'Technické průkazy'
                               ? hasTechnicalPapersComplete
                                 ? 'bg-green-600 hover:bg-green-700'
@@ -1813,6 +1830,79 @@ export default function LeadDetailV2() {
                       </button>
                     ))}
                   </div>
+                ) : documentsView === 'evidence' ? (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Evidenční kontrola</div>
+
+                    <div
+                      onClick={() => setShowEvidenceModal(true)}
+                      className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                        'border-gray-300 bg-gray-50'
+                      }`}
+                    >
+                      {hasEvidence ? (
+                        <div className="w-full">
+                          <div className="grid grid-cols-2 gap-1 mb-2">
+                            {((lead?.documents?.evidence || []) as LeadDocument[])
+                              .filter((d) => typeof d?.file === 'string' && d.file)
+                              .slice(0, 4)
+                              .map((d, idx) => (
+                                <img
+                                  key={idx}
+                                  src={downloadUrl(d.file as string)}
+                                  alt={`Evidenční kontrola ${idx + 1}`}
+                                  className="w-full h-12 object-cover rounded border border-gray-200"
+                                  loading="lazy"
+                                />
+                              ))}
+                          </div>
+                          <p className="text-xs text-center text-gray-700">
+                            {((lead?.documents?.evidence || []) as LeadDocument[]).filter(
+                              (d) => typeof d?.file === 'string' && d.file
+                            ).length}{' '}
+                            {((lead?.documents?.evidence || []) as LeadDocument[]).filter(
+                              (d) => typeof d?.file === 'string' && d.file
+                            ).length === 1
+                              ? 'fotografie'
+                              : 'fotografií'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEvidenceModal(true);
+                            }}
+                            className="mt-2 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                          >
+                            Zobrazit
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-gray-900">Evidenční kontrola</p>
+                          <p className="text-xs text-gray-500">Nahrajte fotku evidenční kontroly</p>
+                          <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte fotku</p>
+                        </div>
+                      )}
+
+                      {uploadingPhotoKey === 'evidence' ? (
+                        <div className="mt-2 text-xs text-gray-600 text-center">Nahrávám...</div>
+                      ) : null}
+                    </div>
+
+                    <PhotoUploadModal
+                      isOpen={showEvidenceModal}
+                      onClose={() => setShowEvidenceModal(false)}
+                      title="Evidenční kontrola"
+                      existing={((lead?.documents?.evidence || []) as LeadDocument[]) ?? ([] as LeadDocument[])}
+                      allowMultiple={true}
+                      uploading={uploadingPhotoKey === 'evidence'}
+                      onUploadFiles={async (files) => {
+                        await uploadLeadPhotos('evidence', files);
+                      }}
+                      downloadUrl={downloadUrl}
+                    />
+                  </>
                 ) : documentsView === 'carPhotos' ? (
                   <>
                     <div className="text-sm font-medium text-gray-800 mb-3">Fotografie auta</div>
