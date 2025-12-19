@@ -9,6 +9,7 @@ interface Lead {
   createdAt: string;
   updatedAt?: string;
   statusUpdatedAt?: string;
+  subStatus?: string | null;
   noteMessage?: string;
   note?: Array<{
     message?: string;
@@ -378,10 +379,10 @@ export function Leads() {
   useEffect(() => {
     fetchLeads();
     
-    // Auto-refresh every 30 seconds (silent to avoid spinner flicker)
+    // Auto-refresh every 60 seconds (silent to avoid spinner flicker)
     const refreshInterval = setInterval(() => {
       fetchLeads(true);
-    }, 30000);
+    }, 60000);
     
     return () => clearInterval(refreshInterval);
   }, [fetchLeads]);
@@ -730,7 +731,7 @@ export function Leads() {
                       </div>
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
-                      {normalizeSubstatus(lead.declinedType || lead.notInterestedStatus)}
+                      {normalizeSubstatus(lead.subStatus || lead.declinedType || lead.notInterestedStatus)}
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
                       {getSourceDisplay(lead)}
