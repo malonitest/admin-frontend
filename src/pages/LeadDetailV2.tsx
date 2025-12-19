@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
 import { tryFormatDateTimePrague } from '@/utils/dateTime';
+
+type LeadDocument = {
+  _id?: string;
+  file?: string;
+  name?: string;
+  documentType?: string;
+};
 
 interface LeadResponse {
   id: string;
@@ -20,12 +27,11 @@ interface LeadResponse {
   carDetectReportOk?: boolean;
   executionOk?: boolean;
   documents?: {
-    carDetectReport?: {
-      _id?: string;
-      file?: string;
-      name?: string;
-      documentType?: string;
-    } | null;
+    carDetectReport?: LeadDocument | null;
+    carVIN?: LeadDocument | null;
+    carMileage?: LeadDocument | null;
+    carExterior?: LeadDocument[] | null;
+    carInterior?: LeadDocument[] | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -111,6 +117,248 @@ interface LeadResponse {
   }>;
   assignedSalesManager?: { id?: string; _id?: string; name?: string } | string;
   salesVisitAt?: string;
+}
+
+function CameraCapture({ onCapture, onClose }: { onCapture: (file: File) => void; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setReady(true);
+        }
+      } catch (err) {
+        console.error('Camera error:', err);
+        setError('Nepodařilo se spustit kameru. Zkontrolujte oprávnění prohlížeče.');
+      }
+    };
+
+    startCamera();
+    return () => stopCamera();
+  }, [stopCamera]);
+
+  const handleCapture = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        stopCamera();
+        onCapture(file);
+      },
+      'image/jpeg',
+      0.9
+    );
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black z-[60] flex flex-col">
+      <div className="flex items-center justify-between p-4 bg-black/80">
+        <h2 className="text-white text-lg font-semibold">Vyfotit</h2>
+        <button onClick={handleClose} className="px-3 py-1 text-sm bg-gray-200 text-gray-900 rounded hover:bg-gray-300">
+          Zavřít
+        </button>
+      </div>
+
+      <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
+        {error ? (
+          <div className="text-white text-center p-4">
+            <p className="mb-4">{error}</p>
+            <button onClick={handleClose} className="px-4 py-2 bg-red-600 text-white rounded-lg">
+              Zavřít
+            </button>
+          </div>
+        ) : (
+          <>
+            <video ref={videoRef} autoPlay playsInline muted className="max-w-full max-h-full object-contain" />
+            <canvas ref={canvasRef} className="hidden" />
+          </>
+        )}
+      </div>
+
+      {!error && (
+        <div className="p-6 bg-black/80 flex justify-center">
+          <button
+            onClick={handleCapture}
+            disabled={!ready}
+            className="w-20 h-20 bg-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-gray-200 transition-colors border-4 border-gray-400"
+          >
+            <div className="w-14 h-14 bg-red-600 rounded-full" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhotoUploadModal({
+  isOpen,
+  onClose,
+  title,
+  existing,
+  allowMultiple,
+  uploading,
+  onUploadFiles,
+  downloadUrl,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  existing: LeadDocument[];
+  allowMultiple: boolean;
+  uploading: boolean;
+  onUploadFiles: (files: File[]) => Promise<void>;
+  downloadUrl: (documentFile: string) => string;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    const limited = allowMultiple ? files : files.slice(0, 1);
+    await onUploadFiles(limited);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    await handleFiles(files);
+  };
+
+  const handleCameraCapture = async (file: File) => {
+    setShowCamera(false);
+    await handleFiles([file]);
+  };
+
+  if (showCamera) return <CameraCapture onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} />;
+
+  const existingWithFile = existing.filter((d) => typeof d?.file === 'string' && d.file);
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button
+              onClick={onClose}
+              className="px-3 py-1 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+            >
+              Zavřít
+            </button>
+          </div>
+
+          <div className="p-4">
+            <div
+              className={`border-2 border-dashed rounded-lg p-4 mb-4 transition-colors ${
+                dragActive ? 'border-red-600 bg-red-50' : 'border-gray-300'
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setDragActive(false);
+                const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith('image/'));
+                await handleFiles(files);
+              }}
+            >
+              <div className="flex gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple={allowMultiple}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700"
+                >
+                  {uploading ? 'Nahrávám...' : 'Nahrát z počítače'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCamera(true)}
+                  disabled={uploading}
+                  className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
+                >
+                  Vyfotit
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-3">
+                {dragActive ? 'Pusťte fotky zde…' : 'nebo přetáhněte fotky sem (drag & drop)'}
+              </p>
+            </div>
+
+            {existingWithFile.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {existingWithFile.map((doc, index) => (
+                  <div key={`${doc._id || doc.file || index}`} className="relative">
+                    <img
+                      src={downloadUrl(doc.file as string)}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <p>Zatím žádné fotografie</p>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t border-gray-200">
+            <button onClick={onClose} className="w-full py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
+              Hotovo
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
 
 type LeadNote = NonNullable<LeadResponse['note']>[number];
@@ -365,6 +613,10 @@ export default function LeadDetailV2() {
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos'>('categories');
+  const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
+  const [uploadingPhotoKey, setUploadingPhotoKey] = useState<string | null>(null);
+  const [draggingPhotoKey, setDraggingPhotoKey] = useState<string | null>(null);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -416,6 +668,41 @@ export default function LeadDetailV2() {
 
     fetchAll();
   }, [id]);
+
+  const refreshLead = useCallback(async () => {
+    if (!id) return;
+    const leadRes = await axiosClient.get(`/leads/${id}`);
+    const leadData: LeadResponse = leadRes.data;
+    setLead(leadData);
+    setForm(leadToForm(leadData));
+  }, [id]);
+
+  const downloadUrl = useCallback((documentFile: string) => {
+    const base = (axiosClient.defaults.baseURL || '').replace(/\/$/, '');
+    return `${base}/documents/download/${encodeURIComponent(documentFile)}`;
+  }, []);
+
+  const uploadLeadPhotos = useCallback(
+    async (category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN', files: File[]) => {
+      if (!id) return;
+      const onlyImages = files.filter((f) => f.type.startsWith('image/'));
+      if (onlyImages.length === 0) return;
+
+      setUploadingPhotoKey(category);
+      try {
+        for (const file of onlyImages) {
+          const formData = new FormData();
+          formData.append('document', file);
+          formData.append('category', category);
+          await axiosClient.post(`/leads/${id}/documents`, formData);
+        }
+        await refreshLead();
+      } finally {
+        setUploadingPhotoKey(null);
+      }
+    },
+    [id, refreshLead]
+  );
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -637,14 +924,6 @@ export default function LeadDetailV2() {
     } finally {
       setGeneratingCarDetect(false);
     }
-  };
-
-  const refreshLead = async () => {
-    if (!id) return;
-    const refreshed = await axiosClient.get(`/leads/${id}`);
-    const refreshedLead: LeadResponse = refreshed.data;
-    setLead(refreshedLead);
-    setForm(leadToForm(refreshedLead));
   };
 
   const setLeadCheck = async (field: 'carDetectReportOk' | 'executionOk', value: boolean) => {
@@ -1027,7 +1306,11 @@ export default function LeadDetailV2() {
 
             <button
               type="button"
-              onClick={() => setShowDocumentsModal(true)}
+              onClick={() => {
+                setDocumentsView('categories');
+                setActivePhotoModal(null);
+                setShowDocumentsModal(true);
+              }}
               className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Dokumenty
@@ -1315,7 +1598,21 @@ export default function LeadDetailV2() {
             <div className="absolute inset-0 bg-black/40" />
             <div className="relative w-full max-w-lg mx-4 bg-white rounded-lg shadow-lg border border-gray-200">
               <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-900">Dokumenty</div>
+                <div className="flex items-center gap-2">
+                  {documentsView !== 'categories' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDocumentsView('categories');
+                        setActivePhotoModal(null);
+                      }}
+                      className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                    >
+                      Zpět
+                    </button>
+                  ) : null}
+                  <div className="text-sm font-semibold text-gray-900">Dokumenty</div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowDocumentsModal(false)}
@@ -1326,28 +1623,146 @@ export default function LeadDetailV2() {
               </div>
 
               <div className="p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    'Fotografie auta',
-                    'Evidenční kontrola',
-                    'Technické průkazy',
-                    'Smlouvy',
-                    'Zelená karta',
-                    'Plná moc',
-                    'Pojištění',
-                    'Při prodeji',
-                    'CarDetect report',
-                    'Ostatni dokumenty',
-                  ].map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className="w-full px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                {documentsView === 'categories' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      'Fotografie auta',
+                      'Evidenční kontrola',
+                      'Technické průkazy',
+                      'Smlouvy',
+                      'Zelená karta',
+                      'Plná moc',
+                      'Pojištění',
+                      'Při prodeji',
+                      'CarDetect report',
+                      'Ostatni dokumenty',
+                    ].map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => {
+                          if (label === 'Fotografie auta') {
+                            setDocumentsView('carPhotos');
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Fotografie auta</div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        {
+                          key: 'interior',
+                          title: 'Interiér',
+                          subtitle: 'Nahrajte fotky interiéru',
+                          category: 'carInterior' as const,
+                          allowMultiple: true,
+                          existing: (lead?.documents?.carInterior || []) as LeadDocument[],
+                        },
+                        {
+                          key: 'exterior',
+                          title: 'Exteriér',
+                          subtitle: 'Nahrajte fotky exteriéru',
+                          category: 'carExterior' as const,
+                          allowMultiple: true,
+                          existing: (lead?.documents?.carExterior || []) as LeadDocument[],
+                        },
+                        {
+                          key: 'mileage',
+                          title: 'Tachometr',
+                          subtitle: 'Nahrajte fotku tachometru',
+                          category: 'carMileage' as const,
+                          allowMultiple: false,
+                          existing: lead?.documents?.carMileage ? [lead.documents.carMileage] : [],
+                        },
+                        {
+                          key: 'vin',
+                          title: 'VIN',
+                          subtitle: 'Nahrajte fotku VIN',
+                          category: 'carVIN' as const,
+                          allowMultiple: false,
+                          existing: lead?.documents?.carVIN ? [lead.documents.carVIN] : [],
+                        },
+                      ] as const).map((item) => {
+                        const existingFiles = (item.existing || []).filter((d) => typeof d?.file === 'string' && d.file);
+                        const previews = existingFiles
+                          .slice(0, 4)
+                          .map((d) => downloadUrl(d.file as string));
+                        const isDragging = draggingPhotoKey === item.category;
+
+                        return (
+                          <div
+                            key={item.key}
+                            onClick={() => setActivePhotoModal(item.key)}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setDraggingPhotoKey(item.category);
+                            }}
+                            onDragLeave={() => setDraggingPhotoKey(null)}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              setDraggingPhotoKey(null);
+                              const files = Array.from(e.dataTransfer.files || []);
+                              const limited = item.allowMultiple ? files : files.slice(0, 1);
+                              await uploadLeadPhotos(item.category, limited);
+                            }}
+                            className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                              isDragging ? 'border-red-600 bg-red-50' : 'border-gray-300 bg-gray-50'
+                            }`}
+                          >
+                            {previews.length > 0 ? (
+                              <div className="w-full">
+                                <div className="grid grid-cols-2 gap-1 mb-2">
+                                  {previews.map((src, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={src}
+                                      alt={`${item.title} ${idx + 1}`}
+                                      className="w-full h-12 object-cover rounded border border-gray-200"
+                                      loading="lazy"
+                                    />
+                                  ))}
+                                </div>
+                                <p className="text-xs text-center text-gray-700">
+                                  {existingFiles.length} {existingFiles.length === 1 ? 'fotografie' : 'fotografií'}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="h-full flex flex-col items-center justify-center text-center">
+                                <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                                <p className="text-xs text-gray-500">{item.subtitle}</p>
+                                <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte fotku</p>
+                              </div>
+                            )}
+
+                            {uploadingPhotoKey === item.category ? (
+                              <div className="mt-2 text-xs text-gray-600 text-center">Nahrávám...</div>
+                            ) : null}
+
+                            <PhotoUploadModal
+                              isOpen={activePhotoModal === item.key}
+                              onClose={() => setActivePhotoModal(null)}
+                              title={item.title}
+                              existing={item.existing as LeadDocument[]}
+                              allowMultiple={item.allowMultiple}
+                              uploading={uploadingPhotoKey === item.category}
+                              onUploadFiles={async (files) => {
+                                await uploadLeadPhotos(item.category, files);
+                              }}
+                              downloadUrl={downloadUrl}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
