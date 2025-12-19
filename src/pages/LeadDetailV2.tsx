@@ -719,6 +719,22 @@ export default function LeadDetailV2() {
               <label className="block text-xs text-gray-500 mb-1">Číslo bankovního účtu</label>
               <input value={form.bankAccount} onChange={handleChange('bankAccount')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
             </div>
+
+            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              Generovat nabídku
+            </button>
+
+            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              CarDetect Report
+            </button>
+
+            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              Dokumenty
+            </button>
+
+            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              Fotogalerie
+            </button>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow space-y-3">
