@@ -17,6 +17,7 @@ interface TimeFunnelRow {
   declinedAt?: string | null;
   decisionBy?: { _id: string; name?: string; email?: string } | null;
   durationMinutes?: number | null;
+  ageMinutes?: number | null;
 }
 
 interface PaginatedResponse<T> {
@@ -61,7 +62,7 @@ const formatDuration = (minutes?: number | null): string => {
 const decisionLabel = (row: TimeFunnelRow): string => {
   if (row.amApprovedAt) return 'Schválen AM';
   if (row.declinedAt) return 'Zamítnuto';
-  return '-';
+  return 'Čeká';
 };
 
 export default function TimeFunnelNewToDecisionPage() {
@@ -123,6 +124,7 @@ export default function TimeFunnelNewToDecisionPage() {
 
   const summary = useMemo(() => {
     const rows = data?.results ?? [];
+    // KPI: measure only finished decisions (speed of processing)
     const durations = rows
       .map((r) => r.durationMinutes)
       .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
@@ -141,7 +143,7 @@ export default function TimeFunnelNewToDecisionPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900">Časový funnel – New → Schválen AM</h1>
       <p className="text-sm text-gray-600 mt-1">
-        Jak číst: každý řádek je lead vytvořený v zvoleném období, který už má rozhodnutí (Schválen AM nebo Zamítnuto). “Doba” je čas od vytvoření leada po rozhodnutí – nižší hodnota znamená rychlejší zpracování.
+        Jak číst: každý řádek je lead vytvořený v zvoleném období. “Rozhodnutí” ukazuje, zda je lead Schválen AM / Zamítnuto / Čeká. “Doba” je čas od vytvoření po rozhodnutí; u „Čeká“ je to čas od vytvoření do teď.
       </p>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -181,7 +183,7 @@ export default function TimeFunnelNewToDecisionPage() {
       </div>
 
       <div className="mt-4 text-sm text-gray-700">
-        <span className="mr-4">Počet: <span className="font-semibold">{summary.count}</span></span>
+        <span className="mr-4">Rozhodnuté: <span className="font-semibold">{summary.count}</span></span>
         <span className="mr-4">Průměrná doba: <span className="font-semibold">{formatDuration(summary.avg)}</span></span>
         <span>Medián: <span className="font-semibold">{formatDuration(summary.median)}</span></span>
       </div>
@@ -219,7 +221,7 @@ export default function TimeFunnelNewToDecisionPage() {
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.createdAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.amApprovedAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.declinedAt)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{formatDuration(row.durationMinutes)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{formatDuration(row.durationMinutes ?? row.ageMinutes)}</td>
                   </tr>
                 ))}
 
