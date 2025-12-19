@@ -569,6 +569,22 @@ export default function LeadDetailV2() {
               <input value={form.postalCode} onChange={handleChange('postalCode')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
             </div>
 
+            {showCompanyFields && (
+              <>
+                <div className="text-xs text-gray-500">Jedná se o firemního klienta.</div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">IČO</label>
+                  <input value={form.companyID} onChange={handleChange('companyID')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Název společnosti</label>
+                  <input value={form.companyName} onChange={handleChange('companyName')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                </div>
+              </>
+            )}
+
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={form.enableAddress2} onChange={handleChange('enableAddress2')} className="w-4 h-4" />
               <span className="text-sm">Přidat korespondenční adresu</span>
@@ -669,19 +685,6 @@ export default function LeadDetailV2() {
               <label className="block text-xs text-gray-500 mb-1">Číslo bankovního účtu</label>
               <input value={form.bankAccount} onChange={handleChange('bankAccount')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
             </div>
-
-            {showCompanyFields && (
-              <>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">IČO</label>
-                  <input value={form.companyID} onChange={handleChange('companyID')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Název společnosti</label>
-                  <input value={form.companyName} onChange={handleChange('companyName')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                </div>
-              </>
-            )}
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">Datum návštěvy technika</label>
