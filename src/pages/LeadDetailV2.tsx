@@ -967,27 +967,26 @@ export default function LeadDetailV2() {
 
   const handleGenerateCarDetectReport = async () => {
     if (!id) return;
-    if (!form.vin.trim()) {
-      alert('Vyplňte prosím VIN vozu.');
-      return;
-    }
+    const existingFile = (lead as any)?.documents?.carDetectReport?.file as string | undefined;
 
-    const downloadDocumentFile = async (documentFile: string, filename: string) => {
+    const openPdfInBrowser = async (documentFile: string) => {
       try {
         const resp = await axiosClient.get(`/documents/download/${encodeURIComponent(documentFile)}`, {
           responseType: 'blob',
         });
         const blob = resp.data instanceof Blob ? resp.data : new Blob([resp.data]);
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+
+        const opened = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+          window.location.href = url;
+        }
+
+        window.setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 60_000);
       } catch (err) {
-        console.error('Failed to download CarDetect PDF via blob:', err);
+        console.error('Failed to open CarDetect PDF via blob:', err);
 
         // Fallback: open download URL in a new tab (lets the browser handle the file).
         const base = (axiosClient.defaults.baseURL || '').replace(/\/$/, '');
@@ -995,6 +994,18 @@ export default function LeadDetailV2() {
         window.open(url, '_blank', 'noopener,noreferrer');
       }
     };
+
+    // If we already have a stored CarDetect PDF, just open it.
+    if (typeof existingFile === 'string' && existingFile) {
+      await openPdfInBrowser(existingFile);
+      return;
+    }
+
+    // Otherwise generate it (and store to the lead).
+    if (!form.vin.trim()) {
+      alert('Vyplňte prosím VIN vozu.');
+      return;
+    }
 
     setGeneratingCarDetect(true);
     try {
@@ -1011,12 +1022,8 @@ export default function LeadDetailV2() {
         (genRes as any)?.data?.data?.file || (refreshedLead as any)?.documents?.carDetectReport?.file;
 
       if (typeof documentFile === 'string' && documentFile) {
-        const fileNameBase = refreshedLead?.uniqueId ? `CarDetect_${refreshedLead.uniqueId}` : `CarDetect_${id}`;
-        const filename = fileNameBase.endsWith('.pdf') ? fileNameBase : `${fileNameBase}.pdf`;
-        await downloadDocumentFile(documentFile, filename);
+        await openPdfInBrowser(documentFile);
       }
-
-      alert('CarDetect report byl vygenerován a uložen k leadu.');
     } catch (e) {
       const status = (e as any)?.response?.status as number | undefined;
       const message = (e as any)?.response?.data?.message as string | undefined;
@@ -1040,11 +1047,8 @@ export default function LeadDetailV2() {
           if ((refreshedLead as any)?.documents?.carDetectReport) {
             const documentFile = (refreshedLead as any)?.documents?.carDetectReport?.file;
             if (typeof documentFile === 'string' && documentFile) {
-              const fileNameBase = refreshedLead?.uniqueId ? `CarDetect_${refreshedLead.uniqueId}` : `CarDetect_${id}`;
-              const filename = fileNameBase.endsWith('.pdf') ? fileNameBase : `${fileNameBase}.pdf`;
-              await downloadDocumentFile(documentFile, filename);
+              await openPdfInBrowser(documentFile);
             }
-            alert('CarDetect report byl vygenerován a uložen k leadu.');
           } else {
             alert('CarDetect report se nepodařilo vygenerovat. Zkuste nejdřív uložit lead a pak znovu.');
           }
@@ -1804,6 +1808,9 @@ export default function LeadDetailV2() {
                           }
                           if (label === 'Zelená karta') {
                             setDocumentsView('greenCard');
+                          }
+                          if (label === 'CarDetect report') {
+                            void handleGenerateCarDetectReport();
                           }
                         }}
                         className={`w-full px-3 py-3 text-sm text-white rounded-lg ${
