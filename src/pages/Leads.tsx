@@ -157,6 +157,22 @@ const getLeadLatestSubStatusChangeAt = (lead: Lead): string | undefined => {
   return latest;
 };
 
+const getSubStatusDeltaHHMM = (lead: Lead): string | undefined => {
+  const history = lead.subStatusHistory;
+  if (!history || history.length < 2) return undefined;
+
+  const sorted = [...history]
+    .filter((h) => Boolean(h.changedAt))
+    .map((h) => ({ changedAt: h.changedAt as string, ms: parseApiDate(h.changedAt as string).getTime() }))
+    .filter((h) => !Number.isNaN(h.ms))
+    .sort((a, b) => b.ms - a.ms);
+
+  if (sorted.length < 2) return undefined;
+
+  const diffMinutes = (sorted[0].ms - sorted[1].ms) / (1000 * 60);
+  return formatHHMM(diffMinutes);
+};
+
 const formatHHMM = (totalMinutes: number): string => {
   const minutes = Math.max(0, Math.floor(totalMinutes));
   const hours = Math.floor(minutes / 60);
@@ -781,7 +797,12 @@ export function Leads() {
                       {getAuthorName(lead)}
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500">
-                      {getContactDeltaHHMM(lead)}
+                      <div>{getContactDeltaHHMM(lead)}</div>
+                      {getSubStatusDeltaHHMM(lead) && (
+                        <div className="text-[10px] text-gray-400 mt-0.5">
+                          ΔSS {getSubStatusDeltaHHMM(lead)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
                       <div className="text-[10px] text-gray-400">
