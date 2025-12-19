@@ -146,12 +146,14 @@ function PhotoUploadModal({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
+  useEffect(() => {
+    if (isOpen) {
+      setPending([]);
+      setDragActive(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  useEffect(() => {
-    if (isOpen) setPending([]);
-  }, [isOpen]);
 
   const addPending = async (files: File[]) => {
     const imageFiles = files.filter((f) => f.type.startsWith('image/'));
