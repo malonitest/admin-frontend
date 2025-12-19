@@ -409,6 +409,39 @@ export default function LeadDetailV2() {
     });
   };
 
+  const formatLeadStatus = (status?: string): string => {
+    switch (status) {
+      case 'CONCEPT':
+        return 'Koncept';
+      case 'NEW':
+        return 'Nový';
+      case 'AWAITS_APPROVAL':
+        return 'Čeká na schválení';
+      case 'SUPERVISOR_APPROVED':
+        return 'Schválen AM';
+      case 'CUSTOMER_APPROVED':
+        return 'Schválen klientem';
+      case 'ASSIGNED':
+        return 'Přiřazeno';
+      case 'SENT_TO_OZ':
+        return 'Odesláno OZ';
+      case 'SALES_APPROVED':
+        return 'Schváleno sales';
+      case 'UPLOAD_DOCUMENTS':
+        return 'Nahrát dokumenty';
+      case 'FINAL_APPROVAL':
+        return 'Finální schválení';
+      case 'RETURNED_TO_SALES':
+        return 'Vráceno sales';
+      case 'CONVERTED':
+        return 'Konvertováno';
+      case 'DECLINED':
+        return 'Zamítnuto';
+      default:
+        return status || '';
+    }
+  };
+
   const handleAddNote = async () => {
     if (!id) return;
     const trimmed = noteDraft.trim();
@@ -933,6 +966,11 @@ export default function LeadDetailV2() {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="text-xs text-gray-600 space-y-1">
+            {lead?.status ? (
+              <div>
+                Status: <span className="font-medium">{formatLeadStatus(lead.status)}</span>
+              </div>
+            ) : null}
             {lead?.amApprovedAt ? (
               <div>
                 Schválen AM: <span className="font-medium">{formatNoteDateTime(lead.amApprovedAt)}</span>
