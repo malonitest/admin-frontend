@@ -446,7 +446,9 @@ export default function LeadDetailV2() {
 
     setGeneratingCarDetect(true);
     try {
-      await axiosClient.post(`/leads/${id}/generateCarDetectReport`);
+      await axiosClient.post(`/leads/${id}/generateCarDetectReport`, {
+        vin: form.vin.trim(),
+      });
 
       const refreshed = await axiosClient.get(`/leads/${id}`);
       const refreshedLead: LeadResponse = refreshed.data;
@@ -455,8 +457,44 @@ export default function LeadDetailV2() {
 
       alert('CarDetect report byl vygenerován a uložen k leadu.');
     } catch (e) {
+      const status = (e as any)?.response?.status as number | undefined;
+      const message = (e as any)?.response?.data?.message as string | undefined;
+
+      // Backward-compatible fallback:
+      // some deployments/revisions may not have /generateCarDetectReport yet.
+      if (status === 404) {
+        try {
+          // Trigger existing backend behavior: when VIN changes on update, backend refreshes CarDetect.
+          await axiosClient.patch(`/leads/${id}`, {
+            car: {
+              VIN: form.vin.trim(),
+            },
+          });
+
+          const refreshed = await axiosClient.get(`/leads/${id}`);
+          const refreshedLead: LeadResponse = refreshed.data;
+          setLead(refreshedLead);
+          setForm(leadToForm(refreshedLead));
+
+          if ((refreshedLead as any)?.documents?.carDetectReport) {
+            alert('CarDetect report byl vygenerován a uložen k leadu.');
+          } else {
+            alert('CarDetect report se nepodařilo vygenerovat. Zkuste nejdřív uložit lead a pak znovu.');
+          }
+          return;
+        } catch (fallbackError) {
+          console.error('CarDetect fallback failed:', fallbackError);
+          alert('Nepodařilo se vygenerovat CarDetect report');
+          return;
+        }
+      }
+
       console.error('Failed to generate CarDetect report:', e);
-      alert('Nepodařilo se vygenerovat CarDetect report');
+      if (status === 400) {
+        alert(message || 'Nepodařilo se vygenerovat CarDetect report (zkontrolujte VIN / uložte lead).');
+      } else {
+        alert('Nepodařilo se vygenerovat CarDetect report');
+      }
     } finally {
       setGeneratingCarDetect(false);
     }
