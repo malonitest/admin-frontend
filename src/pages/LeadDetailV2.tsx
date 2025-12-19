@@ -5,7 +5,11 @@ import { axiosClient } from '@/api/axiosClient';
 interface LeadResponse {
   id: string;
   uniqueId?: number;
+  status?: string;
   estimatedValue?: number | null;
+  decidedAt?: string;
+  amApprovedAt?: string;
+  declinedAt?: string;
   note?: Array<{
     message?: string;
     createdAt?: string;
@@ -927,30 +931,45 @@ export default function LeadDetailV2() {
           </div>
         </div>
 
-        <div className="mt-4 flex justify-end gap-3">
-          <button
-            onClick={handleSetDeclined}
-            disabled={saving || settingDeclined || settingAmApproved}
-            className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
-          >
-            {settingDeclined ? 'Nastavuji...' : 'Zamítnout'}
-          </button>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="text-xs text-gray-600 space-y-1">
+            {lead?.amApprovedAt ? (
+              <div>
+                Schválen AM: <span className="font-medium">{formatNoteDateTime(lead.amApprovedAt)}</span>
+              </div>
+            ) : null}
+            {lead?.declinedAt ? (
+              <div>
+                Zamítnuto: <span className="font-medium">{formatNoteDateTime(lead.declinedAt)}</span>
+              </div>
+            ) : null}
+          </div>
 
-          <button
-            onClick={handleSetAmApproved}
-            disabled={saving || settingDeclined || settingAmApproved}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
-          >
-            {settingAmApproved ? 'Nastavuji...' : 'Schválen AM'}
-          </button>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={handleSetDeclined}
+              disabled={saving || settingDeclined || settingAmApproved}
+              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
+            >
+              {settingDeclined ? 'Nastavuji...' : 'Zamítnout'}
+            </button>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
-          >
-            {saving ? 'Ukládám...' : 'Uložit změny'}
-          </button>
+            <button
+              onClick={handleSetAmApproved}
+              disabled={saving || settingDeclined || settingAmApproved}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+            >
+              {settingAmApproved ? 'Nastavuji...' : 'Schválen AM'}
+            </button>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+            >
+              {saving ? 'Ukládám...' : 'Uložit změny'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
