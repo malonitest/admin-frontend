@@ -10,6 +10,12 @@ interface LeadResponse {
   decidedAt?: string;
   amApprovedAt?: string;
   declinedAt?: string;
+  subStatus?: string | null;
+  subStatusHistory?: Array<{
+    subStatus?: string;
+    changedAt?: string;
+    changedBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+  }>;
   carDetectReportOk?: boolean;
   executionOk?: boolean;
   documents?: {
@@ -114,6 +120,29 @@ interface Dealer {
   name?: string;
   user?: { name?: string };
 }
+
+const LEAD_SUBSTATES: Array<{ value: string; label: string }> = [
+  { value: 'NOT_REACHED_1', label: 'Nedovoláno 1x' },
+  { value: 'NOT_REACHED_2', label: 'Nedovoláno 2x' },
+  { value: 'NOT_REACHED_3', label: 'Nedovoláno 3x' },
+  { value: 'NOT_REACHED_4', label: 'Nedovoláno 4x' },
+  { value: 'NOT_REACHED_X', label: 'Nedovoláno opakovaně' },
+  { value: 'CAR_LOW_VALUE', label: 'Nízká hodnota auta' },
+  { value: 'CAR_OLD', label: 'Stáří vozu' },
+  { value: 'CAR_BAD_TECHNICAL_STATE', label: 'Zlý technický stav' },
+  { value: 'CAR_HIGH_MILEAGE', label: 'Vysoký nájezd' },
+  { value: 'CAR_DENIED_BY_TECHNICIAN', label: 'Zamítnuto technikem' },
+  { value: 'CUSTOMER_NOT_INTERESTED_BUY', label: 'Nechce řešit' },
+  { value: 'CUSTOMER_PRICE_DISADVANTAGEOUS', label: 'Nevýhodná cena' },
+  { value: 'IN_PROGRESS', label: 'V řešení' },
+  { value: 'AWAITING_FEEDBACK', label: 'Zpětný kontakt' },
+  { value: 'ASSIGNED_TO_TECHNICIAN', label: 'Předáno technikovi' },
+];
+
+const normalizeSubstatus = (type: string | undefined | null): string => {
+  if (!type) return '-';
+  return LEAD_SUBSTATES.find((s) => s.value === type)?.label || type;
+};
 
 type FormState = {
   customerType: string;
@@ -330,6 +359,10 @@ export default function LeadDetailV2() {
   const [settingDeclined, setSettingDeclined] = useState(false);
   const [showDeclineReasons, setShowDeclineReasons] = useState(false);
   const [declineType, setDeclineType] = useState<string>('OTHER');
+
+  const [showSubStatusPicker, setShowSubStatusPicker] = useState(false);
+  const [subStatusDraft, setSubStatusDraft] = useState<string>('');
+  const [settingSubStatus, setSettingSubStatus] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -634,6 +667,35 @@ export default function LeadDetailV2() {
       alert('Nepodařilo se uložit změnu');
     } finally {
       setSavingLeadChecks(false);
+    }
+  };
+
+  const formatDealerName = (value: any): string => {
+    if (!value) return '-';
+    if (typeof value === 'string') return value;
+    return value?.name || value?.user?.name || '-';
+  };
+
+  const handleOpenSubStatus = () => {
+    setSubStatusDraft(String(lead?.subStatus || ''));
+    setShowSubStatusPicker(true);
+  };
+
+  const handleConfirmSubStatus = async () => {
+    if (!id) return;
+    const next = subStatusDraft.trim();
+    if (!next) return;
+
+    try {
+      setSettingSubStatus(true);
+      await axiosClient.patch(`/leads/${id}`, { subStatus: next });
+      await refreshLead();
+      setShowSubStatusPicker(false);
+    } catch (e) {
+      console.error('Failed to update subStatus:', e);
+      alert('Nepodařilo se nastavit substatus');
+    } finally {
+      setSettingSubStatus(false);
     }
   };
 
@@ -1003,6 +1065,36 @@ export default function LeadDetailV2() {
 
               {savingLeadChecks && <div className="text-xs text-gray-500">Ukládám...</div>}
             </div>
+
+            <div className="pt-2 border-t border-gray-200">
+              <div className="text-xs text-gray-500">Aktuální substatus</div>
+              <div className="text-sm text-gray-800 mb-2">{normalizeSubstatus(lead?.subStatus)}</div>
+
+              <div className="text-xs text-gray-500 mb-1">Historie substatusů</div>
+              <div className="border border-gray-200 rounded-lg p-2 max-h-64 overflow-auto bg-gray-50">
+                {lead?.subStatusHistory && lead.subStatusHistory.length > 0 ? (
+                  <div className="space-y-2">
+                    {lead.subStatusHistory
+                      .slice()
+                      .sort((a, b) => new Date(b.changedAt || 0).getTime() - new Date(a.changedAt || 0).getTime())
+                      .map((item, idx) => (
+                        <div
+                          key={`${item.changedAt || idx}-${item.subStatus || idx}`}
+                          className="bg-white border border-gray-200 rounded-md p-2"
+                        >
+                          <div className="text-xs text-gray-500 flex items-center justify-between gap-2">
+                            <span>{formatDealerName(item.changedBy)}</span>
+                            <span>{formatNoteDateTime(item.changedAt)}</span>
+                          </div>
+                          <div className="text-sm text-gray-800">{normalizeSubstatus(item.subStatus)}</div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Zatím bez změn substatusu</div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow space-y-3">
@@ -1092,6 +1184,11 @@ export default function LeadDetailV2() {
                 Status: <span className="font-medium">{formatLeadStatus(lead.status)}</span>
               </div>
             ) : null}
+            {lead?.subStatus ? (
+              <div>
+                Substatus: <span className="font-medium">{normalizeSubstatus(lead.subStatus)}</span>
+              </div>
+            ) : null}
             {lead?.amApprovedAt ? (
               <div>
                 Schválen AM: <span className="font-medium">{formatNoteDateTime(lead.amApprovedAt)}</span>
@@ -1114,6 +1211,14 @@ export default function LeadDetailV2() {
             </button>
 
             <button
+              onClick={handleOpenSubStatus}
+              disabled={saving || settingDeclined || settingAmApproved}
+              className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
+            >
+              SubStatus update
+            </button>
+
+            <button
               onClick={handleSetAmApproved}
               disabled={saving || settingDeclined || settingAmApproved}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
@@ -1130,6 +1235,45 @@ export default function LeadDetailV2() {
             </button>
           </div>
         </div>
+
+        {showSubStatusPicker ? (
+          <div className="mt-3 bg-white rounded-lg p-4 shadow border border-gray-200">
+            <div className="text-sm font-medium text-gray-800 mb-2">Substatus</div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <select
+                value={subStatusDraft}
+                onChange={(e) => setSubStatusDraft(e.target.value)}
+                className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Vyberte substatus</option>
+                {LEAD_SUBSTATES.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSubStatusPicker(false)}
+                  disabled={settingSubStatus}
+                  className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSubStatus}
+                  disabled={settingSubStatus || !subStatusDraft.trim()}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {settingSubStatus ? 'Ukládám...' : 'Potvrdit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {showDeclineReasons ? (
           <div className="mt-3 bg-white rounded-lg p-4 shadow border border-gray-200">
