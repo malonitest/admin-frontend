@@ -10,6 +10,8 @@ interface LeadResponse {
   decidedAt?: string;
   amApprovedAt?: string;
   declinedAt?: string;
+  carDetectReportOk?: boolean;
+  executionOk?: boolean;
   documents?: {
     carDetectReport?: {
       _id?: string;
@@ -323,6 +325,7 @@ export default function LeadDetailV2() {
   const [form, setForm] = useState<FormState>(emptyFormState);
   const [noteDraft, setNoteDraft] = useState('');
   const [generatingCarDetect, setGeneratingCarDetect] = useState(false);
+  const [savingLeadChecks, setSavingLeadChecks] = useState(false);
   const [settingAmApproved, setSettingAmApproved] = useState(false);
   const [settingDeclined, setSettingDeclined] = useState(false);
   const [showDeclineReasons, setShowDeclineReasons] = useState(false);
@@ -616,6 +619,22 @@ export default function LeadDetailV2() {
     const refreshedLead: LeadResponse = refreshed.data;
     setLead(refreshedLead);
     setForm(leadToForm(refreshedLead));
+  };
+
+  const setLeadCheck = async (field: 'carDetectReportOk' | 'executionOk', value: boolean) => {
+    if (!id) return;
+    setSavingLeadChecks(true);
+    try {
+      await axiosClient.patch(`/leads/${id}`, {
+        [field]: value,
+      });
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to update lead check:', e);
+      alert('Nepodařilo se uložit změnu');
+    } finally {
+      setSavingLeadChecks(false);
+    }
   };
 
   const handleSetAmApproved = async () => {
@@ -958,6 +977,32 @@ export default function LeadDetailV2() {
             <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
               Fotogalerie
             </button>
+
+            <div className="pt-2 border-t border-gray-200 space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={Boolean(lead?.carDetectReportOk)}
+                  disabled={savingLeadChecks}
+                  onChange={(e) => setLeadCheck('carDetectReportOk', e.target.checked)}
+                />
+                <span className="text-sm">CarDetect report OK</span>
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={Boolean(lead?.executionOk)}
+                  disabled={savingLeadChecks}
+                  onChange={(e) => setLeadCheck('executionOk', e.target.checked)}
+                />
+                <span className="text-sm">Exekuce OK</span>
+              </label>
+
+              {savingLeadChecks && <div className="text-xs text-gray-500">Ukládám...</div>}
+            </div>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow space-y-3">
