@@ -11,6 +11,10 @@ interface Lead {
   updatedAt?: string;
   statusUpdatedAt?: string;
   subStatus?: string | null;
+  subStatusHistory?: Array<{
+    subStatus?: string;
+    changedAt?: string;
+  }>;
   noteMessage?: string;
   note?: Array<{
     message?: string;
@@ -132,6 +136,27 @@ const getLeadLatestNoteAt = (lead: Lead): string | undefined => {
   return getLeadLatestNote(lead)?.createdAt;
 };
 
+const getLeadLatestSubStatusChangeAt = (lead: Lead): string | undefined => {
+  const history = lead.subStatusHistory;
+  if (!history || history.length === 0) return undefined;
+
+  let latest: string | undefined;
+  let latestMs = -1;
+
+  for (const h of history) {
+    const changedAt = h.changedAt;
+    if (!changedAt) continue;
+    const ms = parseApiDate(changedAt).getTime();
+    if (Number.isNaN(ms)) continue;
+    if (ms > latestMs) {
+      latestMs = ms;
+      latest = changedAt;
+    }
+  }
+
+  return latest;
+};
+
 const formatHHMM = (totalMinutes: number): string => {
   const minutes = Math.max(0, Math.floor(totalMinutes));
   const hours = Math.floor(minutes / 60);
@@ -141,9 +166,17 @@ const formatHHMM = (totalMinutes: number): string => {
 
 const getContactDeltaHHMM = (lead: Lead): string => {
   const lastNoteAt = getLeadLatestNoteAt(lead);
-  if (!lastNoteAt) return '-';
-  const lastMs = parseApiDate(lastNoteAt).getTime();
-  if (Number.isNaN(lastMs)) return '-';
+  const lastSubStatusAt = getLeadLatestSubStatusChangeAt(lead);
+
+  const lastNoteMs = lastNoteAt ? parseApiDate(lastNoteAt).getTime() : Number.NaN;
+  const lastSubStatusMs = lastSubStatusAt ? parseApiDate(lastSubStatusAt).getTime() : Number.NaN;
+
+  const lastMs = Math.max(
+    Number.isNaN(lastNoteMs) ? -1 : lastNoteMs,
+    Number.isNaN(lastSubStatusMs) ? -1 : lastSubStatusMs
+  );
+
+  if (lastMs < 0) return '-';
   const nowMs = Date.now();
   const diffMinutes = (nowMs - lastMs) / (1000 * 60);
   return formatHHMM(diffMinutes);
