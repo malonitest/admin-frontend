@@ -35,11 +35,22 @@ const toDateInputValue = (d: Date): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const isoWithoutTimezoneRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
+
+const parseApiDate = (dateString?: string | null): Date | null => {
+  if (!dateString) return null;
+  const normalized = isoWithoutTimezoneRegex.test(dateString) ? `${dateString}Z` : dateString;
+  const d = new Date(normalized);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+};
+
 const formatDateTime = (dateString?: string | null): string => {
   if (!dateString) return '-';
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return String(dateString);
+  const d = parseApiDate(dateString);
+  if (!d) return String(dateString);
   return d.toLocaleString('cs-CZ', {
+    timeZone: 'Europe/Prague',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
