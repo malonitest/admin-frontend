@@ -23,6 +23,12 @@ const navigation: NavItem[] = [
   { name: 'Obchodníci', href: '/dealers', icon: DealersIcon },
   { name: 'Faktury', href: '/invoices', icon: InvoiceIcon },
   { name: 'Logy', href: '/logs', icon: LogIcon },
+  {
+    name: 'Časový funnel',
+    href: '/time-funnel',
+    icon: StatsIcon,
+    children: [{ name: 'New->Schválen AM', href: '/time-funnel/new-to-am-approved' }],
+  },
   { 
     name: 'Nové Reporty', 
     href: '/new-reports', 

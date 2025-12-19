@@ -36,6 +36,7 @@ import Reports2KPI from '@/pages/Reports2KPI';
 import Reports2Financial from '@/pages/Reports2Financial';
 import Reports2FunnelTechnik from '@/pages/Reports2FunnelTechnik';
 import Reports2CarStats from '@/pages/Reports2CarStats';
+import TimeFunnelNewToDecisionPage from '@/pages/TimeFunnelNewToDecision';
 import { InvestorReport } from '@/reports/investor';
 import { FunnelReportPage } from '@/reports/funnel';
 import FinancialPL from '@/pages/NewReports/FinancialPL';
@@ -75,6 +76,14 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      {
+        path: 'time-funnel',
+        element: <Navigate to="/time-funnel/new-to-am-approved" replace />,
+      },
+      {
+        path: 'time-funnel/new-to-am-approved',
+        element: <TimeFunnelNewToDecisionPage />,
+      },
       {
         index: true,
         element: <Dashboard />,
