@@ -444,9 +444,16 @@ export default function LeadDetailV2() {
 
   const formatNoteDateTime = (value?: string): string => {
     if (!value) return '';
-    const d = new Date(value);
+
+    // Backend historically returned ISO strings without timezone (no trailing Z).
+    // Treat those as UTC and always display in Europe/Prague.
+    const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
+    const normalized = hasTimezone ? value : `${value}Z`;
+
+    const d = new Date(normalized);
     if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleString('cs-CZ', {
+      timeZone: 'Europe/Prague',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
