@@ -328,8 +328,12 @@ function PhotoUploadModal({
                     <img
                       src={downloadUrl(doc.file as string)}
                       alt={`Foto ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      className="w-full h-24 object-cover rounded-lg border border-gray-200 cursor-pointer"
                       loading="lazy"
+                      onClick={() => {
+                        const url = downloadUrl(doc.file as string);
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                      }}
                     />
                   </div>
                 ))}
@@ -1844,6 +1848,16 @@ export default function LeadDetailV2() {
                                 <p className="text-xs text-center text-gray-700">
                                   {existingFiles.length} {existingFiles.length === 1 ? 'fotografie' : 'fotografií'}
                                 </p>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActivePhotoModal(item.key);
+                                  }}
+                                  className="mt-2 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                                >
+                                  Zobrazit
+                                </button>
                               </div>
                             ) : (
                               <div className="h-full flex flex-col items-center justify-center text-center">
@@ -1931,6 +1945,16 @@ export default function LeadDetailV2() {
                                 <p className="text-xs text-center text-gray-700">
                                   {existingFiles.length} {existingFiles.length === 1 ? 'dokument' : 'dokumentů'}
                                 </p>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTechnicalModal(item.key);
+                                  }}
+                                  className="mt-2 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                                >
+                                  Zobrazit
+                                </button>
                               </div>
                             ) : (
                               <div className="h-full flex flex-col items-center justify-center text-center">
@@ -1983,6 +2007,16 @@ export default function LeadDetailV2() {
                             loading="lazy"
                           />
                           <p className="text-xs text-center text-gray-700 mt-2">Nahráno</p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowGreenCardModal(true);
+                            }}
+                            className="mt-2 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                          >
+                            Zobrazit
+                          </button>
                         </div>
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-center">
