@@ -120,108 +120,6 @@ function MoneyIcon({ className }: { className?: string }) {
   );
 }
 
-function CameraCapture({ onCapture, onClose }: { onCapture: (file: File) => void; onClose: () => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => setReady(true);
-        }
-      } catch (err) {
-        console.error('Camera error:', err);
-        setError('Nepodařilo se spustit kameru. Zkontrolujte oprávnění prohlížeče.');
-      }
-    };
-
-    startCamera();
-    return () => stopCamera();
-  }, [stopCamera]);
-
-  const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(video, 0, 0);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        stopCamera();
-        onCapture(file);
-      },
-      'image/jpeg',
-      0.9
-    );
-  };
-
-  const handleClose = () => {
-    stopCamera();
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black z-[60] flex flex-col">
-      <div className="flex items-center justify-between p-4 bg-black/80">
-        <h2 className="text-white text-lg font-semibold">Vyfotit</h2>
-        <button onClick={handleClose} className="p-2 text-white hover:bg-gray-800 rounded">
-          <XIcon className="w-6 h-6" />
-        </button>
-      </div>
-
-      <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
-        {error ? (
-          <div className="text-white text-center p-4">
-            <p className="mb-4">{error}</p>
-            <button onClick={handleClose} className="px-4 py-2 bg-red-600 text-white rounded-lg">
-              Zavřít
-            </button>
-          </div>
-        ) : (
-          <>
-            <video ref={videoRef} autoPlay playsInline muted className="max-w-full max-h-full object-contain" />
-            <canvas ref={canvasRef} className="hidden" />
-          </>
-        )}
-      </div>
-
-      {!error && (
-        <div className="p-6 bg-black/80 flex justify-center">
-          <button
-            onClick={handleCapture}
-            disabled={!ready}
-            className="w-20 h-20 bg-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-gray-200 transition-colors border-4 border-gray-400"
-          >
-            <div className="w-14 h-14 bg-red-600 rounded-full" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function PhotoUploadModal({
   isOpen,
   onClose,
@@ -238,7 +136,7 @@ function PhotoUploadModal({
   onRemovePhoto: (index: number) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showCamera, setShowCamera] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   if (!isOpen) return null;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,20 +145,13 @@ function PhotoUploadModal({
     e.target.value = '';
   };
 
-  const handleCameraCapture = (file: File) => {
-    setShowCamera(false);
-    if (photos.length < MAX_PHOTOS) onAddPhotos([file]);
-  };
-
   const canAddMore = photos.length < MAX_PHOTOS;
-
-  if (showCamera) return <CameraCapture onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} />;
 
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto mx-2 sm:mx-4">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-lg font-semibold">{title}</h2>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
@@ -269,20 +160,29 @@ function PhotoUploadModal({
           </div>
 
           <div className="p-4">
-            <div className="flex gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden" />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!canAddMore}
-                className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg flex items-center justify-center gap-2 text-gray-700"
+                className="flex-1 w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg flex items-center justify-center gap-2 text-gray-700"
               >
                 <FolderIcon className="w-5 h-5" />
                 <span>Nahrát z počítače</span>
               </button>
               <button
-                onClick={() => setShowCamera(true)}
+                onClick={() => cameraInputRef.current?.click()}
                 disabled={!canAddMore}
-                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg flex items-center justify-center gap-2 text-white"
+                className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg flex items-center justify-center gap-2 text-white"
               >
                 <CameraIcon className="w-5 h-5" />
                 <span>Vyfotit</span>

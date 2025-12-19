@@ -123,108 +123,6 @@ interface LeadResponse {
   salesVisitAt?: string;
 }
 
-function CameraCapture({ onCapture, onClose }: { onCapture: (file: File) => void; onClose: () => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => setReady(true);
-        }
-      } catch (err) {
-        console.error('Camera error:', err);
-        setError('Nepodařilo se spustit kameru. Zkontrolujte oprávnění prohlížeče.');
-      }
-    };
-
-    startCamera();
-    return () => stopCamera();
-  }, [stopCamera]);
-
-  const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(video, 0, 0);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        stopCamera();
-        onCapture(file);
-      },
-      'image/jpeg',
-      0.9
-    );
-  };
-
-  const handleClose = () => {
-    stopCamera();
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black z-[60] flex flex-col">
-      <div className="flex items-center justify-between p-4 bg-black/80">
-        <h2 className="text-white text-lg font-semibold">Vyfotit</h2>
-        <button onClick={handleClose} className="px-3 py-1 text-sm bg-gray-200 text-gray-900 rounded hover:bg-gray-300">
-          Zavřít
-        </button>
-      </div>
-
-      <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
-        {error ? (
-          <div className="text-white text-center p-4">
-            <p className="mb-4">{error}</p>
-            <button onClick={handleClose} className="px-4 py-2 bg-red-600 text-white rounded-lg">
-              Zavřít
-            </button>
-          </div>
-        ) : (
-          <>
-            <video ref={videoRef} autoPlay playsInline muted className="max-w-full max-h-full object-contain" />
-            <canvas ref={canvasRef} className="hidden" />
-          </>
-        )}
-      </div>
-
-      {!error && (
-        <div className="p-6 bg-black/80 flex justify-center">
-          <button
-            onClick={handleCapture}
-            disabled={!ready}
-            className="w-20 h-20 bg-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-gray-200 transition-colors border-4 border-gray-400"
-          >
-            <div className="w-14 h-14 bg-red-600 rounded-full" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function PhotoUploadModal({
   isOpen,
   onClose,
@@ -245,7 +143,7 @@ function PhotoUploadModal({
   downloadUrl: (documentFile: string) => string;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showCamera, setShowCamera] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
 
@@ -301,13 +199,6 @@ function PhotoUploadModal({
     await addPending(files);
   };
 
-  const handleCameraCapture = async (file: File) => {
-    setShowCamera(false);
-    await addPending([file]);
-  };
-
-  if (showCamera) return <CameraCapture onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} />;
-
   const existingWithFile = existing.filter((d) => typeof d?.file === 'string' && d.file);
 
   return (
@@ -321,7 +212,7 @@ function PhotoUploadModal({
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto mx-2 sm:mx-4"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -355,7 +246,7 @@ function PhotoUploadModal({
                 await addPending(files);
               }}
             >
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -364,19 +255,28 @@ function PhotoUploadModal({
                   onChange={handleFileSelect}
                   className="hidden"
                 />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple={allowMultiple}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || (!allowMultiple && pending.length >= 1) || pending.length >= MAX_PHOTOS}
-                  className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700"
+                  className="flex-1 w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700"
                 >
                   {uploading ? 'Nahrávám...' : 'Nahrát z počítače'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowCamera(true)}
+                  onClick={() => cameraInputRef.current?.click()}
                   disabled={uploading || (!allowMultiple && pending.length >= 1) || pending.length >= MAX_PHOTOS}
-                  className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
+                  className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
                 >
                   Vyfotit
                 </button>
@@ -1727,8 +1627,16 @@ export default function LeadDetailV2() {
 
         {showDocumentsModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="relative w-full max-w-lg mx-4 bg-white rounded-lg shadow-lg border border-gray-200">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowDocumentsModal(false)}
+              role="button"
+              tabIndex={-1}
+            />
+            <div
+              className="relative w-full max-w-lg mx-2 sm:mx-4 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[92vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {documentsView !== 'categories' ? (
@@ -1777,7 +1685,7 @@ export default function LeadDetailV2() {
                             setDocumentsView('carPhotos');
                           }
                         }}
-                        className="w-full px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                        className="w-full px-3 py-3 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
                       >
                         {label}
                       </button>
