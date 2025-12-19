@@ -311,6 +311,8 @@ export default function LeadDetailV2() {
   const [form, setForm] = useState<FormState>(emptyFormState);
   const [noteDraft, setNoteDraft] = useState('');
   const [generatingCarDetect, setGeneratingCarDetect] = useState(false);
+  const [settingAmApproved, setSettingAmApproved] = useState(false);
+  const [settingDeclined, setSettingDeclined] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -497,6 +499,45 @@ export default function LeadDetailV2() {
       }
     } finally {
       setGeneratingCarDetect(false);
+    }
+  };
+
+  const refreshLead = async () => {
+    if (!id) return;
+    const refreshed = await axiosClient.get(`/leads/${id}`);
+    const refreshedLead: LeadResponse = refreshed.data;
+    setLead(refreshedLead);
+    setForm(leadToForm(refreshedLead));
+  };
+
+  const handleSetAmApproved = async () => {
+    if (!id) return;
+    setSettingAmApproved(true);
+    try {
+      await axiosClient.post(`/leads/${id}/supervisor/approve`);
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to set AM approved:', e);
+      alert('Nepodařilo se nastavit status "Schválen AM"');
+    } finally {
+      setSettingAmApproved(false);
+    }
+  };
+
+  const handleSetDeclined = async () => {
+    if (!id) return;
+    setSettingDeclined(true);
+    try {
+      await axiosClient.post(`/leads/${id}/decline`, {
+        type: 'OTHER',
+        reason: 'Zamítnuto',
+      });
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to decline lead:', e);
+      alert('Nepodařilo se nastavit status "Zamítnuto"');
+    } finally {
+      setSettingDeclined(false);
     }
   };
 
@@ -887,6 +928,22 @@ export default function LeadDetailV2() {
         </div>
 
         <div className="mt-4 flex justify-end gap-3">
+          <button
+            onClick={handleSetDeclined}
+            disabled={saving || settingDeclined || settingAmApproved}
+            className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
+          >
+            {settingDeclined ? 'Nastavuji...' : 'Zamítnout'}
+          </button>
+
+          <button
+            onClick={handleSetAmApproved}
+            disabled={saving || settingDeclined || settingAmApproved}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+          >
+            {settingAmApproved ? 'Nastavuji...' : 'Schválen AM'}
+          </button>
+
           <button
             onClick={handleSave}
             disabled={saving}
