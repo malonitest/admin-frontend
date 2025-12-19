@@ -38,6 +38,7 @@ interface LeadResponse {
     carInterior?: LeadDocument[] | null;
     carVTP?: LeadDocument[] | null;
     carMTP?: LeadDocument[] | null;
+    greenCard?: LeadDocument | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -610,9 +611,10 @@ export default function LeadDetailV2() {
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
-  const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos' | 'technicalPapers'>('categories');
+  const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard'>('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
+  const [showGreenCardModal, setShowGreenCardModal] = useState(false);
   const [uploadingPhotoKey, setUploadingPhotoKey] = useState<string | null>(null);
   const [mtpNumberDraft, setMtpNumberDraft] = useState('');
   const [savingMtpNumber, setSavingMtpNumber] = useState(false);
@@ -682,7 +684,10 @@ export default function LeadDetailV2() {
   }, []);
 
   const uploadLeadPhotos = useCallback(
-    async (category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN' | 'carVTP' | 'carMTP', files: File[]) => {
+    async (
+      category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN' | 'carVTP' | 'carMTP' | 'greenCard',
+      files: File[]
+    ) => {
       if (!id) return;
       const onlyImages = files.filter((f) => f.type.startsWith('image/'));
       if (onlyImages.length === 0) return;
@@ -820,6 +825,11 @@ export default function LeadDetailV2() {
     const vtpCount = Array.isArray(docs?.carVTP) ? docs!.carVTP.filter((d) => d && typeof d === 'object' && (d as any).file).length : 0;
     const mtpCount = Array.isArray(docs?.carMTP) ? docs!.carMTP.filter((d) => d && typeof d === 'object' && (d as any).file).length : 0;
     return hasNumber && (vtpCount > 0 || mtpCount > 0);
+  }, [lead]);
+
+  const hasGreenCard = useMemo(() => {
+    const d = lead?.documents?.greenCard as any;
+    return Boolean(d && typeof d === 'object' && typeof d.file === 'string' && d.file);
   }, [lead]);
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -1732,6 +1742,7 @@ export default function LeadDetailV2() {
                         setDocumentsView('categories');
                         setActivePhotoModal(null);
                         setActiveTechnicalModal(null);
+                        setShowGreenCardModal(false);
                       }}
                       className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
                     >
@@ -1774,6 +1785,9 @@ export default function LeadDetailV2() {
                           if (label === 'Technické průkazy') {
                             setDocumentsView('technicalPapers');
                           }
+                          if (label === 'Zelená karta') {
+                            setDocumentsView('greenCard');
+                          }
                         }}
                         className={`w-full px-3 py-3 text-sm text-white rounded-lg ${
                           label === 'Fotografie auta'
@@ -1784,6 +1798,10 @@ export default function LeadDetailV2() {
                               ? hasTechnicalPapersComplete
                                 ? 'bg-green-600 hover:bg-green-700'
                                 : 'bg-red-600 hover:bg-red-700'
+                              : label === 'Zelená karta'
+                                ? hasGreenCard
+                                  ? 'bg-green-600 hover:bg-green-700'
+                                  : 'bg-red-600 hover:bg-red-700'
                               : 'bg-red-600 hover:bg-red-700'
                         }`}
                       >
@@ -1859,7 +1877,7 @@ export default function LeadDetailV2() {
                       downloadUrl={downloadUrl}
                     />
                   </>
-                ) : (
+                ) : documentsView === 'technicalPapers' ? (
                   <>
                     <div className="text-sm font-medium text-gray-800 mb-3">Technické průkazy</div>
 
@@ -1942,6 +1960,51 @@ export default function LeadDetailV2() {
                       onUploadFiles={async (files) => {
                         if (!activeTechnicalConfig?.category) return;
                         await uploadLeadPhotos(activeTechnicalConfig.category, files);
+                      }}
+                      downloadUrl={downloadUrl}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Zelená karta</div>
+
+                    <div
+                      onClick={() => setShowGreenCardModal(true)}
+                      className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                        'border-gray-300 bg-gray-50'
+                      }`}
+                    >
+                      {lead?.documents?.greenCard?.file ? (
+                        <div className="w-full">
+                          <img
+                            src={downloadUrl(lead.documents.greenCard.file as string)}
+                            alt="Zelená karta"
+                            className="w-full h-32 object-cover rounded border border-gray-200"
+                            loading="lazy"
+                          />
+                          <p className="text-xs text-center text-gray-700 mt-2">Nahráno</p>
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-gray-900">Zelená karta</p>
+                          <p className="text-xs text-gray-500">Nahrajte fotku zelené karty</p>
+                          <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte fotku</p>
+                        </div>
+                      )}
+                      {uploadingPhotoKey === 'greenCard' ? (
+                        <div className="mt-2 text-xs text-gray-600 text-center">Nahrávám...</div>
+                      ) : null}
+                    </div>
+
+                    <PhotoUploadModal
+                      isOpen={showGreenCardModal}
+                      onClose={() => setShowGreenCardModal(false)}
+                      title="Zelená karta"
+                      existing={lead?.documents?.greenCard ? ([lead.documents.greenCard] as LeadDocument[]) : ([] as LeadDocument[])}
+                      allowMultiple={false}
+                      uploading={uploadingPhotoKey === 'greenCard'}
+                      onUploadFiles={async (files) => {
+                        await uploadLeadPhotos('greenCard', files);
                       }}
                       downloadUrl={downloadUrl}
                     />
