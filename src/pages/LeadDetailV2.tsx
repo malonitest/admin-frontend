@@ -827,6 +827,14 @@ export default function LeadDetailV2() {
                 onChange={(e) => setForm((prev) => ({ ...prev, assignedTechnician: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               >
+                <option value="">Vyberte technika</option>
+                {technicianOptions.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">Datum návštěvy technika</label>
@@ -836,14 +844,6 @@ export default function LeadDetailV2() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">Čas návštěvy technika</label>
               <input type="time" value={form.salesVisitTime} onChange={handleChange('salesVisitTime')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
-                <option value="">Vyberte technika</option>
-                {technicianOptions.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
