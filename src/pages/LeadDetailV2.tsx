@@ -36,6 +36,8 @@ interface LeadResponse {
     carMileage?: LeadDocument | null;
     carExterior?: LeadDocument[] | null;
     carInterior?: LeadDocument[] | null;
+    carVTP?: LeadDocument[] | null;
+    carMTP?: LeadDocument[] | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -92,6 +94,8 @@ interface LeadResponse {
     registration?: number | null;
     carSPZ?: string;
     mileage?: number | null;
+    numberMTP?: string;
+    numberVTP?: string;
   } | Array<{
     VIN?: string;
     brand?: string;
@@ -99,6 +103,8 @@ interface LeadResponse {
     registration?: number | null;
     carSPZ?: string;
     mileage?: number | null;
+    numberMTP?: string;
+    numberVTP?: string;
   }>;
   lease?: {
     leaseAmount?: number | null;
@@ -604,9 +610,12 @@ export default function LeadDetailV2() {
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
-  const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos'>('categories');
+  const [documentsView, setDocumentsView] = useState<'categories' | 'carPhotos' | 'technicalPapers'>('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
+  const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
   const [uploadingPhotoKey, setUploadingPhotoKey] = useState<string | null>(null);
+  const [mtpNumberDraft, setMtpNumberDraft] = useState('');
+  const [savingMtpNumber, setSavingMtpNumber] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -673,7 +682,7 @@ export default function LeadDetailV2() {
   }, []);
 
   const uploadLeadPhotos = useCallback(
-    async (category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN', files: File[]) => {
+    async (category: 'carInterior' | 'carExterior' | 'carMileage' | 'carVIN' | 'carVTP' | 'carMTP', files: File[]) => {
       if (!id) return;
       const onlyImages = files.filter((f) => f.type.startsWith('image/'));
       if (onlyImages.length === 0) return;
@@ -733,6 +742,29 @@ export default function LeadDetailV2() {
     [lead]
   );
 
+  const technicalPaperConfigs = useMemo(
+    () =>
+      [
+        {
+          key: 'vtp' as const,
+          title: 'TP původní',
+          subtitle: 'Nahrajte fotky původního TP',
+          category: 'carVTP' as const,
+          allowMultiple: true,
+          existing: (lead?.documents?.carVTP || []) as LeadDocument[],
+        },
+        {
+          key: 'mtp' as const,
+          title: 'TP nový přepsaný na Cash gate',
+          subtitle: 'Nahrajte fotky nového TP',
+          category: 'carMTP' as const,
+          allowMultiple: true,
+          existing: (lead?.documents?.carMTP || []) as LeadDocument[],
+        },
+      ] as const,
+    [lead]
+  );
+
   const hasAllCarPhotoCategories = useMemo(() => {
     const countDocsWithFile = (value: unknown): number => {
       if (Array.isArray(value)) {
@@ -759,6 +791,36 @@ export default function LeadDetailV2() {
     () => carPhotoConfigs.find((c) => c.key === activePhotoModal) || null,
     [carPhotoConfigs, activePhotoModal]
   );
+
+  const activeTechnicalConfig = useMemo(
+    () => technicalPaperConfigs.find((c) => c.key === activeTechnicalModal) || null,
+    [technicalPaperConfigs, activeTechnicalModal]
+  );
+
+  useEffect(() => {
+    if (showDocumentsModal) {
+      setMtpNumberDraft(String((lead?.car as any)?.numberMTP || ''));
+    }
+  }, [showDocumentsModal, lead]);
+
+  const saveMtpNumber = useCallback(async () => {
+    if (!id) return;
+    setSavingMtpNumber(true);
+    try {
+      await axiosClient.patch(`/leads/${id}`, { car: { numberMTP: mtpNumberDraft.trim() } });
+      await refreshLead();
+    } finally {
+      setSavingMtpNumber(false);
+    }
+  }, [id, mtpNumberDraft, refreshLead]);
+
+  const hasTechnicalPapersComplete = useMemo(() => {
+    const docs = lead?.documents;
+    const hasNumber = Boolean(String((lead?.car as any)?.numberMTP || '').trim());
+    const vtpCount = Array.isArray(docs?.carVTP) ? docs!.carVTP.filter((d) => d && typeof d === 'object' && (d as any).file).length : 0;
+    const mtpCount = Array.isArray(docs?.carMTP) ? docs!.carMTP.filter((d) => d && typeof d === 'object' && (d as any).file).length : 0;
+    return hasNumber && (vtpCount > 0 || mtpCount > 0);
+  }, [lead]);
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -1669,6 +1731,7 @@ export default function LeadDetailV2() {
                       onClick={() => {
                         setDocumentsView('categories');
                         setActivePhotoModal(null);
+                        setActiveTechnicalModal(null);
                       }}
                       className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
                     >
@@ -1708,18 +1771,27 @@ export default function LeadDetailV2() {
                           if (label === 'Fotografie auta') {
                             setDocumentsView('carPhotos');
                           }
+                          if (label === 'Technické průkazy') {
+                            setDocumentsView('technicalPapers');
+                          }
                         }}
                         className={`w-full px-3 py-3 text-sm text-white rounded-lg ${
-                          label === 'Fotografie auta' && hasAllCarPhotoCategories
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : 'bg-red-600 hover:bg-red-700'
+                          label === 'Fotografie auta'
+                            ? hasAllCarPhotoCategories
+                              ? 'bg-green-600 hover:bg-green-700'
+                              : 'bg-red-600 hover:bg-red-700'
+                            : label === 'Technické průkazy'
+                              ? hasTechnicalPapersComplete
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-red-600 hover:bg-red-700'
+                              : 'bg-red-600 hover:bg-red-700'
                         }`}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
-                ) : (
+                ) : documentsView === 'carPhotos' ? (
                   <>
                     <div className="text-sm font-medium text-gray-800 mb-3">Fotografie auta</div>
 
@@ -1783,6 +1855,93 @@ export default function LeadDetailV2() {
                       onUploadFiles={async (files) => {
                         if (!activeCarPhotoConfig?.category) return;
                         await uploadLeadPhotos(activeCarPhotoConfig.category, files);
+                      }}
+                      downloadUrl={downloadUrl}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Technické průkazy</div>
+
+                    <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <div className="text-sm font-medium text-gray-900 mb-2">Číslo MTP</div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          value={mtpNumberDraft}
+                          onChange={(e) => setMtpNumberDraft(e.target.value)}
+                          placeholder="Zadejte číslo MTP"
+                          className="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void saveMtpNumber()}
+                          disabled={savingMtpNumber}
+                          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                        >
+                          {savingMtpNumber ? 'Ukládám…' : 'Uložit'}
+                        </button>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">Tlačítko „Technické průkazy“ zezelená, pokud je nahrán alespoň jeden TP a je uložené číslo MTP.</div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {technicalPaperConfigs.map((item) => {
+                        const existingFiles = (item.existing || []).filter((d) => typeof d?.file === 'string' && d.file);
+                        const previews = existingFiles.slice(0, 4).map((d) => downloadUrl(d.file as string));
+
+                        return (
+                          <div
+                            key={item.key}
+                            onClick={() => setActiveTechnicalModal(item.key)}
+                            className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                              'border-gray-300 bg-gray-50'
+                            }`}
+                          >
+                            {previews.length > 0 ? (
+                              <div className="w-full">
+                                <div className="grid grid-cols-2 gap-1 mb-2">
+                                  {previews.map((src, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={src}
+                                      alt={`${item.title} ${idx + 1}`}
+                                      className="w-full h-12 object-cover rounded border border-gray-200"
+                                      loading="lazy"
+                                    />
+                                  ))}
+                                </div>
+                                <p className="text-xs text-center text-gray-700">
+                                  {existingFiles.length} {existingFiles.length === 1 ? 'dokument' : 'dokumentů'}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="h-full flex flex-col items-center justify-center text-center">
+                                <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                                <p className="text-xs text-gray-500">{item.subtitle}</p>
+                                <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte fotku</p>
+                              </div>
+                            )}
+
+                            {uploadingPhotoKey === item.category ? (
+                              <div className="mt-2 text-xs text-gray-600 text-center">Nahrávám...</div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <PhotoUploadModal
+                      isOpen={Boolean(activeTechnicalConfig)}
+                      onClose={() => setActiveTechnicalModal(null)}
+                      title={activeTechnicalConfig?.title || ''}
+                      existing={(activeTechnicalConfig?.existing || []) as LeadDocument[]}
+                      allowMultiple={Boolean(activeTechnicalConfig?.allowMultiple)}
+                      uploading={
+                        Boolean(activeTechnicalConfig?.category) && uploadingPhotoKey === activeTechnicalConfig?.category
+                      }
+                      onUploadFiles={async (files) => {
+                        if (!activeTechnicalConfig?.category) return;
+                        await uploadLeadPhotos(activeTechnicalConfig.category, files);
                       }}
                       downloadUrl={downloadUrl}
                     />
