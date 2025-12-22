@@ -949,11 +949,16 @@ export default function LeadDetailV2() {
     setGeneratingContractKey('buy');
     try {
       const res = await axiosClient.post(`/leads/${id}/generateBuyAgreementDocx`);
-      const file = res?.data?.data?.file as string | undefined;
+      const file =
+        (res?.data?.data?.file as string | undefined) ||
+        (res?.data?.file as string | undefined) ||
+        (res?.data?.data?.data?.file as string | undefined);
+
+      await refreshLead();
+
       if (file) {
         triggerDownload(downloadUrl(file), file);
       }
-      await refreshLead();
     } catch (e: any) {
       const message = e?.response?.data?.message as string | undefined;
       console.error('Failed to generate buy agreement DOCX:', e);
@@ -961,18 +966,33 @@ export default function LeadDetailV2() {
     } finally {
       setGeneratingContractKey(null);
     }
-  }, [id, refreshLead, triggerDownload]);
+  }, [downloadUrl, id, refreshLead, triggerDownload]);
 
   const generateRentAgreementDocx = useCallback(async () => {
     if (!id) return;
     setGeneratingContractKey('rent');
     try {
       const res = await axiosClient.post(`/leads/${id}/generateRentAgreementDocx`);
-      const file = res?.data?.data?.file as string | undefined;
+      const file =
+        (res?.data?.data?.file as string | undefined) ||
+        (res?.data?.file as string | undefined) ||
+        (res?.data?.data?.data?.file as string | undefined);
+
+      await refreshLead();
+
       if (file) {
         triggerDownload(downloadUrl(file), file);
+      } else {
+        // Fallback: if backend response shape differs, download newest generated document.
+        const refreshed = await axiosClient.get(`/leads/${id}`);
+        const refreshedLead: LeadResponse = refreshed.data;
+        const docs = (refreshedLead?.documents?.rentAgreement || []) as any[];
+        const newest = [...docs].reverse().find((d) => d && typeof d.file === 'string' && d.file);
+        const newestFile = newest && typeof newest.file === 'string' ? (newest.file as string) : undefined;
+        if (newestFile) {
+          triggerDownload(downloadUrl(newestFile), newestFile);
+        }
       }
-      await refreshLead();
     } catch (e: any) {
       const message = e?.response?.data?.message as string | undefined;
       console.error('Failed to generate rent agreement DOCX:', e);
@@ -980,7 +1000,7 @@ export default function LeadDetailV2() {
     } finally {
       setGeneratingContractKey(null);
     }
-  }, [id, refreshLead, triggerDownload]);
+  }, [downloadUrl, id, refreshLead, triggerDownload]);
 
   const ContractUploadModal = ({
     isOpen,
