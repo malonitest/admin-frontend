@@ -1141,10 +1141,6 @@ export default function LeadDetailV2() {
       setCapturedPhotos([]);
       capturingPdfRef.current = true;
       capturedPhotosRef.current = [];
-      // Let state settle before opening camera.
-      window.setTimeout(() => {
-        cameraInputRef.current?.click();
-      }, 50);
     };
 
     return (
@@ -1219,8 +1215,7 @@ export default function LeadDetailV2() {
                       return;
                     }
 
-                    const first = files[0];
-                    if (!first) {
+                    if (!files[0]) {
                       setCapturingPdf(false);
                       setCapturedPhotos([]);
                       capturingPdfRef.current = false;
@@ -1228,14 +1223,13 @@ export default function LeadDetailV2() {
                       return;
                     }
 
-                    const nextPhotos = [...capturedPhotosRef.current, first].slice(0, captureSpec.count);
+                    const remaining = Math.max(0, captureSpec.count - capturedPhotosRef.current.length);
+                    const toTake = files.slice(0, remaining);
+                    const nextPhotos = [...capturedPhotosRef.current, ...toTake].slice(0, captureSpec.count);
                     capturedPhotosRef.current = nextPhotos;
                     setCapturedPhotos(nextPhotos);
 
                     if (nextPhotos.length < captureSpec.count) {
-                      window.setTimeout(() => {
-                        cameraInputRef.current?.click();
-                      }, 100);
                       return;
                     }
 
@@ -1265,12 +1259,15 @@ export default function LeadDetailV2() {
                     type="button"
                     onClick={() => {
                       if (captureSpec.enabled) {
-                        startPdfCapture();
+                        if (!capturingPdfRef.current) {
+                          startPdfCapture();
+                        }
+                        cameraInputRef.current?.click();
                       } else {
                         cameraInputRef.current?.click();
                       }
                     }}
-                    disabled={uploadingPhotoKey === category || (captureSpec.enabled && capturingPdf)}
+                    disabled={uploadingPhotoKey === category}
                     className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
                   >
                     {captureSpec.enabled && capturingPdf
@@ -1283,6 +1280,11 @@ export default function LeadDetailV2() {
                     {category === 'buyAgreement'
                       ? 'Kupní smlouva: vyfoťte 3 fotky – sloučí se do jednoho PDF'
                       : 'Nájemní smlouva: vyfoťte 4 fotky – sloučí se do jednoho PDF'}
+                  </p>
+                ) : null}
+                {captureSpec.enabled && capturingPdf && capturedPhotos.length < captureSpec.count ? (
+                  <p className="text-xs text-gray-500 text-center mt-1">
+                    Pro další fotku klikněte znovu na „Vyfotit“
                   </p>
                 ) : null}
                 <p className="text-xs text-gray-500 text-center mt-3">
