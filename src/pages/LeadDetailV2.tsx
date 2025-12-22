@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { jsPDF } from 'jspdf';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
 import { tryFormatDateTimePrague } from '@/utils/dateTime';
@@ -893,7 +894,11 @@ export default function LeadDetailV2() {
   const hasContracts = useMemo(() => {
     const buy = (lead?.documents?.buyAgreement || []) as any[];
     const rent = (lead?.documents?.rentAgreement || []) as any[];
-    const hasFiles = (items: any[]) => Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
+    const hasFiles = (items: any[]) =>
+      Array.isArray(items) &&
+      items.some(
+        (d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file && String(d?.name || '').trim() !== 'buy_agreement' && String(d?.name || '').trim() !== 'rent_agreement'
+      );
     return hasFiles(buy) || hasFiles(rent);
   }, [lead]);
 
@@ -912,6 +917,11 @@ export default function LeadDetailV2() {
     return file.toLowerCase().endsWith('.docx');
   }, []);
 
+  const isLegacyGeneratedContractDoc = useCallback((doc: any): boolean => {
+    const name = String(doc?.name || '').trim();
+    return name === 'buy_agreement' || name === 'rent_agreement';
+  }, []);
+
   const triggerDownload = useCallback((url: string, filename?: string) => {
     const a = document.createElement('a');
     a.href = url;
@@ -921,6 +931,21 @@ export default function LeadDetailV2() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  }, []);
+
+  const buildCustomerNameForContractFile = useCallback((): string => {
+    const customer = (lead as any)?.customer;
+    const personName = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim();
+    const raw = String(customer?.companyName || customer?.name || personName || '').trim();
+    return raw || 'Zákazník';
+  }, [lead]);
+
+  const sanitizeFilename = useCallback((value: string): string => {
+    return String(value || '')
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ')
+      .slice(0, 120);
   }, []);
 
   const uploadContractDocuments = useCallback(
@@ -1018,16 +1043,101 @@ export default function LeadDetailV2() {
     const uploadInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const [dragActive, setDragActive] = useState(false);
+    const [capturingPdf, setCapturingPdf] = useState(false);
+    const [capturedPhotos, setCapturedPhotos] = useState<File[]>([]);
+    const capturingPdfRef = useRef(false);
+    const capturedPhotosRef = useRef<File[]>([]);
 
     useEffect(() => {
       if (isOpen) {
         setDragActive(false);
+        setCapturingPdf(false);
+        setCapturedPhotos([]);
+        capturingPdfRef.current = false;
+        capturedPhotosRef.current = [];
       }
     }, [isOpen]);
 
     if (!isOpen) return null;
 
-    const existingWithFile = (existing || []).filter((d) => typeof d?.file === 'string' && d.file);
+    const existingWithFile = (existing || []).filter(
+      (d) => typeof d?.file === 'string' && d.file && !isLegacyGeneratedContractDoc(d)
+    );
+
+    const shouldCaptureThreePhotosToPdf = category === 'buyAgreement';
+
+    const fileToJpegDataUrl = async (file: File): Promise<string> => {
+      // Read file as Data URL
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('FileReader failed'));
+        reader.readAsDataURL(file);
+      });
+
+      // Normalize via canvas to a JPEG data URL (jsPDF handles JPEG reliably)
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = () => reject(new Error('Image decode failed'));
+        i.src = dataUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
+      ctx.drawImage(img, 0, 0);
+      return canvas.toDataURL('image/jpeg', 0.92);
+    };
+
+    const buildThreePhotoPdf = async (photos: File[]): Promise<File> => {
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 8;
+
+      for (let i = 0; i < photos.length; i += 1) {
+        if (i > 0) doc.addPage();
+        const jpegUrl = await fileToJpegDataUrl(photos[i]);
+
+        // Get image aspect ratio
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = () => reject(new Error('Image decode failed'));
+          im.src = jpegUrl;
+        });
+
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+        const maxW = pageW - margin * 2;
+        const maxH = pageH - margin * 2;
+        const scale = Math.min(maxW / imgW, maxH / imgH);
+        const drawW = imgW * scale;
+        const drawH = imgH * scale;
+        const x = (pageW - drawW) / 2;
+        const y = (pageH - drawH) / 2;
+        doc.addImage(jpegUrl, 'JPEG', x, y, drawW, drawH);
+      }
+
+      const pdfBlob = doc.output('blob');
+      const customerName = sanitizeFilename(buildCustomerNameForContractFile());
+      const filename = `Kupni smlouva ${customerName}.pdf`;
+      return new File([pdfBlob], filename, { type: 'application/pdf' });
+    };
+
+    const startThreePhotoPdfCapture = () => {
+      setCapturingPdf(true);
+      setCapturedPhotos([]);
+      capturingPdfRef.current = true;
+      capturedPhotosRef.current = [];
+      // Let state settle before opening camera.
+      window.setTimeout(() => {
+        cameraInputRef.current?.click();
+      }, 50);
+    };
 
     return (
       <>
@@ -1095,7 +1205,41 @@ export default function LeadDetailV2() {
                   onChange={async (e) => {
                     const files = Array.from(e.target.files || []);
                     e.target.value = '';
-                    await uploadContractDocuments(category, files);
+
+                    if (!shouldCaptureThreePhotosToPdf || !capturingPdfRef.current) {
+                      await uploadContractDocuments(category, files);
+                      return;
+                    }
+
+                    const first = files[0];
+                    if (!first) {
+                      setCapturingPdf(false);
+                      setCapturedPhotos([]);
+                      capturingPdfRef.current = false;
+                      capturedPhotosRef.current = [];
+                      return;
+                    }
+
+                    const nextPhotos = [...capturedPhotosRef.current, first].slice(0, 3);
+                    capturedPhotosRef.current = nextPhotos;
+                    setCapturedPhotos(nextPhotos);
+
+                    if (nextPhotos.length < 3) {
+                      window.setTimeout(() => {
+                        cameraInputRef.current?.click();
+                      }, 100);
+                      return;
+                    }
+
+                    try {
+                      const pdfFile = await buildThreePhotoPdf(nextPhotos);
+                      await uploadContractDocuments(category, [pdfFile]);
+                    } finally {
+                      setCapturingPdf(false);
+                      setCapturedPhotos([]);
+                      capturingPdfRef.current = false;
+                      capturedPhotosRef.current = [];
+                    }
                   }}
                   className="hidden"
                 />
@@ -1111,11 +1255,19 @@ export default function LeadDetailV2() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    disabled={uploadingPhotoKey === category}
+                    onClick={() => {
+                      if (shouldCaptureThreePhotosToPdf) {
+                        startThreePhotoPdfCapture();
+                      } else {
+                        cameraInputRef.current?.click();
+                      }
+                    }}
+                    disabled={uploadingPhotoKey === category || (shouldCaptureThreePhotosToPdf && capturingPdf)}
                     className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
                   >
-                    Vyfotit
+                    {shouldCaptureThreePhotosToPdf && capturingPdf
+                      ? `Vyfoťte 3 fotky (${capturedPhotos.length}/3)`
+                      : 'Vyfotit'}
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 text-center mt-3">
@@ -2578,11 +2730,19 @@ export default function LeadDetailV2() {
                           'border-gray-300 bg-gray-50'
                         }`}
                       >
-                        {Array.isArray(lead?.documents?.buyAgreement) && (lead?.documents?.buyAgreement || []).some((d) => (d as any)?.file) ? (
+                        {Array.isArray(lead?.documents?.buyAgreement) &&
+                        (lead?.documents?.buyAgreement || []).some(
+                          (d) => (d as any)?.file && !isLegacyGeneratedContractDoc(d as any)
+                        ) ? (
                           <div className="w-full">
                             <p className="text-sm font-medium text-gray-900">Kupní smlouva</p>
                             <p className="text-xs text-gray-500 mt-1">
-                              {(lead?.documents?.buyAgreement || []).filter((d) => typeof (d as any)?.file === 'string' && (d as any).file).length} dokumentů
+                              {
+                                (lead?.documents?.buyAgreement || []).filter(
+                                  (d) => typeof (d as any)?.file === 'string' && (d as any).file && !isLegacyGeneratedContractDoc(d as any)
+                                ).length
+                              }{' '}
+                              dokumentů
                             </p>
                             <button
                               type="button"
@@ -2610,11 +2770,19 @@ export default function LeadDetailV2() {
                           'border-gray-300 bg-gray-50'
                         }`}
                       >
-                        {Array.isArray(lead?.documents?.rentAgreement) && (lead?.documents?.rentAgreement || []).some((d) => (d as any)?.file) ? (
+                        {Array.isArray(lead?.documents?.rentAgreement) &&
+                        (lead?.documents?.rentAgreement || []).some(
+                          (d) => (d as any)?.file && !isLegacyGeneratedContractDoc(d as any)
+                        ) ? (
                           <div className="w-full">
                             <p className="text-sm font-medium text-gray-900">Nájemní smlouva</p>
                             <p className="text-xs text-gray-500 mt-1">
-                              {(lead?.documents?.rentAgreement || []).filter((d) => typeof (d as any)?.file === 'string' && (d as any).file).length} dokumentů
+                              {
+                                (lead?.documents?.rentAgreement || []).filter(
+                                  (d) => typeof (d as any)?.file === 'string' && (d as any).file && !isLegacyGeneratedContractDoc(d as any)
+                                ).length
+                              }{' '}
+                              dokumentů
                             </p>
                             <button
                               type="button"
