@@ -40,6 +40,8 @@ interface LeadResponse {
     carMTP?: LeadDocument[] | null;
     greenCard?: LeadDocument | null;
     evidence?: LeadDocument[] | null;
+    insurance?: LeadDocument[] | null;
+    insuranceEnds?: string | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -617,7 +619,7 @@ export default function LeadDetailV2() {
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [documentsView, setDocumentsView] = useState<
-    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence'
+    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence' | 'insurance'
   >('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
@@ -626,6 +628,8 @@ export default function LeadDetailV2() {
   const [uploadingPhotoKey, setUploadingPhotoKey] = useState<string | null>(null);
   const [mtpNumberDraft, setMtpNumberDraft] = useState('');
   const [savingMtpNumber, setSavingMtpNumber] = useState(false);
+  const [insuranceEndsDraft, setInsuranceEndsDraft] = useState('');
+  const [savingInsuranceEnds, setSavingInsuranceEnds] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -686,6 +690,11 @@ export default function LeadDetailV2() {
     setForm(leadToForm(leadData));
   }, [id]);
 
+  useEffect(() => {
+    const value = (lead?.documents as any)?.insuranceEnds;
+    setInsuranceEndsDraft(value ? String(value).split('T')[0] : '');
+  }, [lead]);
+
   const downloadUrl = useCallback((documentFile: string) => {
     const base = (axiosClient.defaults.baseURL || '').replace(/\/$/, '');
     return `${base}/documents/download/${encodeURIComponent(documentFile)}`;
@@ -706,6 +715,27 @@ export default function LeadDetailV2() {
           const formData = new FormData();
           formData.append('document', file);
           formData.append('category', category);
+          await axiosClient.post(`/leads/${id}/documents`, formData);
+        }
+        await refreshLead();
+      } finally {
+        setUploadingPhotoKey(null);
+      }
+    },
+    [id, refreshLead]
+  );
+
+  const uploadInsuranceDocuments = useCallback(
+    async (files: File[]) => {
+      if (!id) return;
+      if (!files || files.length === 0) return;
+
+      setUploadingPhotoKey('insurance');
+      try {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('document', file);
+          formData.append('category', 'insurance');
           await axiosClient.post(`/leads/${id}/documents`, formData);
         }
         await refreshLead();
@@ -827,6 +857,17 @@ export default function LeadDetailV2() {
     }
   }, [id, mtpNumberDraft, refreshLead]);
 
+  const saveInsuranceEnds = useCallback(async () => {
+    if (!id) return;
+    setSavingInsuranceEnds(true);
+    try {
+      await axiosClient.patch(`/leads/${id}`, { documents: { insuranceEnds: toISODateOrUndefined(insuranceEndsDraft) } });
+      await refreshLead();
+    } finally {
+      setSavingInsuranceEnds(false);
+    }
+  }, [id, insuranceEndsDraft, refreshLead]);
+
   const hasTechnicalPapersComplete = useMemo(() => {
     const docs = lead?.documents;
     const hasNumber = Boolean(String((lead?.car as any)?.numberMTP || '').trim());
@@ -844,6 +885,16 @@ export default function LeadDetailV2() {
     const items = (lead?.documents?.evidence || []) as any[];
     return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
   }, [lead]);
+
+  const hasInsurance = useMemo(() => {
+    const items = (lead?.documents?.insurance || []) as any[];
+    return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
+  }, [lead]);
+
+  const isPdfDoc = useCallback((doc: LeadDocument): boolean => {
+    const file = typeof doc?.file === 'string' ? doc.file : '';
+    return file.toLowerCase().endsWith('.pdf');
+  }, []);
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -1826,6 +1877,9 @@ export default function LeadDetailV2() {
                           if (label === 'Zelená karta') {
                             setDocumentsView('greenCard');
                           }
+                          if (label === 'Pojištění') {
+                            setDocumentsView('insurance');
+                          }
                           if (label === 'CarDetect report') {
                             void handleGenerateCarDetectReport();
                           }
@@ -1847,6 +1901,10 @@ export default function LeadDetailV2() {
                                 ? hasGreenCard
                                   ? 'bg-green-600 hover:bg-green-700'
                                   : 'bg-red-600 hover:bg-red-700'
+                                : label === 'Pojištění'
+                                  ? hasInsurance
+                                    ? 'bg-green-600 hover:bg-green-700'
+                                    : 'bg-red-600 hover:bg-red-700'
                               : 'bg-red-600 hover:bg-red-700'
                         }`}
                       >
@@ -2101,6 +2159,124 @@ export default function LeadDetailV2() {
                       }}
                       downloadUrl={downloadUrl}
                     />
+                  </>
+                ) : documentsView === 'insurance' ? (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Pojištění</div>
+
+                    <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <label className="block text-xs text-gray-600 mb-1">Platnost pojištění do</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="date"
+                          value={insuranceEndsDraft}
+                          onChange={(e) => setInsuranceEndsDraft(e.target.value)}
+                          className="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void saveInsuranceEnds()}
+                          disabled={savingInsuranceEnds}
+                          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                        >
+                          {savingInsuranceEnds ? 'Ukládám…' : 'Uložit'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-4 mb-4 transition-colors ${
+                        uploadingPhotoKey === 'insurance' ? 'border-gray-300 bg-gray-50' : 'border-gray-300 bg-gray-50'
+                      }`}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                      }}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        const files = Array.from(e.dataTransfer.files || []);
+                        await uploadInsuranceDocuments(files);
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf,.pdf"
+                        multiple
+                        className="hidden"
+                        id="insurance-upload"
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files || []);
+                          e.target.value = '';
+                          await uploadInsuranceDocuments(files);
+                        }}
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        id="insurance-capture"
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files || []);
+                          e.target.value = '';
+                          await uploadInsuranceDocuments(files);
+                        }}
+                      />
+
+                      <div className="flex gap-2 justify-center">
+                        <label
+                          htmlFor="insurance-upload"
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 cursor-pointer"
+                        >
+                          {uploadingPhotoKey === 'insurance' ? 'Nahrávám…' : 'Nahrát (PDF/foto)'}
+                        </label>
+                        <label
+                          htmlFor="insurance-capture"
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer"
+                        >
+                          Vyfotit
+                        </label>
+                      </div>
+
+                      <p className="text-xs text-gray-500 text-center mt-3">nebo přetáhněte soubory sem (PDF / fotky)</p>
+                    </div>
+
+                    {Array.isArray(lead?.documents?.insurance) && (lead?.documents?.insurance || []).length > 0 ? (
+                      <div className="grid grid-cols-1 gap-2">
+                        {(lead?.documents?.insurance || [])
+                          .filter((d) => typeof d?.file === 'string' && d.file)
+                          .map((d, idx) => {
+                            const url = downloadUrl(d.file as string);
+                            if (isPdfDoc(d)) {
+                              return (
+                                <button
+                                  key={`${d._id || d.file || idx}`}
+                                  type="button"
+                                  onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                                  className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                                >
+                                  <span className="text-sm text-gray-800 truncate">{d.name || d.file}</span>
+                                  <span className="text-xs text-gray-500">PDF</span>
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <img
+                                key={`${d._id || d.file || idx}`}
+                                src={url}
+                                alt={`Pojištění ${idx + 1}`}
+                                className="w-full h-32 object-cover rounded border border-gray-200 cursor-pointer"
+                                loading="lazy"
+                                onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                              />
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        <p>Zatím žádné dokumenty</p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>

@@ -71,6 +71,8 @@ interface Lead {
     carMileage?: { _id: string; file: string };
     carExterior?: { _id: string; file: string }[];
     carInterior?: { _id: string; file: string }[];
+    insurance?: { _id: string; file: string }[];
+    insuranceEnds?: string;
   };
 }
 
@@ -184,8 +186,11 @@ export function LeadDetail() {
   const [selectedDocCategory, setSelectedDocCategory] = useState<string | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isDragging, setIsDragging] = useState<string | null>(null); // Track which drop zone is active
+  const [insuranceEndsDraft, setInsuranceEndsDraft] = useState('');
+  const [savingInsuranceEnds, setSavingInsuranceEnds] = useState(false);
 
   const hydrateFormDataFromLead = (leadData: any) => {
+    setInsuranceEndsDraft(leadData?.documents?.insuranceEnds ? String(leadData.documents.insuranceEnds).split('T')[0] : '');
     setFormData({
       customerType: leadData.customer?.customerType || '',
       companyID: leadData.customer?.companyID || '',
@@ -238,11 +243,39 @@ export function LeadDetail() {
       'zelena_karta': 'greenCard',
       'plna_moc': 'buyMandate', // nebo 'sellMandate'
       'pri_prodeji': 'sellMandate',
-      'pojisteni': 'insurance',
+      // Backend uses DocumentType.PHOTO_INSURANCE (string value "PHOTO_INSURANCE").
+      'pojisteni': 'PHOTO_INSURANCE',
       'ostatni': 'other',
       'cebia_cardetect': 'carDetectReport',
     };
     return mapping[category] || 'other';
+  };
+
+  const saveInsuranceEnds = async () => {
+    if (!id) return;
+    setSavingInsuranceEnds(true);
+    try {
+      const res = await axiosClient.patch(`/leads/${id}`, {
+        documents: {
+          insuranceEnds: toISODateOrUndefined(insuranceEndsDraft),
+        },
+      });
+
+      const updatedLead = res?.data?.data ?? res?.data;
+      if (updatedLead) {
+        setLead(updatedLead);
+        hydrateFormDataFromLead(updatedLead);
+      } else {
+        await refreshLead();
+      }
+
+      alert('Platnost pojištění uložena');
+    } catch (error) {
+      console.error('Failed to save insuranceEnds:', error);
+      alert('Nepodařilo se uložit platnost pojištění');
+    } finally {
+      setSavingInsuranceEnds(false);
+    }
   };
 
   // Drag & drop handler with automatic fallback to /uploadDocument
@@ -1517,17 +1550,39 @@ export function LeadDetail() {
                 {/* Upload Area */}
                 <div 
                   className={`border-2 border-dashed rounded-lg p-6 mb-4 transition-colors ${isDragging === 'general' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
-                  onDrop={(e) => handleDrop(e, selectedDocCategory || '')}
+                  onDrop={(e) => handleDrop(e, getDocumentType(selectedDocCategory || ''))}
                   onDragOver={(e) => handleDragOver(e, 'general')}
                   onDragLeave={handleDragLeave}
                 >
+                  {selectedDocCategory === 'pojisteni' ? (
+                    <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <label className="block text-xs text-gray-600 mb-1">Platnost pojištění do</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="date"
+                          value={insuranceEndsDraft}
+                          onChange={(e) => setInsuranceEndsDraft(e.target.value)}
+                          className="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void saveInsuranceEnds()}
+                          disabled={savingInsuranceEnds}
+                          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                        >
+                          {savingInsuranceEnds ? 'Ukládám…' : 'Uložit'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
                   {/* Hidden inputs */}
                   <input
                     type="file"
                     id="doc-upload"
                     className="hidden"
                     multiple
-                    accept="image/*,.pdf,.doc,.docx"
+                    accept={selectedDocCategory === 'pojisteni' ? 'image/*,application/pdf,.pdf' : 'image/*,.pdf,.doc,.docx'}
                     onChange={async (e) => {
                       const files = e.target.files;
                       if (!files || files.length === 0) return;
@@ -1624,7 +1679,11 @@ export function LeadDetail() {
                   </div>
 
                   <p className="text-xs text-gray-400 text-center">
-                    {isDragging === 'general' ? '📁 Pusťte soubory zde...' : 'PDF, DOC, DOCX, obrázky • nebo přetáhněte soubory sem'}
+                    {isDragging === 'general'
+                      ? '📁 Pusťte soubory zde...'
+                      : selectedDocCategory === 'pojisteni'
+                        ? 'PDF, obrázky • nebo přetáhněte soubory sem'
+                        : 'PDF, DOC, DOCX, obrázky • nebo přetáhněte soubory sem'}
                   </p>
                 </div>
 
