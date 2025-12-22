@@ -46,6 +46,7 @@ interface LeadResponse {
     insuranceEnds?: string | null;
     buyAgreement?: LeadDocument[] | null;
     rentAgreement?: LeadDocument[] | null;
+    powerOfAttorney?: LeadDocument[] | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -623,7 +624,7 @@ export default function LeadDetailV2() {
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [documentsView, setDocumentsView] = useState<
-    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence' | 'insurance' | 'contracts'
+    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence' | 'insurance' | 'contracts' | 'powerOfAttorney'
   >('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
@@ -636,6 +637,7 @@ export default function LeadDetailV2() {
   const [savingInsuranceEnds, setSavingInsuranceEnds] = useState(false);
   const [activeContractModal, setActiveContractModal] = useState<'buy' | 'rent' | null>(null);
   const [generatingContractKey, setGeneratingContractKey] = useState<'buy' | 'rent' | null>(null);
+  const [showPowerOfAttorneyModal, setShowPowerOfAttorneyModal] = useState(false);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -903,6 +905,11 @@ export default function LeadDetailV2() {
     return hasFiles(buy) || hasFiles(rent);
   }, [lead]);
 
+  const hasPowerOfAttorney = useMemo(() => {
+    const items = (lead?.documents?.powerOfAttorney || []) as any[];
+    return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
+  }, [lead]);
+
   const hasInsurance = useMemo(() => {
     const items = (lead?.documents?.insurance || []) as any[];
     return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
@@ -950,7 +957,7 @@ export default function LeadDetailV2() {
   }, []);
 
   const uploadContractDocuments = useCallback(
-    async (category: 'buyAgreement' | 'rentAgreement', files: File[]) => {
+    async (category: 'buyAgreement' | 'rentAgreement' | 'powerOfAttorney', files: File[]) => {
       if (!id) return;
       if (!files || files.length === 0) return;
 
@@ -1038,7 +1045,7 @@ export default function LeadDetailV2() {
     isOpen: boolean;
     onClose: () => void;
     title: string;
-    category: 'buyAgreement' | 'rentAgreement';
+    category: 'buyAgreement' | 'rentAgreement' | 'powerOfAttorney';
     existing: LeadDocument[];
   }) => {
     const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -1087,6 +1094,9 @@ export default function LeadDetailV2() {
       }
       if (category === 'rentAgreement') {
         return { enabled: true, count: 4, filenamePrefix: 'Nájemní smlouva' };
+      }
+      if (category === 'powerOfAttorney') {
+        return { enabled: true, count: 1, filenamePrefix: 'plna moc' };
       }
       return { enabled: false, count: 0, filenamePrefix: '' };
     }, [category]);
@@ -1340,7 +1350,9 @@ export default function LeadDetailV2() {
                   <p className="text-xs text-gray-500 text-center mt-2">
                     {category === 'buyAgreement'
                       ? 'Kupní smlouva: vyfoťte 3 fotky – sloučí se do jednoho PDF'
-                      : 'Nájemní smlouva: vyfoťte 4 fotky – sloučí se do jednoho PDF'}
+                      : category === 'rentAgreement'
+                        ? 'Nájemní smlouva: vyfoťte 4 fotky – sloučí se do jednoho PDF'
+                        : 'Plná moc: vyfoťte 1 fotku – vytvoří se PDF'}
                   </p>
                 ) : null}
                 {captureSpec.enabled && capturingPdf && capturedPhotos.length < captureSpec.count ? (
@@ -2389,6 +2401,9 @@ export default function LeadDetailV2() {
                           if (label === 'Smlouvy') {
                             setDocumentsView('contracts');
                           }
+                          if (label === 'Plná moc') {
+                            setDocumentsView('powerOfAttorney');
+                          }
                           if (label === 'Zelená karta') {
                             setDocumentsView('greenCard');
                           }
@@ -2418,6 +2433,10 @@ export default function LeadDetailV2() {
                                   : 'bg-red-600 hover:bg-red-700'
                                 : label === 'Smlouvy'
                                   ? hasContracts
+                                    ? 'bg-green-600 hover:bg-green-700'
+                                    : 'bg-red-600 hover:bg-red-700'
+                                : label === 'Plná moc'
+                                  ? hasPowerOfAttorney
                                     ? 'bg-green-600 hover:bg-green-700'
                                     : 'bg-red-600 hover:bg-red-700'
                                 : label === 'Pojištění'
@@ -2923,6 +2942,51 @@ export default function LeadDetailV2() {
                       title="Nájemní smlouva"
                       category="rentAgreement"
                       existing={((lead?.documents?.rentAgreement || []) as LeadDocument[]) ?? ([] as LeadDocument[])}
+                    />
+                  </>
+                ) : documentsView === 'powerOfAttorney' ? (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Plná moc</div>
+
+                    <div
+                      onClick={() => setShowPowerOfAttorneyModal(true)}
+                      className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                        'border-gray-300 bg-gray-50'
+                      }`}
+                    >
+                      {Array.isArray(lead?.documents?.powerOfAttorney) && (lead?.documents?.powerOfAttorney || []).some((d) => (d as any)?.file) ? (
+                        <div className="w-full">
+                          <p className="text-sm font-medium text-gray-900">Plná moc</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {(lead?.documents?.powerOfAttorney || []).filter((d) => typeof (d as any)?.file === 'string' && (d as any).file).length}{' '}
+                            dokumentů
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowPowerOfAttorneyModal(true);
+                            }}
+                            className="mt-3 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                          >
+                            Zobrazit
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-gray-900">Plná moc</p>
+                          <p className="text-xs text-gray-500">Nahrajte PDF nebo fotku</p>
+                          <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte soubor</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <ContractUploadModal
+                      isOpen={showPowerOfAttorneyModal}
+                      onClose={() => setShowPowerOfAttorneyModal(false)}
+                      title="Plná moc"
+                      category="powerOfAttorney"
+                      existing={((lead?.documents?.powerOfAttorney || []) as LeadDocument[]) ?? ([] as LeadDocument[])}
                     />
                   </>
                 ) : (
