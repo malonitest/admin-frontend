@@ -636,8 +636,19 @@ export default function LeadDetailV2() {
   const [insuranceEndsDraft, setInsuranceEndsDraft] = useState('');
   const [savingInsuranceEnds, setSavingInsuranceEnds] = useState(false);
   const [activeContractModal, setActiveContractModal] = useState<'buy' | 'rent' | null>(null);
-  const [generatingContractKey, setGeneratingContractKey] = useState<'buy' | 'rent' | null>(null);
+  const [generatingContractKey, setGeneratingContractKey] = useState<'buy' | 'rent' | 'poa' | null>(null);
   const [showPowerOfAttorneyModal, setShowPowerOfAttorneyModal] = useState(false);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const successToastTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successToastTimeoutRef.current) {
+        window.clearTimeout(successToastTimeoutRef.current);
+        successToastTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -1035,6 +1046,30 @@ export default function LeadDetailV2() {
     }
   }, [downloadUrl, id, refreshLead, triggerDownload]);
 
+  const generatePowerOfAttorneyDocx = useCallback(async () => {
+    if (!id) return;
+    setGeneratingContractKey('poa');
+    try {
+      const res = await axiosClient.post(`/leads/${id}/generatePowerOfAttorneyDocx`);
+      const file =
+        (res?.data?.data?.file as string | undefined) ||
+        (res?.data?.file as string | undefined) ||
+        (res?.data?.data?.data?.file as string | undefined);
+
+      await refreshLead();
+
+      if (file) {
+        triggerDownload(downloadUrl(file), file);
+      }
+    } catch (e: any) {
+      const message = e?.response?.data?.message as string | undefined;
+      console.error('Failed to generate power of attorney DOCX:', e);
+      alert(message || 'Nepodařilo se vygenerovat plnou moc (Word)');
+    } finally {
+      setGeneratingContractKey(null);
+    }
+  }, [downloadUrl, id, refreshLead, triggerDownload]);
+
   const ContractUploadModal = ({
     isOpen,
     onClose,
@@ -1055,8 +1090,6 @@ export default function LeadDetailV2() {
     const [capturedPhotos, setCapturedPhotos] = useState<File[]>([]);
     const capturingPdfRef = useRef(false);
     const capturedPhotosRef = useRef<File[]>([]);
-    const [successToast, setSuccessToast] = useState<string | null>(null);
-    const successToastTimeoutRef = useRef<number | null>(null);
 
     useEffect(() => {
       if (isOpen) {
@@ -1065,22 +1098,8 @@ export default function LeadDetailV2() {
         setCapturedPhotos([]);
         capturingPdfRef.current = false;
         capturedPhotosRef.current = [];
-        setSuccessToast(null);
-        if (successToastTimeoutRef.current) {
-          window.clearTimeout(successToastTimeoutRef.current);
-          successToastTimeoutRef.current = null;
-        }
       }
     }, [isOpen]);
-
-    useEffect(() => {
-      return () => {
-        if (successToastTimeoutRef.current) {
-          window.clearTimeout(successToastTimeoutRef.current);
-          successToastTimeoutRef.current = null;
-        }
-      };
-    }, []);
 
     if (!isOpen) return null;
 
@@ -1142,8 +1161,7 @@ export default function LeadDetailV2() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas not supported');
       ctx.imageSmoothingEnabled = true;
-      // @ts-expect-error - not in older TS lib DOM types
-      if (typeof ctx.imageSmoothingQuality !== 'undefined') ctx.imageSmoothingQuality = 'high';
+      if ('imageSmoothingQuality' in ctx) (ctx as any).imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       return canvas.toDataURL('image/jpeg', 0.82);
     };
@@ -2979,6 +2997,17 @@ export default function LeadDetailV2() {
                           <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte soubor</p>
                         </div>
                       )}
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void generatePowerOfAttorneyDocx()}
+                        disabled={generatingContractKey === 'poa'}
+                        className="w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                      >
+                        {generatingContractKey === 'poa' ? 'Generuji…' : 'Vygenerovat plnou moc ve Wordu'}
+                      </button>
                     </div>
 
                     <ContractUploadModal
