@@ -969,7 +969,7 @@ export default function LeadDetailV2() {
     if (!id) return;
     const existingFile = (lead as any)?.documents?.carDetectReport?.file as string | undefined;
 
-    const openPdfInBrowser = async (documentFile: string) => {
+    const openPdfInBrowser = async (documentFile: string): Promise<'opened' | 'missing'> => {
       try {
         const resp = await axiosClient.get(`/documents/download/${encodeURIComponent(documentFile)}`, {
           responseType: 'blob',
@@ -985,20 +985,31 @@ export default function LeadDetailV2() {
         window.setTimeout(() => {
           window.URL.revokeObjectURL(url);
         }, 60_000);
+        return 'opened';
       } catch (err) {
         console.error('Failed to open CarDetect PDF via blob:', err);
+
+        const status = (err as any)?.response?.status as number | undefined;
+        if (status === 404) {
+          // The file reference exists on the lead, but the backend cannot find it on disk
+          // (common after redeploy or when running multiple replicas without shared storage).
+          return 'missing';
+        }
 
         // Fallback: open download URL in a new tab (lets the browser handle the file).
         const base = (axiosClient.defaults.baseURL || '').replace(/\/$/, '');
         const url = `${base}/documents/download/${encodeURIComponent(documentFile)}`;
         window.open(url, '_blank', 'noopener,noreferrer');
+        return 'opened';
       }
     };
 
     // If we already have a stored CarDetect PDF, just open it.
     if (typeof existingFile === 'string' && existingFile) {
-      await openPdfInBrowser(existingFile);
-      return;
+      const result = await openPdfInBrowser(existingFile);
+      if (result === 'opened') {
+        return;
+      }
     }
 
     // Otherwise generate it (and store to the lead).
@@ -1022,7 +1033,10 @@ export default function LeadDetailV2() {
         (genRes as any)?.data?.data?.file || (refreshedLead as any)?.documents?.carDetectReport?.file;
 
       if (typeof documentFile === 'string' && documentFile) {
-        await openPdfInBrowser(documentFile);
+        const result = await openPdfInBrowser(documentFile);
+        if (result === 'missing') {
+          alert('CarDetect report se nepodařilo stáhnout (soubor nebyl nalezen na serveru). Zkuste to prosím znovu.');
+        }
       }
     } catch (e) {
       const status = (e as any)?.response?.status as number | undefined;
@@ -1047,7 +1061,10 @@ export default function LeadDetailV2() {
           if ((refreshedLead as any)?.documents?.carDetectReport) {
             const documentFile = (refreshedLead as any)?.documents?.carDetectReport?.file;
             if (typeof documentFile === 'string' && documentFile) {
-              await openPdfInBrowser(documentFile);
+              const result = await openPdfInBrowser(documentFile);
+              if (result === 'missing') {
+                alert('CarDetect report se nepodařilo stáhnout (soubor nebyl nalezen na serveru). Zkuste to prosím znovu.');
+              }
             }
           } else {
             alert('CarDetect report se nepodařilo vygenerovat. Zkuste nejdřív uložit lead a pak znovu.');
