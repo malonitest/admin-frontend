@@ -954,6 +954,10 @@ export default function LeadDetailV2() {
         triggerDownload(downloadUrl(file), file);
       }
       await refreshLead();
+    } catch (e: any) {
+      const message = e?.response?.data?.message as string | undefined;
+      console.error('Failed to generate buy agreement DOCX:', e);
+      alert(message || 'Nepodařilo se vygenerovat kupní smlouvu (Word)');
     } finally {
       setGeneratingContractKey(null);
     }
@@ -969,6 +973,10 @@ export default function LeadDetailV2() {
         triggerDownload(downloadUrl(file), file);
       }
       await refreshLead();
+    } catch (e: any) {
+      const message = e?.response?.data?.message as string | undefined;
+      console.error('Failed to generate rent agreement DOCX:', e);
+      alert(message || 'Nepodařilo se vygenerovat nájemní smlouvu (Word)');
     } finally {
       setGeneratingContractKey(null);
     }
