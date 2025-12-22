@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { jsPDF } from 'jspdf';
+import heic2any from 'heic2any';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
 import { tryFormatDateTimePrague } from '@/utils/dateTime';
@@ -1075,12 +1076,25 @@ export default function LeadDetailV2() {
     }, [category]);
 
     const fileToJpegDataUrl = async (file: File): Promise<string> => {
-      // Read file as Data URL
+      const isHeicLike =
+        String(file?.type || '').toLowerCase().includes('heic') ||
+        String(file?.type || '').toLowerCase().includes('heif') ||
+        String(file?.name || '').toLowerCase().endsWith('.heic') ||
+        String(file?.name || '').toLowerCase().endsWith('.heif');
+
+      const inputBlob: Blob = isHeicLike
+        ? ((await (async () => {
+            const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+            return Array.isArray(converted) ? converted[0] : converted;
+          })()) as Blob)
+        : file;
+
+      // Read as Data URL
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ''));
         reader.onerror = () => reject(new Error('FileReader failed'));
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(inputBlob);
       });
 
       // Normalize via canvas to a JPEG data URL (jsPDF handles JPEG reliably)
@@ -1236,6 +1250,11 @@ export default function LeadDetailV2() {
                     try {
                       const pdfFile = await buildCapturedPhotosPdf(nextPhotos, captureSpec.filenamePrefix);
                       await uploadContractDocuments(category, [pdfFile]);
+                    } catch (err: any) {
+                      console.error('Failed to create/upload contract PDF:', err);
+                      alert(
+                        'Nepodařilo se vytvořit nebo nahrát PDF ze fotek. Pokud fotíte na iPhonu (HEIC), zkuste to prosím znovu.'
+                      );
                     } finally {
                       setCapturingPdf(false);
                       setCapturedPhotos([]);
