@@ -42,6 +42,8 @@ interface LeadResponse {
     evidence?: LeadDocument[] | null;
     insurance?: LeadDocument[] | null;
     insuranceEnds?: string | null;
+    buyAgreement?: LeadDocument[] | null;
+    rentAgreement?: LeadDocument[] | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -619,7 +621,7 @@ export default function LeadDetailV2() {
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [documentsView, setDocumentsView] = useState<
-    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence' | 'insurance'
+    'categories' | 'carPhotos' | 'technicalPapers' | 'greenCard' | 'evidence' | 'insurance' | 'contracts'
   >('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
@@ -630,6 +632,8 @@ export default function LeadDetailV2() {
   const [savingMtpNumber, setSavingMtpNumber] = useState(false);
   const [insuranceEndsDraft, setInsuranceEndsDraft] = useState('');
   const [savingInsuranceEnds, setSavingInsuranceEnds] = useState(false);
+  const [activeContractModal, setActiveContractModal] = useState<'buy' | 'rent' | null>(null);
+  const [generatingContractKey, setGeneratingContractKey] = useState<'buy' | 'rent' | null>(null);
 
   const rentDurationMonths = Number.parseInt(form.rentDuration || '', 10) || 0;
   const monthlyPayment = Number.parseInt(form.monthlyPayment || '', 10) || 0;
@@ -886,6 +890,13 @@ export default function LeadDetailV2() {
     return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
   }, [lead]);
 
+  const hasContracts = useMemo(() => {
+    const buy = (lead?.documents?.buyAgreement || []) as any[];
+    const rent = (lead?.documents?.rentAgreement || []) as any[];
+    const hasFiles = (items: any[]) => Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
+    return hasFiles(buy) || hasFiles(rent);
+  }, [lead]);
+
   const hasInsurance = useMemo(() => {
     const items = (lead?.documents?.insurance || []) as any[];
     return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
@@ -895,6 +906,230 @@ export default function LeadDetailV2() {
     const file = typeof doc?.file === 'string' ? doc.file : '';
     return file.toLowerCase().endsWith('.pdf');
   }, []);
+
+  const isDocxDoc = useCallback((doc: LeadDocument): boolean => {
+    const file = typeof doc?.file === 'string' ? doc.file : '';
+    return file.toLowerCase().endsWith('.docx');
+  }, []);
+
+  const uploadContractDocuments = useCallback(
+    async (category: 'buyAgreement' | 'rentAgreement', files: File[]) => {
+      if (!id) return;
+      if (!files || files.length === 0) return;
+
+      setUploadingPhotoKey(category);
+      try {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('document', file);
+          formData.append('category', category);
+          await axiosClient.post(`/leads/${id}/documents`, formData);
+        }
+        await refreshLead();
+      } finally {
+        setUploadingPhotoKey(null);
+      }
+    },
+    [id, refreshLead]
+  );
+
+  const generateBuyAgreementDocx = useCallback(async () => {
+    if (!id) return;
+    setGeneratingContractKey('buy');
+    try {
+      await axiosClient.post(`/leads/${id}/generateBuyAgreementDocx`);
+      await refreshLead();
+    } finally {
+      setGeneratingContractKey(null);
+    }
+  }, [id, refreshLead]);
+
+  const generateRentAgreementDocx = useCallback(async () => {
+    if (!id) return;
+    setGeneratingContractKey('rent');
+    try {
+      await axiosClient.post(`/leads/${id}/generateRentAgreementDocx`);
+      await refreshLead();
+    } finally {
+      setGeneratingContractKey(null);
+    }
+  }, [id, refreshLead]);
+
+  const ContractUploadModal = ({
+    isOpen,
+    onClose,
+    title,
+    category,
+    existing,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    category: 'buyAgreement' | 'rentAgreement';
+    existing: LeadDocument[];
+  }) => {
+    const uploadInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const [dragActive, setDragActive] = useState(false);
+
+    useEffect(() => {
+      if (isOpen) {
+        setDragActive(false);
+      }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const existingWithFile = (existing || []).filter((d) => typeof d?.file === 'string' && d.file);
+
+    return (
+      <>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto mx-2 sm:mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold">{title}</h2>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="px-3 py-1 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              >
+                Zavřít
+              </button>
+            </div>
+
+            <div className="p-4">
+              <div
+                className={`border-2 border-dashed rounded-lg p-4 mb-4 transition-colors ${
+                  dragActive ? 'border-red-600 bg-red-50' : 'border-gray-300'
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  setDragActive(false);
+                  const files = Array.from(e.dataTransfer.files || []);
+                  await uploadContractDocuments(category, files);
+                }}
+              >
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept="image/*,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+                  multiple
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    e.target.value = '';
+                    await uploadContractDocuments(category, files);
+                  }}
+                  className="hidden"
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    e.target.value = '';
+                    await uploadContractDocuments(category, files);
+                  }}
+                  className="hidden"
+                />
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => uploadInputRef.current?.click()}
+                    disabled={uploadingPhotoKey === category}
+                    className="flex-1 w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700"
+                  >
+                    {uploadingPhotoKey === category ? 'Nahrávám...' : 'Nahrát (PDF/foto)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={uploadingPhotoKey === category}
+                    className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
+                  >
+                    Vyfotit
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  {dragActive ? 'Pusťte soubory zde…' : 'nebo přetáhněte soubory sem (drag & drop)'}
+                </p>
+              </div>
+
+              {existingWithFile.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2">
+                  {existingWithFile.map((doc, idx) => {
+                    const url = downloadUrl(doc.file as string);
+                    if (isPdfDoc(doc) || isDocxDoc(doc)) {
+                      return (
+                        <button
+                          key={`${doc._id || doc.file || idx}`}
+                          type="button"
+                          onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                          className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          <span className="text-sm text-gray-800 truncate">{doc.name || doc.file}</span>
+                          <span className="text-xs text-gray-500">{isDocxDoc(doc) ? 'DOCX' : 'PDF'}</span>
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <img
+                        key={`${doc._id || doc.file || idx}`}
+                        src={url}
+                        alt={`${title} ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded border border-gray-200 cursor-pointer"
+                        loading="lazy"
+                        onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <p>Zatím žádné dokumenty</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="w-full py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+              >
+                Hotovo
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
 
   const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -1874,6 +2109,9 @@ export default function LeadDetailV2() {
                           if (label === 'Technické průkazy') {
                             setDocumentsView('technicalPapers');
                           }
+                          if (label === 'Smlouvy') {
+                            setDocumentsView('contracts');
+                          }
                           if (label === 'Zelená karta') {
                             setDocumentsView('greenCard');
                           }
@@ -1901,6 +2139,10 @@ export default function LeadDetailV2() {
                                 ? hasGreenCard
                                   ? 'bg-green-600 hover:bg-green-700'
                                   : 'bg-red-600 hover:bg-red-700'
+                                : label === 'Smlouvy'
+                                  ? hasContracts
+                                    ? 'bg-green-600 hover:bg-green-700'
+                                    : 'bg-red-600 hover:bg-red-700'
                                 : label === 'Pojištění'
                                   ? hasInsurance
                                     ? 'bg-green-600 hover:bg-green-700'
@@ -2277,6 +2519,110 @@ export default function LeadDetailV2() {
                         <p>Zatím žádné dokumenty</p>
                       </div>
                     )}
+                  </>
+                ) : documentsView === 'contracts' ? (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Smlouvy</div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div
+                        onClick={() => setActiveContractModal('buy')}
+                        className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                          'border-gray-300 bg-gray-50'
+                        }`}
+                      >
+                        {Array.isArray(lead?.documents?.buyAgreement) && (lead?.documents?.buyAgreement || []).some((d) => (d as any)?.file) ? (
+                          <div className="w-full">
+                            <p className="text-sm font-medium text-gray-900">Kupní smlouva</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {(lead?.documents?.buyAgreement || []).filter((d) => typeof (d as any)?.file === 'string' && (d as any).file).length} dokumentů
+                            </p>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveContractModal('buy');
+                              }}
+                              className="mt-3 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                            >
+                              Zobrazit
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="h-full flex flex-col items-center justify-center text-center">
+                            <p className="text-sm font-medium text-gray-900">Kupní smlouva</p>
+                            <p className="text-xs text-gray-500">Nahrajte PDF nebo fotku</p>
+                            <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte soubor</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        onClick={() => setActiveContractModal('rent')}
+                        className={`border-2 border-dashed rounded-lg p-3 cursor-pointer hover:border-red-600 transition-colors min-h-[140px] ${
+                          'border-gray-300 bg-gray-50'
+                        }`}
+                      >
+                        {Array.isArray(lead?.documents?.rentAgreement) && (lead?.documents?.rentAgreement || []).some((d) => (d as any)?.file) ? (
+                          <div className="w-full">
+                            <p className="text-sm font-medium text-gray-900">Nájemní smlouva</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {(lead?.documents?.rentAgreement || []).filter((d) => typeof (d as any)?.file === 'string' && (d as any).file).length} dokumentů
+                            </p>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveContractModal('rent');
+                              }}
+                              className="mt-3 w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
+                            >
+                              Zobrazit
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="h-full flex flex-col items-center justify-center text-center">
+                            <p className="text-sm font-medium text-gray-900">Nájemní smlouva</p>
+                            <p className="text-xs text-gray-500">Nahrajte PDF nebo fotku</p>
+                            <p className="text-[11px] text-gray-400 mt-2">Klikněte nebo přetáhněte soubor</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void generateBuyAgreementDocx()}
+                        disabled={generatingContractKey === 'buy'}
+                        className="w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                      >
+                        {generatingContractKey === 'buy' ? 'Generuji…' : 'Generovat kupní smlouvu (Word)'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void generateRentAgreementDocx()}
+                        disabled={generatingContractKey === 'rent'}
+                        className="w-full py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                      >
+                        {generatingContractKey === 'rent' ? 'Generuji…' : 'Generovat nájemní smlouvu (Word)'}
+                      </button>
+                    </div>
+
+                    <ContractUploadModal
+                      isOpen={activeContractModal === 'buy'}
+                      onClose={() => setActiveContractModal(null)}
+                      title="Kupní smlouva"
+                      category="buyAgreement"
+                      existing={((lead?.documents?.buyAgreement || []) as LeadDocument[]) ?? ([] as LeadDocument[])}
+                    />
+                    <ContractUploadModal
+                      isOpen={activeContractModal === 'rent'}
+                      onClose={() => setActiveContractModal(null)}
+                      title="Nájemní smlouva"
+                      category="rentAgreement"
+                      existing={((lead?.documents?.rentAgreement || []) as LeadDocument[]) ?? ([] as LeadDocument[])}
+                    />
                   </>
                 ) : (
                   <>
