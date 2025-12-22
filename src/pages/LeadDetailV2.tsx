@@ -1048,6 +1048,8 @@ export default function LeadDetailV2() {
     const [capturedPhotos, setCapturedPhotos] = useState<File[]>([]);
     const capturingPdfRef = useRef(false);
     const capturedPhotosRef = useRef<File[]>([]);
+    const [successToast, setSuccessToast] = useState<string | null>(null);
+    const successToastTimeoutRef = useRef<number | null>(null);
 
     useEffect(() => {
       if (isOpen) {
@@ -1056,8 +1058,22 @@ export default function LeadDetailV2() {
         setCapturedPhotos([]);
         capturingPdfRef.current = false;
         capturedPhotosRef.current = [];
+        setSuccessToast(null);
+        if (successToastTimeoutRef.current) {
+          window.clearTimeout(successToastTimeoutRef.current);
+          successToastTimeoutRef.current = null;
+        }
       }
     }, [isOpen]);
+
+    useEffect(() => {
+      return () => {
+        if (successToastTimeoutRef.current) {
+          window.clearTimeout(successToastTimeoutRef.current);
+          successToastTimeoutRef.current = null;
+        }
+      };
+    }, []);
 
     if (!isOpen) return null;
 
@@ -1165,6 +1181,20 @@ export default function LeadDetailV2() {
       capturedPhotosRef.current = [];
     };
 
+    const showUploadSuccessToast = (files: File[]) => {
+      const hasPdf = files.some(
+        (f) => String(f?.type || '').toLowerCase() === 'application/pdf' || String(f?.name || '').toLowerCase().endsWith('.pdf')
+      );
+      setSuccessToast(hasPdf ? 'PDF nahráno' : 'Dokument nahrán');
+      if (successToastTimeoutRef.current) window.clearTimeout(successToastTimeoutRef.current);
+      successToastTimeoutRef.current = window.setTimeout(() => setSuccessToast(null), 2200);
+    };
+
+    const uploadContractDocumentsWithToast = async (files: File[]) => {
+      await uploadContractDocuments(category, files);
+      showUploadSuccessToast(files);
+    };
+
     return (
       <>
         <div
@@ -1207,7 +1237,7 @@ export default function LeadDetailV2() {
                   e.preventDefault();
                   setDragActive(false);
                   const files = Array.from(e.dataTransfer.files || []);
-                  await uploadContractDocuments(category, files);
+                  await uploadContractDocumentsWithToast(files);
                 }}
               >
                 <input
@@ -1218,7 +1248,7 @@ export default function LeadDetailV2() {
                   onChange={async (e) => {
                     const files = Array.from(e.target.files || []);
                     e.target.value = '';
-                    await uploadContractDocuments(category, files);
+                    await uploadContractDocumentsWithToast(files);
                   }}
                   className="hidden"
                 />
@@ -1233,7 +1263,7 @@ export default function LeadDetailV2() {
                     e.target.value = '';
 
                     if (!captureSpec.enabled || !capturingPdfRef.current) {
-                      await uploadContractDocuments(category, files);
+                      await uploadContractDocumentsWithToast(files);
                       return;
                     }
 
@@ -1257,7 +1287,7 @@ export default function LeadDetailV2() {
 
                     try {
                       const pdfFile = await buildCapturedPhotosPdf(nextPhotos, captureSpec.filenamePrefix);
-                      await uploadContractDocuments(category, [pdfFile]);
+                      await uploadContractDocumentsWithToast([pdfFile]);
                     } catch (err: any) {
                       console.error('Failed to create/upload contract PDF:', err);
                       const status = err?.response?.status as number | undefined;
@@ -2766,6 +2796,14 @@ export default function LeadDetailV2() {
                         <p>Zatím žádné dokumenty</p>
                       </div>
                     )}
+
+                    {successToast ? (
+                      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60]">
+                        <div className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm shadow">
+                          {successToast}
+                        </div>
+                      </div>
+                    ) : null}
                   </>
                 ) : documentsView === 'contracts' ? (
                   <>
