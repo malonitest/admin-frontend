@@ -300,7 +300,7 @@ function PhotoUploadModal({
                 {dragActive ? 'Pusťte fotky zde…' : 'nebo přetáhněte fotky sem (drag & drop)'}
               </p>
               <p className="text-xs text-gray-500 text-center mt-1">
-                Připraveno {pending.length} z {MAX_PHOTOS} fotek
+                  {dragActive ? 'Pusťte soubory zde…' : 'nebo přetáhněte soubory sem (drag & drop)'}
               </p>
             </div>
 
@@ -1270,6 +1270,11 @@ export default function LeadDetailV2() {
                       : 'Vyfotit'}
                   </button>
                 </div>
+                {shouldCaptureThreePhotosToPdf ? (
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Kupní smlouva: vyfoťte 3 fotky – sloučí se do jednoho PDF
+                  </p>
+                ) : null}
                 <p className="text-xs text-gray-500 text-center mt-3">
                   {dragActive ? 'Pusťte soubory zde…' : 'nebo přetáhněte soubory sem (drag & drop)'}
                 </p>
