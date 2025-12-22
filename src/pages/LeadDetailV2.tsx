@@ -1064,7 +1064,15 @@ export default function LeadDetailV2() {
       (d) => typeof d?.file === 'string' && d.file && !isLegacyGeneratedContractDoc(d)
     );
 
-    const shouldCaptureThreePhotosToPdf = category === 'buyAgreement';
+    const captureSpec = useMemo(() => {
+      if (category === 'buyAgreement') {
+        return { enabled: true, count: 3, filenamePrefix: 'Kupni smlouva' };
+      }
+      if (category === 'rentAgreement') {
+        return { enabled: true, count: 4, filenamePrefix: 'Nájemní smlouva' };
+      }
+      return { enabled: false, count: 0, filenamePrefix: '' };
+    }, [category]);
 
     const fileToJpegDataUrl = async (file: File): Promise<string> => {
       // Read file as Data URL
@@ -1092,7 +1100,7 @@ export default function LeadDetailV2() {
       return canvas.toDataURL('image/jpeg', 0.92);
     };
 
-    const buildThreePhotoPdf = async (photos: File[]): Promise<File> => {
+    const buildCapturedPhotosPdf = async (photos: File[], filenamePrefix: string): Promise<File> => {
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
@@ -1124,11 +1132,11 @@ export default function LeadDetailV2() {
 
       const pdfBlob = doc.output('blob');
       const customerName = sanitizeFilename(buildCustomerNameForContractFile());
-      const filename = `Kupni smlouva ${customerName}.pdf`;
+      const filename = `${filenamePrefix} ${customerName}.pdf`;
       return new File([pdfBlob], filename, { type: 'application/pdf' });
     };
 
-    const startThreePhotoPdfCapture = () => {
+    const startPdfCapture = () => {
       setCapturingPdf(true);
       setCapturedPhotos([]);
       capturingPdfRef.current = true;
@@ -1206,7 +1214,7 @@ export default function LeadDetailV2() {
                     const files = Array.from(e.target.files || []);
                     e.target.value = '';
 
-                    if (!shouldCaptureThreePhotosToPdf || !capturingPdfRef.current) {
+                    if (!captureSpec.enabled || !capturingPdfRef.current) {
                       await uploadContractDocuments(category, files);
                       return;
                     }
@@ -1220,11 +1228,11 @@ export default function LeadDetailV2() {
                       return;
                     }
 
-                    const nextPhotos = [...capturedPhotosRef.current, first].slice(0, 3);
+                    const nextPhotos = [...capturedPhotosRef.current, first].slice(0, captureSpec.count);
                     capturedPhotosRef.current = nextPhotos;
                     setCapturedPhotos(nextPhotos);
 
-                    if (nextPhotos.length < 3) {
+                    if (nextPhotos.length < captureSpec.count) {
                       window.setTimeout(() => {
                         cameraInputRef.current?.click();
                       }, 100);
@@ -1232,7 +1240,7 @@ export default function LeadDetailV2() {
                     }
 
                     try {
-                      const pdfFile = await buildThreePhotoPdf(nextPhotos);
+                      const pdfFile = await buildCapturedPhotosPdf(nextPhotos, captureSpec.filenamePrefix);
                       await uploadContractDocuments(category, [pdfFile]);
                     } finally {
                       setCapturingPdf(false);
@@ -1256,23 +1264,25 @@ export default function LeadDetailV2() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (shouldCaptureThreePhotosToPdf) {
-                        startThreePhotoPdfCapture();
+                      if (captureSpec.enabled) {
+                        startPdfCapture();
                       } else {
                         cameraInputRef.current?.click();
                       }
                     }}
-                    disabled={uploadingPhotoKey === category || (shouldCaptureThreePhotosToPdf && capturingPdf)}
+                    disabled={uploadingPhotoKey === category || (captureSpec.enabled && capturingPdf)}
                     className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
                   >
-                    {shouldCaptureThreePhotosToPdf && capturingPdf
-                      ? `Vyfoťte 3 fotky (${capturedPhotos.length}/3)`
+                    {captureSpec.enabled && capturingPdf
+                      ? `Vyfoťte ${captureSpec.count} fotky (${capturedPhotos.length}/${captureSpec.count})`
                       : 'Vyfotit'}
                   </button>
                 </div>
-                {shouldCaptureThreePhotosToPdf ? (
+                {captureSpec.enabled ? (
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    Kupní smlouva: vyfoťte 3 fotky – sloučí se do jednoho PDF
+                    {category === 'buyAgreement'
+                      ? 'Kupní smlouva: vyfoťte 3 fotky – sloučí se do jednoho PDF'
+                      : 'Nájemní smlouva: vyfoťte 4 fotky – sloučí se do jednoho PDF'}
                   </p>
                 ) : null}
                 <p className="text-xs text-gray-500 text-center mt-3">
