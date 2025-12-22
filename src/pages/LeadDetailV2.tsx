@@ -1097,7 +1097,7 @@ export default function LeadDetailV2() {
         reader.readAsDataURL(inputBlob);
       });
 
-      // Normalize via canvas to a JPEG data URL (jsPDF handles JPEG reliably)
+      // Normalize + downscale via canvas to a JPEG data URL (jsPDF handles JPEG reliably)
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const i = new Image();
         i.onload = () => resolve(i);
@@ -1106,12 +1106,20 @@ export default function LeadDetailV2() {
       });
 
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
+      const srcW = img.naturalWidth || img.width;
+      const srcH = img.naturalHeight || img.height;
+      // Mobile safety: keep memory and upload sizes reasonable.
+      const maxDim = 1800;
+      const scale = Math.min(1, maxDim / Math.max(srcW, srcH));
+      canvas.width = Math.max(1, Math.round(srcW * scale));
+      canvas.height = Math.max(1, Math.round(srcH * scale));
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas not supported');
-      ctx.drawImage(img, 0, 0);
-      return canvas.toDataURL('image/jpeg', 0.92);
+      ctx.imageSmoothingEnabled = true;
+      // @ts-expect-error - not in older TS lib DOM types
+      if (typeof ctx.imageSmoothingQuality !== 'undefined') ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.82);
     };
 
     const buildCapturedPhotosPdf = async (photos: File[], filenamePrefix: string): Promise<File> => {
@@ -1252,8 +1260,12 @@ export default function LeadDetailV2() {
                       await uploadContractDocuments(category, [pdfFile]);
                     } catch (err: any) {
                       console.error('Failed to create/upload contract PDF:', err);
+                      const status = err?.response?.status as number | undefined;
+                      const apiMessage = (err?.response?.data?.message as string | undefined) || undefined;
+                      const reason = apiMessage || (typeof err?.message === 'string' ? err.message : undefined);
+                      const statusHint = status ? ` (HTTP ${status})` : '';
                       alert(
-                        'Nepodařilo se vytvořit nebo nahrát PDF ze fotek. Pokud fotíte na iPhonu (HEIC), zkuste to prosím znovu.'
+                        `Nepodařilo se vytvořit nebo nahrát PDF ze fotek${statusHint}. ${reason ? `Důvod: ${reason}` : 'Zkuste to prosím znovu.'}`
                       );
                     } finally {
                       setCapturingPdf(false);
