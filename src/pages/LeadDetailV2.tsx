@@ -912,6 +912,17 @@ export default function LeadDetailV2() {
     return file.toLowerCase().endsWith('.docx');
   }, []);
 
+  const triggerDownload = useCallback((url: string, filename?: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    if (filename) a.download = filename;
+    a.rel = 'noopener noreferrer';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, []);
+
   const uploadContractDocuments = useCallback(
     async (category: 'buyAgreement' | 'rentAgreement', files: File[]) => {
       if (!id) return;
@@ -937,23 +948,31 @@ export default function LeadDetailV2() {
     if (!id) return;
     setGeneratingContractKey('buy');
     try {
-      await axiosClient.post(`/leads/${id}/generateBuyAgreementDocx`);
+      const res = await axiosClient.post(`/leads/${id}/generateBuyAgreementDocx`);
+      const file = res?.data?.data?.file as string | undefined;
+      if (file) {
+        triggerDownload(downloadUrl(file), file);
+      }
       await refreshLead();
     } finally {
       setGeneratingContractKey(null);
     }
-  }, [id, refreshLead]);
+  }, [id, refreshLead, triggerDownload]);
 
   const generateRentAgreementDocx = useCallback(async () => {
     if (!id) return;
     setGeneratingContractKey('rent');
     try {
-      await axiosClient.post(`/leads/${id}/generateRentAgreementDocx`);
+      const res = await axiosClient.post(`/leads/${id}/generateRentAgreementDocx`);
+      const file = res?.data?.data?.file as string | undefined;
+      if (file) {
+        triggerDownload(downloadUrl(file), file);
+      }
       await refreshLead();
     } finally {
       setGeneratingContractKey(null);
     }
-  }, [id, refreshLead]);
+  }, [id, refreshLead, triggerDownload]);
 
   const ContractUploadModal = ({
     isOpen,
