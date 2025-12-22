@@ -1059,7 +1059,9 @@ export default function LeadDetailV2() {
       await refreshLead();
 
       if (file) {
-        triggerDownload(downloadUrl(file), file);
+        const customerName = sanitizeFilename(buildCustomerNameForContractFile());
+        const niceName = sanitizeFilename(`Plna moc ${customerName}`);
+        triggerDownload(downloadUrl(file), `${niceName}.docx`);
       }
     } catch (e: any) {
       const message = e?.response?.data?.message as string | undefined;
@@ -1068,7 +1070,7 @@ export default function LeadDetailV2() {
     } finally {
       setGeneratingContractKey(null);
     }
-  }, [downloadUrl, id, refreshLead, triggerDownload]);
+  }, [buildCustomerNameForContractFile, downloadUrl, id, refreshLead, sanitizeFilename, triggerDownload]);
 
   const ContractUploadModal = ({
     isOpen,
