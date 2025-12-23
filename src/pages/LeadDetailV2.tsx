@@ -625,6 +625,7 @@ export default function LeadDetailV2() {
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
   const [documentsView, setDocumentsView] = useState<
     'categories' |
     'carPhotos' |
@@ -1064,6 +1065,63 @@ export default function LeadDetailV2() {
     const file = typeof doc?.file === 'string' ? doc.file : '';
     return file.toLowerCase().endsWith('.pdf');
   }, []);
+
+  const isImageDoc = useCallback((doc: LeadDocument): boolean => {
+    const file = typeof doc?.file === 'string' ? doc.file : '';
+    if (!file) return false;
+    const lower = file.toLowerCase();
+    if (lower.endsWith('.pdf') || lower.endsWith('.docx') || lower.endsWith('.doc')) return false;
+    return /\.(png|jpe?g|webp|gif|bmp|heic|heif)$/i.test(lower);
+  }, []);
+
+  const allLeadDocuments = useMemo(() => {
+    const docsRoot = (lead?.documents || {}) as any;
+    const collected: LeadDocument[] = [];
+    const seenFiles = new Set<string>();
+    const seenObjects = new WeakSet<object>();
+
+    const pushDoc = (d: any) => {
+      if (!d || typeof d !== 'object') return;
+      const file = typeof d.file === 'string' ? d.file : '';
+      if (!file) return;
+      if (seenFiles.has(file)) return;
+      seenFiles.add(file);
+      collected.push(d as LeadDocument);
+    };
+
+    const visit = (v: any) => {
+      if (!v) return;
+      if (Array.isArray(v)) {
+        v.forEach(visit);
+        return;
+      }
+      if (typeof v !== 'object') return;
+      if (seenObjects.has(v)) return;
+      seenObjects.add(v);
+
+      // If it looks like a stored document, collect it.
+      if (typeof (v as any).file === 'string') {
+        pushDoc(v);
+        return;
+      }
+
+      // Otherwise traverse nested values (covers any future/legacy document buckets)
+      for (const child of Object.values(v)) {
+        visit(child);
+      }
+    };
+
+    visit(docsRoot);
+    return collected;
+  }, [lead]);
+
+  const photoGalleryImages = useMemo(() => {
+    return allLeadDocuments.filter(isImageDoc);
+  }, [allLeadDocuments, isImageDoc]);
+
+  const photoGalleryPdfs = useMemo(() => {
+    return allLeadDocuments.filter(isPdfDoc);
+  }, [allLeadDocuments, isPdfDoc]);
 
   const isDocxDoc = useCallback((doc: LeadDocument): boolean => {
     const file = typeof doc?.file === 'string' ? doc.file : '';
@@ -2207,7 +2265,11 @@ export default function LeadDetailV2() {
               Dokumenty
             </button>
 
-            <button type="button" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            <button
+              type="button"
+              onClick={() => setShowPhotoGalleryModal(true)}
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
               Fotogalerie
             </button>
 
@@ -3424,6 +3486,85 @@ export default function LeadDetailV2() {
                     />
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPhotoGalleryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowPhotoGalleryModal(false)}
+              role="button"
+              tabIndex={-1}
+            />
+            <div
+              className="relative w-full max-w-3xl mx-2 sm:mx-4 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[92vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <div className="text-sm font-semibold text-gray-900">Fotogalerie</div>
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoGalleryModal(false)}
+                  className="px-3 py-1 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                >
+                  Zavřít
+                </button>
+              </div>
+
+              <div className="p-4 space-y-6">
+                <div>
+                  <div className="text-sm font-medium text-gray-800 mb-3">Obrázky</div>
+                  {photoGalleryImages.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {photoGalleryImages.map((doc, idx) => {
+                        const file = doc.file as string;
+                        const url = downloadUrl(file);
+                        const alt = String(doc.name || `Obrázek ${idx + 1}`);
+                        return (
+                          <img
+                            key={`${doc._id || file || idx}`}
+                            src={url}
+                            alt={alt}
+                            className="w-full h-28 sm:h-32 object-cover rounded border border-gray-200 cursor-pointer"
+                            loading="lazy"
+                            onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">Žádné obrázky nebyly nalezeny</div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-sm font-medium text-gray-800 mb-3">PDF dokumenty</div>
+                  {photoGalleryPdfs.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-2">
+                      {photoGalleryPdfs.map((doc, idx) => {
+                        const file = doc.file as string;
+                        const url = downloadUrl(file);
+                        const name = String(doc.name || file || `PDF ${idx + 1}`);
+                        return (
+                          <button
+                            key={`${doc._id || file || idx}`}
+                            type="button"
+                            onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                            className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                          >
+                            <span className="text-sm text-gray-800 truncate">{name}</span>
+                            <span className="text-xs text-gray-500">PDF</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">Žádné PDF nebylo nalezeno</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
