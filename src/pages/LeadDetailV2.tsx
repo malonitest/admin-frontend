@@ -48,6 +48,7 @@ interface LeadResponse {
     rentAgreement?: LeadDocument[] | null;
     powerOfAttorney?: LeadDocument[] | null;
     sellMandate?: LeadDocument[] | null;
+    misc?: LeadDocument[] | null;
   } | null;
   note?: Array<{
     message?: string;
@@ -634,6 +635,7 @@ export default function LeadDetailV2() {
     'contracts' |
     'powerOfAttorney' |
     'sellMandate'
+    | 'misc'
   >('categories');
   const [activePhotoModal, setActivePhotoModal] = useState<'interior' | 'exterior' | 'mileage' | 'vin' | null>(null);
   const [activeTechnicalModal, setActiveTechnicalModal] = useState<'vtp' | 'mtp' | null>(null);
@@ -653,6 +655,10 @@ export default function LeadDetailV2() {
   const sellMandateUploadInputRef = useRef<HTMLInputElement>(null);
   const sellMandateCameraInputRef = useRef<HTMLInputElement>(null);
   const [sellMandateDragActive, setSellMandateDragActive] = useState(false);
+
+  const miscUploadInputRef = useRef<HTMLInputElement>(null);
+  const miscCameraInputRef = useRef<HTMLInputElement>(null);
+  const [miscDragActive, setMiscDragActive] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -944,6 +950,11 @@ export default function LeadDetailV2() {
     return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
   }, [lead]);
 
+  const hasMiscDocuments = useMemo(() => {
+    const items = (lead?.documents?.misc || []) as any[];
+    return Array.isArray(items) && items.some((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file);
+  }, [lead]);
+
   const uploadSellMandateDocuments = useCallback(
     async (files: File[]) => {
       if (!id) return;
@@ -983,6 +994,59 @@ export default function LeadDetailV2() {
           const formData = new FormData();
           formData.append('document', file);
           formData.append('category', 'sellMandate');
+          await axiosClient.post(`/leads/${id}/documents`, formData);
+        }
+        await refreshLead();
+        setSuccessToast('Dokumenty nahrány');
+        if (successToastTimeoutRef.current) window.clearTimeout(successToastTimeoutRef.current);
+        successToastTimeoutRef.current = window.setTimeout(() => setSuccessToast(null), 2200);
+      } finally {
+        setUploadingPhotoKey(null);
+      }
+    },
+    [id, lead, refreshLead]
+  );
+
+  const uploadMiscDocuments = useCallback(
+    async (files: File[]) => {
+      if (!id) return;
+      if (!files || files.length === 0) return;
+
+      const existing = (lead?.documents?.misc || []) as LeadDocument[];
+      const existingCount = Array.isArray(existing)
+        ? existing.filter((d) => d && typeof d === 'object' && typeof d.file === 'string' && d.file).length
+        : 0;
+
+      const onlyAllowed = files.filter((f) => {
+        const type = String(f?.type || '').toLowerCase();
+        const name = String(f?.name || '').toLowerCase();
+        return type.startsWith('image/') || type === 'application/pdf' || name.endsWith('.pdf');
+      });
+
+      if (onlyAllowed.length === 0) {
+        alert('Nahrajte prosím obrázek nebo PDF.');
+        return;
+      }
+
+      const MAX_DOCS = 10;
+      const remaining = Math.max(0, MAX_DOCS - existingCount);
+      if (remaining <= 0) {
+        alert('V této kategorii může být maximálně 10 dokumentů.');
+        return;
+      }
+
+      const toUpload = onlyAllowed.slice(0, remaining);
+      if (toUpload.length < onlyAllowed.length) {
+        alert(`Lze nahrát maximálně ${remaining} souborů (limit 10). Nahraju jen první ${toUpload.length}.`);
+      }
+
+      setUploadingPhotoKey('misc');
+      try {
+        for (const file of toUpload) {
+          const formData = new FormData();
+          formData.append('document', file);
+          // Backend category for other documents
+          formData.append('category', 'other');
           await axiosClient.post(`/leads/${id}/documents`, formData);
         }
         await refreshLead();
@@ -2506,6 +2570,9 @@ export default function LeadDetailV2() {
                           if (label === 'CarDetect report') {
                             void handleGenerateCarDetectReport();
                           }
+                          if (label === 'Ostatni dokumenty') {
+                            setDocumentsView('misc');
+                          }
                         }}
                         className={`w-full px-3 py-3 text-sm text-white rounded-lg ${
                           label === 'Fotografie auta'
@@ -2538,6 +2605,10 @@ export default function LeadDetailV2() {
                                     : 'bg-red-600 hover:bg-red-700'
                                   : label === 'Při prodeji'
                                     ? hasSellMandate
+                                      ? 'bg-green-600 hover:bg-green-700'
+                                      : 'bg-red-600 hover:bg-red-700'
+                                  : label === 'Ostatni dokumenty'
+                                    ? hasMiscDocuments
                                       ? 'bg-green-600 hover:bg-green-700'
                                       : 'bg-red-600 hover:bg-red-700'
                               : 'bg-red-600 hover:bg-red-700'
@@ -2621,6 +2692,106 @@ export default function LeadDetailV2() {
                     (lead?.documents?.sellMandate || []).some((d) => typeof (d as any)?.file === 'string' && (d as any).file) ? (
                       <div className="grid grid-cols-1 gap-2">
                         {(lead?.documents?.sellMandate || [])
+                          .filter((d) => typeof (d as any)?.file === 'string' && (d as any).file)
+                          .slice(0, 10)
+                          .map((doc, idx) => {
+                            const file = (doc as any)?.file as string;
+                            const url = downloadUrl(file);
+                            const name = String((doc as any)?.name || file || `Dokument ${idx + 1}`);
+                            const isPdf = name.toLowerCase().endsWith('.pdf') || file.toLowerCase().endsWith('.pdf');
+                            return (
+                              <button
+                                key={`${(doc as any)?._id || file || idx}`}
+                                type="button"
+                                onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                                className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              >
+                                <span className="text-sm text-gray-800 truncate">{name}</span>
+                                <span className="text-xs text-gray-500">{isPdf ? 'PDF' : 'IMG'}</span>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        <p>Zatím žádné dokumenty</p>
+                      </div>
+                    )}
+                  </>
+                ) : documentsView === 'misc' ? (
+                  <>
+                    <div className="text-sm font-medium text-gray-800 mb-3">Ostatní dokumenty</div>
+
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-4 mb-4 transition-colors ${
+                        miscDragActive ? 'border-red-600 bg-red-50' : 'border-gray-300 bg-gray-50'
+                      }`}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setMiscDragActive(true);
+                      }}
+                      onDragLeave={() => setMiscDragActive(false)}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        setMiscDragActive(false);
+                        const files = Array.from(e.dataTransfer.files || []);
+                        await uploadMiscDocuments(files);
+                      }}
+                    >
+                      <input
+                        ref={miscUploadInputRef}
+                        type="file"
+                        accept="image/*,application/pdf,.pdf"
+                        multiple
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files || []);
+                          e.target.value = '';
+                          await uploadMiscDocuments(files);
+                        }}
+                        className="hidden"
+                      />
+                      <input
+                        ref={miscCameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        multiple
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files || []);
+                          e.target.value = '';
+                          await uploadMiscDocuments(files);
+                        }}
+                        className="hidden"
+                      />
+
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                          type="button"
+                          onClick={() => miscUploadInputRef.current?.click()}
+                          disabled={uploadingPhotoKey === 'misc'}
+                          className="flex-1 w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700"
+                        >
+                          {uploadingPhotoKey === 'misc' ? 'Nahrávám...' : 'Nahrát (PDF/foto)'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => miscCameraInputRef.current?.click()}
+                          disabled={uploadingPhotoKey === 'misc'}
+                          className="flex-1 w-full py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white"
+                        >
+                          Vyfotit
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 text-center mt-3">
+                        {miscDragActive ? 'Pusťte soubory zde…' : 'nebo přetáhněte soubory sem (drag & drop)'}
+                      </p>
+                      <p className="text-xs text-gray-500 text-center mt-1">Limit: 10 dokumentů (obrázky + PDF)</p>
+                    </div>
+
+                    {Array.isArray(lead?.documents?.misc) &&
+                    (lead?.documents?.misc || []).some((d) => typeof (d as any)?.file === 'string' && (d as any).file) ? (
+                      <div className="grid grid-cols-1 gap-2">
+                        {(lead?.documents?.misc || [])
                           .filter((d) => typeof (d as any)?.file === 'string' && (d as any).file)
                           .slice(0, 10)
                           .map((doc, idx) => {
