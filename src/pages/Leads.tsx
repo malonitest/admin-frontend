@@ -344,7 +344,11 @@ function PlusIcon({ className }: { className?: string }) {
   );
 }
 
-export function Leads() {
+type LeadsProps = {
+  forcedLeadState?: string;
+};
+
+export function Leads({ forcedLeadState }: LeadsProps = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -358,17 +362,26 @@ export function Leads() {
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filterState, setFilterState] = useState(() => searchParams.get('leadState') || '');
+  const [filterState, setFilterState] = useState(() => forcedLeadState ?? (searchParams.get('leadState') || ''));
   const [filterSubstate, setFilterSubstate] = useState(() => searchParams.get('leadSubState') || '');
   const [filterPeriod, setFilterPeriod] = useState(() => searchParams.get('periodFilterType') || '');
   const [filterDealer, setFilterDealer] = useState(() => searchParams.get('dealerId') || '');
   
   const [appliedFilters, setAppliedFilters] = useState({
-    leadState: searchParams.get('leadState') || '',
+    leadState: forcedLeadState ?? (searchParams.get('leadState') || ''),
     leadSubState: searchParams.get('leadSubState') || '',
     periodFilterType: searchParams.get('periodFilterType') || '',
     dealerId: searchParams.get('dealerId') || '',
   });
+
+  const effectiveLeadState = forcedLeadState ?? appliedFilters.leadState;
+
+  // Keep internal state consistent when a forced filter is used.
+  useEffect(() => {
+    if (!forcedLeadState) return;
+    setFilterState(forcedLeadState);
+    setAppliedFilters((prev) => (prev.leadState === forcedLeadState ? prev : { ...prev, leadState: forcedLeadState }));
+  }, [forcedLeadState]);
 
   // Sync URL params when filters change
   useEffect(() => {
@@ -376,12 +389,12 @@ export function Leads() {
     if (page > 1) params.set('page', page.toString());
     if (limit !== 10) params.set('limit', limit.toString());
     if (searchQuery) params.set('search', searchQuery);
-    if (appliedFilters.leadState) params.set('leadState', appliedFilters.leadState);
+    if (effectiveLeadState) params.set('leadState', effectiveLeadState);
     if (appliedFilters.leadSubState) params.set('leadSubState', appliedFilters.leadSubState);
     if (appliedFilters.periodFilterType) params.set('periodFilterType', appliedFilters.periodFilterType);
     if (appliedFilters.dealerId) params.set('dealerId', appliedFilters.dealerId);
     setSearchParams(params, { replace: true });
-  }, [page, limit, searchQuery, appliedFilters, setSearchParams]);
+  }, [page, limit, searchQuery, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId, setSearchParams]);
 
   const debouncedSearch = useDebounce(searchQuery, 400);
 
@@ -410,7 +423,7 @@ export function Leads() {
         params.search = debouncedSearch.trim();
       }
       
-      if (appliedFilters.leadState) params.leadState = appliedFilters.leadState;
+      if (effectiveLeadState) params.leadState = effectiveLeadState;
       if (appliedFilters.leadSubState) params.leadSubState = appliedFilters.leadSubState;
       if (appliedFilters.periodFilterType) params.periodFilterType = appliedFilters.periodFilterType;
       if (appliedFilters.dealerId) params.dealerId = appliedFilters.dealerId;
@@ -424,7 +437,7 @@ export function Leads() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch, appliedFilters]);
+  }, [page, limit, debouncedSearch, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId]);
 
   useEffect(() => {
     fetchLeads();
@@ -443,7 +456,7 @@ export function Leads() {
 
   const handleApplyFilter = () => {
     setAppliedFilters({
-      leadState: filterState,
+      leadState: forcedLeadState ?? filterState,
       leadSubState: filterSubstate,
       periodFilterType: filterPeriod,
       dealerId: filterDealer,
@@ -452,12 +465,12 @@ export function Leads() {
   };
 
   const handleResetFilter = () => {
-    setFilterState('');
+    setFilterState(forcedLeadState ?? '');
     setFilterSubstate('');
     setFilterPeriod('');
     setFilterDealer('');
     setAppliedFilters({
-      leadState: '',
+      leadState: forcedLeadState ?? '',
       leadSubState: '',
       periodFilterType: '',
       dealerId: '',
@@ -465,7 +478,7 @@ export function Leads() {
     setFilterOpen(false);
   };
 
-  const hasActiveFilters = appliedFilters.leadState || appliedFilters.leadSubState || appliedFilters.periodFilterType || appliedFilters.dealerId;
+  const hasActiveFilters = effectiveLeadState || appliedFilters.leadSubState || appliedFilters.periodFilterType || appliedFilters.dealerId;
 
   const formatDateTime = (dateStr: string) => {
     return formatDateTimePrague(dateStr);
@@ -649,8 +662,9 @@ export function Leads() {
               <div className="mb-4">
                 <label className="block text-sm text-gray-600 mb-1">Stav leadu</label>
                 <select
-                  value={filterState}
+                  value={forcedLeadState ?? filterState}
                   onChange={(e) => setFilterState(e.target.value)}
+                  disabled={Boolean(forcedLeadState)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   {LEAD_STATES.map(s => (

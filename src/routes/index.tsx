@@ -102,6 +102,10 @@ export const router = createBrowserRouter([
         element: <Leads />,
       },
       {
+        path: 'leads/am-approved',
+        element: <Leads forcedLeadState="SUPERVISOR_APPROVED" />,
+      },
+      {
         path: 'leads/:id',
         element: <LeadDetail />,
       },

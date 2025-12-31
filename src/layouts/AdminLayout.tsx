@@ -19,7 +19,15 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Statistiky', href: '/', icon: StatsIcon },
   { name: 'Pronájmy', href: '/leases', icon: LeaseIcon },
-  { name: 'Leady', href: '/leads', icon: LeadIcon },
+  {
+    name: 'Leady',
+    href: '/leads',
+    icon: LeadIcon,
+    children: [
+      { name: 'Všechny leady', href: '/leads' },
+      { name: 'Schválen AM', href: '/leads/am-approved' },
+    ],
+  },
   { name: 'Obchodníci', href: '/dealers', icon: DealersIcon },
   { name: 'Faktury', href: '/invoices', icon: InvoiceIcon },
   { name: 'Logy', href: '/logs', icon: LogIcon },
