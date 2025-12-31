@@ -1683,7 +1683,7 @@ export default function LeadDetailV2() {
       case 'SALES_APPROVED':
         return 'Schváleno sales';
       case 'UPLOAD_DOCUMENTS':
-        return 'Nahrát dokumenty';
+        return 'Předáno technikovi';
       case 'FINAL_APPROVAL':
         return 'Finální schválení';
       case 'RETURNED_TO_SALES':
