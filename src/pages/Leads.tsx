@@ -213,7 +213,7 @@ const LEAD_STATES = [
   { value: 'SENT_TO_OZ', label: 'Odesláno OZ' },
   { value: 'SALES_APPROVED', label: 'Schváleno OZ' },
   { value: 'UPLOAD_DOCUMENTS', label: 'Předáno technikovi' },
-  { value: 'FINAL_APPROVAL', label: 'Finální potvrzení' },
+  { value: 'FINAL_APPROVAL', label: 'Předáno k vyplacení' },
   { value: 'CONVERTED', label: 'Konvertován' },
   { value: 'DECLINED', label: 'Zamítnut' },
   { value: 'RETURNED_TO_SALES', label: 'Vráceno OZ' },
@@ -263,7 +263,7 @@ const normalizeLeadState = (state: string): string => {
     SENT_TO_OZ: 'Odesláno OZ',
     SALES_APPROVED: 'Schváleno OZ',
     UPLOAD_DOCUMENTS: 'Předáno technikovi',
-    FINAL_APPROVAL: 'Finální potvrzení',
+    FINAL_APPROVAL: 'Předáno k vyplacení',
     RETURNED_TO_SALES: 'Vráceno OZ',
   };
   return stateMap[state] || state;

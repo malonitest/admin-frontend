@@ -49,7 +49,7 @@ const STATUS_LABELS: Record<string, string> = {
   SENT_TO_OZ: 'Odesláno OZ',
   SALES_APPROVED: 'Schváleno OZ',
   UPLOAD_DOCUMENTS: 'Nahrávání dokumentů',
-  FINAL_APPROVAL: 'Finální schválení',
+  FINAL_APPROVAL: 'Předáno k vyplacení',
   CONVERTED: 'Konvertováno',
   DECLINED: 'Zamítnuto',
   RETURNED_TO_SALES: 'Vráceno obchodníkovi',

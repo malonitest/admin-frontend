@@ -38,6 +38,7 @@ const navigation: NavItem[] = [
     children: [
       { name: 'New->Schválen AM', href: '/time-funnel/new-to-am-approved' },
       { name: 'SchválenAM->Technik', href: '/time-funnel/am-approved-to-technician' },
+      { name: 'Technik->FŘ', href: '/time-funnel/technician-to-finance' },
     ],
   },
   { 

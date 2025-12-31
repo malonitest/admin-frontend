@@ -622,6 +622,7 @@ export default function LeadDetailV2() {
   const [savingLeadChecks, setSavingLeadChecks] = useState(false);
   const [settingAmApproved, setSettingAmApproved] = useState(false);
   const [settingTechnician, setSettingTechnician] = useState(false);
+  const [settingFinance, setSettingFinance] = useState(false);
   const [settingDeclined, setSettingDeclined] = useState(false);
   const [showDeclineReasons, setShowDeclineReasons] = useState(false);
   const [declineType, setDeclineType] = useState<string>('OTHER');
@@ -1689,7 +1690,7 @@ export default function LeadDetailV2() {
       case 'UPLOAD_DOCUMENTS':
         return 'Předáno technikovi';
       case 'FINAL_APPROVAL':
-        return 'Finální schválení';
+        return 'Předáno k vyplacení';
       case 'RETURNED_TO_SALES':
         return 'Vráceno sales';
       case 'CONVERTED':
@@ -1951,6 +1952,21 @@ export default function LeadDetailV2() {
       alert('Nepodařilo se předat lead technikovi');
     } finally {
       setSettingTechnician(false);
+    }
+  };
+
+  const handleHandToFinance = async () => {
+    if (!id) return;
+    setSettingFinance(true);
+    try {
+      // Moves lead to FINAL_APPROVAL ("Předáno k vyplacení")
+      await axiosClient.post(`/leads/${id}/sales/sendForFinalApproval`);
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to hand lead to finance:', e);
+      alert('Nepodařilo se předat lead na FŘ');
+    } finally {
+      setSettingFinance(false);
     }
   };
 
@@ -2471,7 +2487,7 @@ export default function LeadDetailV2() {
           <div className="flex justify-end gap-3">
             <button
               onClick={handleSetDeclined}
-              disabled={saving || settingDeclined || settingAmApproved || settingTechnician}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance}
               className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
             >
               Zamítnout
@@ -2479,20 +2495,28 @@ export default function LeadDetailV2() {
 
             <button
               onClick={handleOpenSubStatus}
-              disabled={saving || settingDeclined || settingAmApproved || settingTechnician}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance}
               className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
             >
               SubStatus update
             </button>
 
             <button
-              onClick={lead?.status === 'SUPERVISOR_APPROVED' ? handleHandToTechnician : handleSetAmApproved}
-              disabled={saving || settingDeclined || settingAmApproved || settingTechnician}
+              onClick={
+                lead?.status === 'SUPERVISOR_APPROVED'
+                  ? handleHandToTechnician
+                  : lead?.status === 'UPLOAD_DOCUMENTS'
+                    ? handleHandToFinance
+                    : handleSetAmApproved
+              }
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
             >
               {lead?.status === 'SUPERVISOR_APPROVED'
                 ? (settingTechnician ? 'Předávám...' : 'Předat technikovi')
-                : (settingAmApproved ? 'Nastavuji...' : 'Schválen AM')}
+                : lead?.status === 'UPLOAD_DOCUMENTS'
+                  ? (settingFinance ? 'Předávám...' : 'Předat FŘ')
+                  : (settingAmApproved ? 'Nastavuji...' : 'Schválen AM')}
             </button>
 
             <button
