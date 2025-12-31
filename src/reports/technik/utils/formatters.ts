@@ -62,17 +62,18 @@ export const formatDateTime = (date: Date | string | undefined | null): string =
 };
 
 /**
- * Mask VIN - show only last 6 characters
- * @example maskVin("WF0XXGCGXBBY36496") => "************36496"
+ * Mask VIN - keep it short and consistent
+ * - Show VIN as-is if length <= 6
+ * - Otherwise show 11 asterisks + last 5 chars
+ *
+ * @example maskVin("WF0XXGCGXBBY36496") => "***********36496"
  */
 export const maskVin = (vin: string | undefined | null): string => {
   if (!vin || vin === 'Neuvedeno') return 'Neuvedeno';
-  
+
   if (vin.length <= 6) return vin;
-  
-  const masked = '*'.repeat(vin.length - 6);
-  const visible = vin.slice(-6);
-  return masked + visible;
+
+  return `${'*'.repeat(11)}${vin.slice(-5)}`;
 };
 
 /**

@@ -7,7 +7,7 @@
 import type { IFunnelStageData, IDropOff, IFunnelNote } from '@/types/reporting';
 
 /**
- * Formátování data do èeského formátu
+ * Formï¿½tovï¿½nï¿½ data do ï¿½eskï¿½ho formï¿½tu
  */
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -18,31 +18,34 @@ export function formatDate(date: Date | string): string {
 }
 
 /**
- * Formátování èísla s èeskými oddìlovaèi
+ * Formï¿½tovï¿½nï¿½ ï¿½ï¿½sla s ï¿½eskï¿½mi oddï¿½lovaï¿½i
  */
 export function formatNumber(value: number, decimals = 0): string {
-  return value.toLocaleString('cs-CZ', {
+  const formatted = value.toLocaleString('cs-CZ', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+
+  // Ensure deterministic output across environments (Intl may use NBSP/narrow NBSP as a thousands separator)
+  return formatted.replace(/[\u00A0\u202F]/g, ' ');
 }
 
 /**
- * Formátování procenta
+ * Formï¿½tovï¿½nï¿½ procenta
  */
 export function formatPercent(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }
 
 /**
- * Formátování období do textu
+ * Formï¿½tovï¿½nï¿½ obdobï¿½ do textu
  */
 export function formatPeriod(dateFrom: Date | string, dateTo: Date | string): string {
   return `${formatDate(dateFrom)} - ${formatDate(dateTo)}`;
 }
 
 /**
- * Formátování data a èasu
+ * Formï¿½tovï¿½nï¿½ data a ï¿½asu
  */
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -53,7 +56,7 @@ export function formatDateTime(date: Date | string): string {
 }
 
 /**
- * Normalizace stages - doplní chybìjící stage a seøadí
+ * Normalizace stages - doplnï¿½ chybï¿½jï¿½cï¿½ stage a seï¿½adï¿½
  */
 export function normalizeStages(stages: IFunnelStageData[]): IFunnelStageData[] {
   const requiredStages = [
@@ -65,19 +68,22 @@ export function normalizeStages(stages: IFunnelStageData[]): IFunnelStageData[] 
 
   const stageMap = new Map<string, IFunnelStageData>();
   
-  // Mapování existujících stages
+  // Mapovï¿½nï¿½ existujï¿½cï¿½ch stages
   stages.forEach((stage) => {
     let normalizedName = stage.stage;
     
-    // Normalizace názvù
-    if (stage.stage.includes('Pøedáno technikovi') || stage.stage.includes('Awaiting Documents')) {
+    // Normalizace nï¿½zvï¿½
+    if (stage.stage.includes('Pï¿½edï¿½no technikovi') || stage.stage.includes('Awaiting Documents')) {
       normalizedName = 'Predano technikovi';
     }
-    
-    stageMap.set(normalizedName, stage);
+
+    stageMap.set(normalizedName, {
+      ...stage,
+      stage: normalizedName,
+    });
   });
 
-  // Doplnìní chybìjících stages
+  // Doplnï¿½nï¿½ chybï¿½jï¿½cï¿½ch stages
   const result: IFunnelStageData[] = [];
   requiredStages.forEach((stageName) => {
     if (stageMap.has(stageName)) {
@@ -97,7 +103,7 @@ export function normalizeStages(stages: IFunnelStageData[]): IFunnelStageData[] 
 }
 
 /**
- * Výpoèet drop-off mezi stages
+ * Vï¿½poï¿½et drop-off mezi stages
  */
 export function computeDropOff(stages: IFunnelStageData[]): IDropOff[] {
   const dropOffs: IDropOff[] = [];
@@ -123,7 +129,7 @@ export function computeDropOff(stages: IFunnelStageData[]): IDropOff[] {
 }
 
 /**
- * Získání nejvìtšího drop-off
+ * Zï¿½skï¿½nï¿½ nejvï¿½tï¿½ï¿½ho drop-off
  */
 export function getLargestDropOff(dropOffs: IDropOff[]): IDropOff | null {
   if (dropOffs.length === 0) return null;
@@ -134,7 +140,7 @@ export function getLargestDropOff(dropOffs: IDropOff[]): IDropOff | null {
 }
 
 /**
- * Získání posledních N poznámek seøazených podle data
+ * Zï¿½skï¿½nï¿½ poslednï¿½ch N poznï¿½mek seï¿½azenï¿½ch podle data
  */
 export function getLatestNotes(notes: IFunnelNote[] | undefined, limit = 3): IFunnelNote[] {
   if (!notes || notes.length === 0) return [];
@@ -145,7 +151,7 @@ export function getLatestNotes(notes: IFunnelNote[] | undefined, limit = 3): IFu
 }
 
 /**
- * Validace souètu procent (tolerance 0.5%)
+ * Validace souï¿½tu procent (tolerance 0.5%)
  */
 export function validatePercentages(
   items: Array<{ percentage: number }>
@@ -160,7 +166,7 @@ export function validatePercentages(
 }
 
 /**
- * Fallback výpoèet conversion rate
+ * Fallback vï¿½poï¿½et conversion rate
  */
 export function computeConversionRate(
   convertedLeads: number,
@@ -171,13 +177,13 @@ export function computeConversionRate(
 }
 
 /**
- * Identifikace typických blokerù z poznámek
+ * Identifikace typickï¿½ch blokerï¿½ z poznï¿½mek
  */
 export function identifyBlockersFromNotes(notes: IFunnelNote[]): string[] {
   const blockers: string[] = [];
   const notesText = notes.map(n => n.text.toLowerCase()).join(' ');
   
-  if (notesText.includes('ceka') || notesText.includes('èeká')) {
+  if (notesText.includes('ceka') || notesText.includes('ï¿½ekï¿½')) {
     blockers.push('Cekani na dalsi krok');
   }
   
@@ -189,7 +195,7 @@ export function identifyBlockersFromNotes(notes: IFunnelNote[]): string[] {
     blockers.push('Problemy s kontaktem');
   }
   
-  if (notesText.includes('posoudit') || notesText.includes('kontrola')) {
+  if (notesText.includes('posoudit') || notesText.includes('posouzeni') || notesText.includes('kontrola')) {
     blockers.push('Ceka na posouzeni');
   }
   
@@ -197,7 +203,7 @@ export function identifyBlockersFromNotes(notes: IFunnelNote[]): string[] {
 }
 
 /**
- * Generování action items na základì drop-off
+ * Generovï¿½nï¿½ action items na zï¿½kladï¿½ drop-off
  */
 export function generateActionItems(
   largestDropOff: IDropOff | null,
@@ -205,43 +211,40 @@ export function generateActionItems(
 ): string[] {
   const actions: string[] = [];
   
-  if (!largestDropOff) {
-    actions.push('Monitorovat konverzni metriky pravideln continue e');
-    return actions;
-  }
+  // If we don't have a drop-off, we can still generate actions based on time-in-stage.
   
-  // Akce podle pozice nejvìtšího drop-off
-  if (largestDropOff.from === 'Novy lead') {
+  // Akce podle pozice nejvï¿½tï¿½ï¿½ho drop-off
+  if (largestDropOff?.from === 'Novy lead') {
     actions.push('Zlepsit prvotni kvalifikaci leadu a kontaktni strategii');
     actions.push('Analyzovat duvody ztrat v prvnim kroku (top decline reasons)');
     actions.push('Zvysit rychlost prvniho kontaktu s leadem');
   }
   
-  if (largestDropOff.from === 'Schvalen AM') {
+  if (largestDropOff?.from === 'Schvalen AM') {
     actions.push('Zrychlit proces predani technikovi');
     actions.push('Zkontrolovat SLA pro predani dokumentu');
-    actions.push('Analyzovat duvody zamítnuti v tech reviw');
+    actions.push('Analyzovat duvody zamï¿½tnuti v tech reviw');
   }
   
-  if (largestDropOff.from === 'Predano technikovi') {
+  if (largestDropOff?.from === 'Predano technikovi') {
     actions.push('Zkratit dobu technickych kontrol (SLA monitoring)');
-    actions.push('Proškolit techniky - identifikovat castá zamítnuti');
+    actions.push('Proï¿½kolit techniky - identifikovat castï¿½ zamï¿½tnuti');
     actions.push('Nastavit automaticke pripominky po 3 dnech v tech reviw');
   }
   
-  // Akce podle dlouhé doby ve stage
+  // Akce podle dlouhï¿½ doby ve stage
   Object.entries(avgTimeInStages).forEach(([stage, days]) => {
     if (days > 7) {
       actions.push(`Zkratit prumernou dobu ve fazi "${stage}" (aktualne ${days.toFixed(1)} dni)`);
     }
   });
   
-  // Obecné doporuèení
+  // Obecnï¿½ doporuï¿½enï¿½
   if (actions.length === 0) {
     actions.push('Udrzovat aktualni tempo, konverze bezi stabilne');
   }
   
-  return actions.slice(0, 5); // Max 5 akcí
+  return actions.slice(0, 5); // Max 5 akcï¿½
 }
 
 /**
@@ -266,7 +269,7 @@ export function exportToJSON(
 }
 
 /**
- * Pøíprava názvu souboru pro export
+ * Pï¿½ï¿½prava nï¿½zvu souboru pro export
  */
 export function generateExportFilename(
   dateFrom: Date | string,

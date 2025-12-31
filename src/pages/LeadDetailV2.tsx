@@ -617,6 +617,7 @@ export default function LeadDetailV2() {
   const [generatingCarDetect, setGeneratingCarDetect] = useState(false);
   const [savingLeadChecks, setSavingLeadChecks] = useState(false);
   const [settingAmApproved, setSettingAmApproved] = useState(false);
+  const [settingTechnician, setSettingTechnician] = useState(false);
   const [settingDeclined, setSettingDeclined] = useState(false);
   const [showDeclineReasons, setShowDeclineReasons] = useState(false);
   const [declineType, setDeclineType] = useState<string>('OTHER');
@@ -1934,6 +1935,21 @@ export default function LeadDetailV2() {
     }
   };
 
+  const handleHandToTechnician = async () => {
+    if (!id) return;
+    setSettingTechnician(true);
+    try {
+      // Moves lead to UPLOAD_DOCUMENTS ("Předáno technikovi" / awaiting documents)
+      await axiosClient.post(`/leads/${id}/sales/initDocumentsUpload`);
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to hand lead to technician:', e);
+      alert('Nepodařilo se předat lead technikovi');
+    } finally {
+      setSettingTechnician(false);
+    }
+  };
+
   const handleSetDeclined = async () => {
     setShowDeclineReasons(true);
   };
@@ -2437,7 +2453,7 @@ export default function LeadDetailV2() {
           <div className="flex justify-end gap-3">
             <button
               onClick={handleSetDeclined}
-              disabled={saving || settingDeclined || settingAmApproved}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician}
               className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
             >
               Zamítnout
@@ -2445,18 +2461,20 @@ export default function LeadDetailV2() {
 
             <button
               onClick={handleOpenSubStatus}
-              disabled={saving || settingDeclined || settingAmApproved}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician}
               className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
             >
               SubStatus update
             </button>
 
             <button
-              onClick={handleSetAmApproved}
-              disabled={saving || settingDeclined || settingAmApproved}
+              onClick={lead?.status === 'SUPERVISOR_APPROVED' ? handleHandToTechnician : handleSetAmApproved}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
             >
-              {settingAmApproved ? 'Nastavuji...' : 'Schválen AM'}
+              {lead?.status === 'SUPERVISOR_APPROVED'
+                ? (settingTechnician ? 'Předávám...' : 'Předat technikovi')
+                : (settingAmApproved ? 'Nastavuji...' : 'Schválen AM')}
             </button>
 
             <button
