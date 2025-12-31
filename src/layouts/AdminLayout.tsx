@@ -24,7 +24,7 @@ const navigation: NavItem[] = [
     href: '/leads',
     icon: LeadIcon,
     children: [
-      { name: 'Všechny leady', href: '/leads' },
+      { name: 'Všechny leady', href: '/leads?reset=1' },
       { name: 'Schválen AM', href: '/leads/am-approved' },
     ],
   },

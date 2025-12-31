@@ -382,7 +382,32 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
     dealerId: searchParams.get('dealerId') || '',
   });
 
+  const resetParam = searchParams.get('reset');
+
   const effectiveLeadState = forcedLeadState ?? appliedFilters.leadState;
+
+  // When arriving from the menu "Všechny leady", always clear filters/search.
+  useEffect(() => {
+    if (forcedLeadState) return;
+    if (resetParam !== '1') return;
+
+    setSearchQuery('');
+    setFilterState('');
+    setFilterSubstate('');
+    setFilterPeriod('');
+    setFilterDealer('');
+    setAppliedFilters({
+      leadState: '',
+      leadSubState: '',
+      periodFilterType: '',
+      dealerId: '',
+    });
+    setFilterOpen(false);
+    setPage(1);
+
+    // Remove reset (and any previous query params) after applying.
+    setSearchParams(new URLSearchParams(), { replace: true });
+  }, [forcedLeadState, resetParam, setSearchParams]);
 
   const displayLeads = useMemo(() => {
     if (!isAmApprovedPage) return leads;
