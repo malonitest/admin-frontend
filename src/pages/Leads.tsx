@@ -227,6 +227,33 @@ const getTechnicianContactDeltaHHMM = (lead: Lead): string => {
   return formatHHMM(diffMinutes);
 };
 
+const getLeadTechnicianSubStatus = (lead: Lead): string | null => {
+  if (lead.status !== 'UPLOAD_DOCUMENTS') return null;
+
+  const technicianAtMs = getLeadTechnicianAtMs(lead);
+  if (!technicianAtMs) return null;
+
+  const history = lead.subStatusHistory;
+  if (!history || history.length === 0) return null;
+
+  // Only keep substatus changes that happened after the lead entered TECHNICIAN stage.
+  const filtered = history
+    .filter((h) => Boolean(h.changedAt))
+    .map((h) => ({ subStatus: h.subStatus, changedAt: h.changedAt as string, ms: parseApiDate(h.changedAt as string).getTime() }))
+    .filter((h) => !Number.isNaN(h.ms) && h.ms >= technicianAtMs);
+
+  if (filtered.length === 0) return null;
+
+  filtered.sort((a, b) => b.ms - a.ms);
+
+  // Prefer the actual subStatus stored in the history entry.
+  const latest = filtered[0];
+  if (latest.subStatus) return latest.subStatus;
+
+  // Fallback: if history entry didn't include the value, show current subStatus.
+  return lead.subStatus || null;
+};
+
 const LEAD_STATES = [
   { value: '', label: 'Všechny' },
   { value: 'CONCEPT', label: 'New' },
@@ -384,7 +411,7 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
 
   const isAmApprovedPage = forcedLeadState === 'SUPERVISOR_APPROVED';
   const isTechnicianPage = variant === 'TECHNICIAN';
-  const tableColSpan = isAmApprovedPage ? 10 : 13;
+  const tableColSpan = isAmApprovedPage ? 10 : isTechnicianPage ? 10 : 13;
   
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
@@ -834,13 +861,13 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                 <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Auto</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Substatus</th>
-                {!isAmApprovedPage && (
+                {!isAmApprovedPage && !isTechnicianPage && (
                   <th className="w-[70px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zdroj</th>
                 )}
-                {!isAmApprovedPage && (
+                {!isAmApprovedPage && !isTechnicianPage && (
                   <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
                 )}
-                {!isAmApprovedPage && (
+                {!isAmApprovedPage && !isTechnicianPage && (
                   <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zadal</th>
                 )}
                 <th className="w-[80px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kontakt</th>
@@ -890,14 +917,16 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                       </div>
                     </td>
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
-                      {normalizeSubstatus(lead.subStatus || lead.declinedType || lead.notInterestedStatus)}
+                      {isTechnicianPage
+                        ? normalizeSubstatus(getLeadTechnicianSubStatus(lead) || '')
+                        : normalizeSubstatus(lead.subStatus || lead.declinedType || lead.notInterestedStatus)}
                     </td>
-                    {!isAmApprovedPage && (
+                    {!isAmApprovedPage && !isTechnicianPage && (
                       <td className="px-2 py-2 text-xs text-gray-500 break-words">
                         {getSourceDisplay(lead)}
                       </td>
                     )}
-                    {!isAmApprovedPage && (
+                    {!isAmApprovedPage && !isTechnicianPage && (
                       <td className="px-2 py-2 text-xs">
                         <div className="text-gray-900 break-words">{getDealerName(lead)}</div>
                         {lead.updatedAt && (
@@ -907,7 +936,7 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                         )}
                       </td>
                     )}
-                    {!isAmApprovedPage && (
+                    {!isAmApprovedPage && !isTechnicianPage && (
                       <td className="px-2 py-2 text-xs text-gray-500 break-words">
                         {getAuthorName(lead)}
                       </td>
