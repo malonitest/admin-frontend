@@ -344,7 +344,7 @@ export function AdminLayout() {
 
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-56 bg-[#8B1A1A] transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-56 bg-[#8B1A1A] transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -363,7 +363,7 @@ export function AdminLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-2 px-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 60px)' }}>
+        <nav className="flex-1 min-h-0 mt-2 px-2 overflow-y-auto">
           {navigation.map((item) => renderNavItem(item, true))}
         </nav>
       </div>
@@ -374,7 +374,7 @@ export function AdminLayout() {
           sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'
         }`}
       >
-        <div className="flex flex-col flex-grow bg-[#8B1A1A]">
+        <div className="flex flex-col flex-grow min-h-0 bg-[#8B1A1A]">
           {/* Header */}
           <div className="px-4 py-3 flex items-center justify-between">
             <div className={sidebarCollapsed ? 'hidden' : ''}>
@@ -396,7 +396,7 @@ export function AdminLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 mt-2 px-2 overflow-y-auto">
+          <nav className="flex-1 min-h-0 mt-2 px-2 overflow-y-auto">
             {navigation.map((item) => renderNavItem(item, false))}
           </nav>
         </div
