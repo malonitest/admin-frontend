@@ -10,6 +10,7 @@ interface Lead {
   createdAt: string;
   updatedAt?: string;
   statusUpdatedAt?: string;
+  uploadDocumentsAt?: string | null;
   subStatus?: string | null;
   subStatusHistory?: Array<{
     subStatus?: string;
@@ -203,6 +204,29 @@ const getContactDeltaHHMM = (lead: Lead): string => {
   return formatHHMM(diffMinutes);
 };
 
+const getLeadTechnicianAtMs = (lead: Lead): number | null => {
+  const uploadAt = lead.uploadDocumentsAt;
+  if (uploadAt) {
+    const ms = parseApiDate(uploadAt).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+
+  // Backward compatibility: older leads may not have uploadDocumentsAt.
+  // For the technician queue (UPLOAD_DOCUMENTS), fall back to statusUpdatedAt/updatedAt.
+  if (lead.status !== 'UPLOAD_DOCUMENTS') return null;
+  const fallback = lead.statusUpdatedAt || lead.updatedAt || lead.createdAt;
+  const ms = fallback ? parseApiDate(fallback).getTime() : Number.NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
+const getTechnicianContactDeltaHHMM = (lead: Lead): string => {
+  const atMs = getLeadTechnicianAtMs(lead);
+  if (!atMs) return '-';
+  const nowMs = Date.now();
+  const diffMinutes = (nowMs - atMs) / (1000 * 60);
+  return formatHHMM(diffMinutes);
+};
+
 const LEAD_STATES = [
   { value: '', label: 'Všechny' },
   { value: 'CONCEPT', label: 'New' },
@@ -351,13 +375,15 @@ function PlusIcon({ className }: { className?: string }) {
 
 type LeadsProps = {
   forcedLeadState?: string;
+  variant?: 'DEFAULT' | 'TECHNICIAN';
 };
 
-export function Leads({ forcedLeadState }: LeadsProps = {}) {
+export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const isAmApprovedPage = forcedLeadState === 'SUPERVISOR_APPROVED';
+  const isTechnicianPage = variant === 'TECHNICIAN';
   const tableColSpan = isAmApprovedPage ? 10 : 13;
   
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -410,6 +436,19 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
   }, [forcedLeadState, resetParam, setSearchParams]);
 
   const displayLeads = useMemo(() => {
+    if (isTechnicianPage) {
+      return leads
+        .map((lead, index) => {
+          const atMs = getLeadTechnicianAtMs(lead);
+          return { lead, atMs: atMs ?? -1, index };
+        })
+        .sort((a, b) => {
+          if (b.atMs !== a.atMs) return b.atMs - a.atMs; // newest first
+          return a.index - b.index;
+        })
+        .map((x) => x.lead);
+    }
+
     if (!isAmApprovedPage) return leads;
 
     const nowMs = Date.now();
@@ -425,7 +464,7 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
         return a.index - b.index;
       })
       .map((x) => x.lead);
-  }, [isAmApprovedPage, leads]);
+  }, [isAmApprovedPage, isTechnicianPage, leads]);
 
   // Keep internal state consistent when a forced filter is used.
   useEffect(() => {
@@ -874,7 +913,7 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
                       </td>
                     )}
                     <td className="px-2 py-2 text-xs text-gray-500">
-                      <div>{getContactDeltaHHMM(lead)}</div>
+                      <div>{isTechnicianPage ? getTechnicianContactDeltaHHMM(lead) : getContactDeltaHHMM(lead)}</div>
                       {getSubStatusDeltaHHMM(lead) && (
                         <div className="text-[10px] text-gray-400 mt-0.5">
                           ΔSS {getSubStatusDeltaHHMM(lead)}
