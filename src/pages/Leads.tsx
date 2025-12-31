@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components';
 import { axiosClient } from '@/api/axiosClient';
@@ -180,7 +180,7 @@ const formatHHMM = (totalMinutes: number): string => {
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 };
 
-const getContactDeltaHHMM = (lead: Lead): string => {
+const getLeadLastContactMs = (lead: Lead): number | null => {
   const lastNoteAt = getLeadLatestNoteAt(lead);
   const lastSubStatusAt = getLeadLatestSubStatusChangeAt(lead);
 
@@ -192,7 +192,12 @@ const getContactDeltaHHMM = (lead: Lead): string => {
     Number.isNaN(lastSubStatusMs) ? -1 : lastSubStatusMs
   );
 
-  if (lastMs < 0) return '-';
+  return lastMs < 0 ? null : lastMs;
+};
+
+const getContactDeltaHHMM = (lead: Lead): string => {
+  const lastMs = getLeadLastContactMs(lead);
+  if (!lastMs) return '-';
   const nowMs = Date.now();
   const diffMinutes = (nowMs - lastMs) / (1000 * 60);
   return formatHHMM(diffMinutes);
@@ -351,6 +356,9 @@ type LeadsProps = {
 export function Leads({ forcedLeadState }: LeadsProps = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const isAmApprovedPage = forcedLeadState === 'SUPERVISOR_APPROVED';
+  const tableColSpan = isAmApprovedPage ? 10 : 13;
   
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
@@ -375,6 +383,24 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
   });
 
   const effectiveLeadState = forcedLeadState ?? appliedFilters.leadState;
+
+  const displayLeads = useMemo(() => {
+    if (!isAmApprovedPage) return leads;
+
+    const nowMs = Date.now();
+
+    return leads
+      .map((lead, index) => {
+        const lastMs = getLeadLastContactMs(lead);
+        const contactMinutes = lastMs ? Math.floor((nowMs - lastMs) / (1000 * 60)) : -1;
+        return { lead, contactMinutes, index };
+      })
+      .sort((a, b) => {
+        if (b.contactMinutes !== a.contactMinutes) return b.contactMinutes - a.contactMinutes;
+        return a.index - b.index;
+      })
+      .map((x) => x.lead);
+  }, [isAmApprovedPage, leads]);
 
   // Keep internal state consistent when a forced filter is used.
   useEffect(() => {
@@ -744,9 +770,15 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
                 <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Auto</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Substatus</th>
-                <th className="w-[70px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zdroj</th>
-                <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
-                <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zadal</th>
+                {!isAmApprovedPage && (
+                  <th className="w-[70px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zdroj</th>
+                )}
+                {!isAmApprovedPage && (
+                  <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
+                )}
+                {!isAmApprovedPage && (
+                  <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zadal</th>
+                )}
                 <th className="w-[80px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kontakt</th>
                 <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Poznámky</th>
                 <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"></th>
@@ -755,20 +787,20 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={13} className="px-2 py-8 text-center">
+                  <td colSpan={tableColSpan} className="px-2 py-8 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
                     </div>
                   </td>
                 </tr>
-              ) : leads.length === 0 ? (
+              ) : displayLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="px-2 py-8 text-center text-gray-500">
+                  <td colSpan={tableColSpan} className="px-2 py-8 text-center text-gray-500">
                     {searchQuery || hasActiveFilters ? 'Žádné výsledky pro zadaný dotaz' : 'Žádné leady'}
                   </td>
                 </tr>
               ) : (
-                leads.map((lead) => (
+                displayLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-gray-50">
                     <td className="px-2 py-2 text-xs font-medium text-gray-900">
                       {lead.uniqueId || lead.id.slice(-6)}
@@ -796,20 +828,26 @@ export function Leads({ forcedLeadState }: LeadsProps = {}) {
                     <td className="px-2 py-2 text-xs text-gray-500 break-words">
                       {normalizeSubstatus(lead.subStatus || lead.declinedType || lead.notInterestedStatus)}
                     </td>
-                    <td className="px-2 py-2 text-xs text-gray-500 break-words">
-                      {getSourceDisplay(lead)}
-                    </td>
-                    <td className="px-2 py-2 text-xs">
-                      <div className="text-gray-900 break-words">{getDealerName(lead)}</div>
-                      {lead.updatedAt && (
-                        <div className="text-[10px] text-gray-400 mt-0.5">
-                          {formatDateTime(lead.updatedAt)}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-2 py-2 text-xs text-gray-500 break-words">
-                      {getAuthorName(lead)}
-                    </td>
+                    {!isAmApprovedPage && (
+                      <td className="px-2 py-2 text-xs text-gray-500 break-words">
+                        {getSourceDisplay(lead)}
+                      </td>
+                    )}
+                    {!isAmApprovedPage && (
+                      <td className="px-2 py-2 text-xs">
+                        <div className="text-gray-900 break-words">{getDealerName(lead)}</div>
+                        {lead.updatedAt && (
+                          <div className="text-[10px] text-gray-400 mt-0.5">
+                            {formatDateTime(lead.updatedAt)}
+                          </div>
+                        )}
+                      </td>
+                    )}
+                    {!isAmApprovedPage && (
+                      <td className="px-2 py-2 text-xs text-gray-500 break-words">
+                        {getAuthorName(lead)}
+                      </td>
+                    )}
                     <td className="px-2 py-2 text-xs text-gray-500">
                       <div>{getContactDeltaHHMM(lead)}</div>
                       {getSubStatusDeltaHHMM(lead) && (
