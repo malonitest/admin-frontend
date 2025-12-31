@@ -31,7 +31,11 @@ interface LeadResponse {
     changedBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
   }>;
   carDetectReportOk?: boolean;
+  carDetectReportOkAt?: string;
+  carDetectReportOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
   executionOk?: boolean;
+  executionOkAt?: string;
+  executionOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
   documents?: {
     carDetectReport?: LeadDocument | null;
     carVIN?: LeadDocument | null;
@@ -2290,27 +2294,41 @@ export default function LeadDetailV2() {
             </button>
 
             <div className="pt-2 border-t border-gray-200 space-y-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4"
-                  checked={Boolean(lead?.carDetectReportOk)}
-                  disabled={savingLeadChecks}
-                  onChange={(e) => setLeadCheck('carDetectReportOk', e.target.checked)}
-                />
-                <span className="text-sm">CarDetect report OK</span>
-              </label>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={Boolean(lead?.carDetectReportOk)}
+                    disabled={savingLeadChecks}
+                    onChange={(e) => setLeadCheck('carDetectReportOk', e.target.checked)}
+                  />
+                  <span className="text-sm">CarDetect report OK</span>
+                </label>
+                {Boolean(lead?.carDetectReportOk) && (lead?.carDetectReportOkBy || lead?.carDetectReportOkAt) && (
+                  <div className="ml-6 text-[11px] text-gray-500">
+                    {formatDealerName(lead?.carDetectReportOkBy)} · {formatNoteDateTime(lead?.carDetectReportOkAt)}
+                  </div>
+                )}
+              </div>
 
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4"
-                  checked={Boolean(lead?.executionOk)}
-                  disabled={savingLeadChecks}
-                  onChange={(e) => setLeadCheck('executionOk', e.target.checked)}
-                />
-                <span className="text-sm">Exekuce OK</span>
-              </label>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={Boolean(lead?.executionOk)}
+                    disabled={savingLeadChecks}
+                    onChange={(e) => setLeadCheck('executionOk', e.target.checked)}
+                  />
+                  <span className="text-sm">Exekuce OK</span>
+                </label>
+                {Boolean(lead?.executionOk) && (lead?.executionOkBy || lead?.executionOkAt) && (
+                  <div className="ml-6 text-[11px] text-gray-500">
+                    {formatDealerName(lead?.executionOkBy)} · {formatNoteDateTime(lead?.executionOkAt)}
+                  </div>
+                )}
+              </div>
 
               {savingLeadChecks && <div className="text-xs text-gray-500">Ukládám...</div>}
             </div>
