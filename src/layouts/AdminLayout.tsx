@@ -27,7 +27,10 @@ const navigation: NavItem[] = [
     name: 'Časový funnel',
     href: '/time-funnel',
     icon: StatsIcon,
-    children: [{ name: 'New->Schválen AM', href: '/time-funnel/new-to-am-approved' }],
+    children: [
+      { name: 'New->Schválen AM', href: '/time-funnel/new-to-am-approved' },
+      { name: 'SchválenAM->Technik', href: '/time-funnel/am-approved-to-technician' },
+    ],
   },
   { 
     name: 'Nové Reporty', 

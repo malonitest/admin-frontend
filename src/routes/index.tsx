@@ -37,6 +37,7 @@ import Reports2Financial from '@/pages/Reports2Financial';
 import Reports2FunnelTechnik from '@/pages/Reports2FunnelTechnik';
 import Reports2CarStats from '@/pages/Reports2CarStats';
 import TimeFunnelNewToDecisionPage from '@/pages/TimeFunnelNewToDecision';
+import TimeFunnelAmApprovedToTechnicianPage from '@/pages/TimeFunnelAmApprovedToTechnician';
 import { InvestorReport } from '@/reports/investor';
 import { FunnelReportPage } from '@/reports/funnel';
 import FinancialPL from '@/pages/NewReports/FinancialPL';
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
       {
         path: 'time-funnel/new-to-am-approved',
         element: <TimeFunnelNewToDecisionPage />,
+      },
+      {
+        path: 'time-funnel/am-approved-to-technician',
+        element: <TimeFunnelAmApprovedToTechnicianPage />,
       },
       {
         index: true,
