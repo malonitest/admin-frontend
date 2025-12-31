@@ -14,9 +14,10 @@ interface TimeFunnelRow {
   leadId: string;
   uniqueId: number;
   amApprovedAt: string;
-  technicianAt: string;
+  technicianAt?: string | null;
   approvedBy?: { _id: string; name?: string; email?: string } | null;
-  durationMinutes: number;
+  durationMinutes?: number | null;
+  ageMinutes?: number | null;
 }
 
 interface PaginatedResponse<T> {
@@ -127,8 +128,9 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900">Časový funnel – Schválen AM → Technik</h1>
       <p className="text-sm text-gray-600 mt-1">
-        Jak číst: každý řádek je lead, který měl status „Schválen AM“ v zvoleném období. “Doba” je čas od prvního „Schválen AM“
-        po první “Technik” (UPLOAD_DOCUMENTS).
+        Jak číst: každý řádek je lead, který měl status „Schválen AM“ (SUPERVISOR_APPROVED) v zvoleném období. “Doba” je čas od
+        prvního „Schválen AM“ po první “Předáno technikovi” (UPLOAD_DOCUMENTS). Pokud ještě není předáno technikovi, zobrazuje se
+        stáří od “Schválen AM” do teď.
       </p>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -169,7 +171,7 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
 
       <div className="mt-4 text-sm text-gray-700">
         <span className="mr-4">
-          Počet: <span className="font-semibold">{summary.count}</span>
+          Dokončeno (předáno technikovi): <span className="font-semibold">{summary.count}</span>
         </span>
         <span className="mr-4">
           Průměrná doba: <span className="font-semibold">{formatDuration(summary.avg)}</span>
@@ -191,7 +193,7 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unikátní ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schválil AM</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schválen AM</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technik</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Předáno technikovi</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doba</th>
                 </tr>
               </thead>
@@ -206,7 +208,7 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
                     <td className="px-4 py-3 text-sm text-gray-900">{row.approvedBy?.name || row.approvedBy?.email || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.amApprovedAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.technicianAt)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{formatDuration(row.durationMinutes)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{formatDuration(row.durationMinutes ?? row.ageMinutes)}</td>
                   </tr>
                 ))}
 
