@@ -749,6 +749,23 @@ export default function LeadDetailV2() {
   const [statusDraft, setStatusDraft] = useState<string>('');
   const [debtPromiseAtDraft, setDebtPromiseAtDraft] = useState<string>('');
   const [settingDebtCollection, setSettingDebtCollection] = useState(false);
+
+  const debtPromiseReminderTimeoutRef = useRef<number | null>(null);
+  const debtPromiseReminderKeyRef = useRef<string | null>(null);
+
+  const clearDebtPromiseReminderTimeout = useCallback(() => {
+    if (debtPromiseReminderTimeoutRef.current !== null) {
+      window.clearTimeout(debtPromiseReminderTimeoutRef.current);
+      debtPromiseReminderTimeoutRef.current = null;
+    }
+    debtPromiseReminderKeyRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearDebtPromiseReminderTimeout();
+    };
+  }, [clearDebtPromiseReminderTimeout]);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
   const [documentsView, setDocumentsView] = useState<
@@ -2195,16 +2212,23 @@ export default function LeadDetailV2() {
   };
 
   const handleOpenDebtCollection = () => {
+    clearDebtPromiseReminderTimeout();
     setDebtCollectionDraft(String(lead?.debtCollectionStatus || ''));
     setStatusDraft(String(lead?.status || ''));
     setDebtPromiseAtDraft('');
     setShowDebtCollectionPicker(true);
   };
 
+  const handleCloseDebtCollection = () => {
+    clearDebtPromiseReminderTimeout();
+    setShowDebtCollectionPicker(false);
+  };
+
   const handleConfirmDebtCollection = async () => {
     if (!id) return;
     setSettingDebtCollection(true);
     try {
+      clearDebtPromiseReminderTimeout();
       const nextDebt = debtCollectionDraft.trim() ? debtCollectionDraft.trim() : null;
 
       const payload: Record<string, any> = {
@@ -2250,6 +2274,7 @@ export default function LeadDetailV2() {
             if (delayMs > 0) {
               const uniqueId = lead?.uniqueId;
               const key = `debtPromiseReminder:${id}:${promiseCallAt.toISOString()}`;
+              debtPromiseReminderKeyRef.current = key;
               if (!localStorage.getItem(key)) {
                 const permission = Notification.permission;
                 if (permission === 'default') {
@@ -2257,7 +2282,7 @@ export default function LeadDetailV2() {
                 }
 
                 if (Notification.permission === 'granted') {
-                  window.setTimeout(() => {
+                  debtPromiseReminderTimeoutRef.current = window.setTimeout(() => {
                     try {
                       const title = uniqueId ? `Volat ${uniqueId}` : 'Volat';
                       const notification = new Notification(title, {
@@ -3057,6 +3082,7 @@ export default function LeadDetailV2() {
                   setDebtCollectionDraft(next);
                   if (next !== 'PAYMENT_PROMISE') {
                     setDebtPromiseAtDraft('');
+                    clearDebtPromiseReminderTimeout();
                   }
                 }}
                 className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
@@ -3099,7 +3125,7 @@ export default function LeadDetailV2() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowDebtCollectionPicker(false)}
+                  onClick={handleCloseDebtCollection}
                   disabled={settingDebtCollection}
                   className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                 >
