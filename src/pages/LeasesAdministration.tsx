@@ -6,6 +6,17 @@ import { tryFormatDateTimePrague } from '@/utils/dateTime';
 
 type TriState = '' | 'true' | 'false';
 
+type PeriodFilterType =
+  | ''
+  | 'TODAY'
+  | 'YESTERDAY'
+  | 'THIS_WEEK'
+  | 'LAST_WEEK'
+  | 'THIS_MONTH'
+  | 'LAST_MONTH'
+  | 'THIS_YEAR'
+  | 'LAST_YEAR';
+
 interface LeadAdminRow {
   id: string;
   uniqueId?: number;
@@ -60,6 +71,18 @@ const boolFromTri = (v: TriState): boolean | undefined => {
   return undefined;
 };
 
+const PERIOD_FILTERS: Array<{ value: PeriodFilterType; label: string }> = [
+  { value: '', label: 'Vše' },
+  { value: 'TODAY', label: 'Dnes' },
+  { value: 'YESTERDAY', label: 'Včera' },
+  { value: 'THIS_WEEK', label: 'Tento týden' },
+  { value: 'LAST_WEEK', label: 'Minulý týden' },
+  { value: 'THIS_MONTH', label: 'Tento měsíc' },
+  { value: 'LAST_MONTH', label: 'Minulý měsíc' },
+  { value: 'THIS_YEAR', label: 'Tento rok' },
+  { value: 'LAST_YEAR', label: 'Minulý rok' },
+];
+
 const BoolCell = ({ value }: { value?: boolean }) => {
   return (
     <input
@@ -105,6 +128,8 @@ export default function LeasesAdministration() {
 
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
 
+  const [periodFilterType, setPeriodFilterType] = useState<PeriodFilterType>(() => (searchParams.get('periodFilterType') as PeriodFilterType) || '');
+
   const [tpSentToClientOk, setTpSentToClientOk] = useState<TriState>(() => (searchParams.get('tpSentToClientOk') as TriState) || '');
   const [ksOrgReceivedOk, setKsOrgReceivedOk] = useState<TriState>(() => (searchParams.get('ksOrgReceivedOk') as TriState) || '');
   const [nsOrgReceivedOk, setNsOrgReceivedOk] = useState<TriState>(() => (searchParams.get('nsOrgReceivedOk') as TriState) || '');
@@ -118,6 +143,8 @@ export default function LeasesAdministration() {
     if (limit !== 10) params.set('limit', limit.toString());
     if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
+    if (periodFilterType) params.set('periodFilterType', periodFilterType);
+
     if (tpSentToClientOk) params.set('tpSentToClientOk', tpSentToClientOk);
     if (ksOrgReceivedOk) params.set('ksOrgReceivedOk', ksOrgReceivedOk);
     if (nsOrgReceivedOk) params.set('nsOrgReceivedOk', nsOrgReceivedOk);
@@ -126,7 +153,7 @@ export default function LeasesAdministration() {
     if (contractsEmailSentOk) params.set('contractsEmailSentOk', contractsEmailSentOk);
 
     return params;
-  }, [page, limit, searchQuery, tpSentToClientOk, ksOrgReceivedOk, nsOrgReceivedOk, insuranceReceivedOk, tpReceivedOk, contractsEmailSentOk]);
+  }, [page, limit, searchQuery, periodFilterType, tpSentToClientOk, ksOrgReceivedOk, nsOrgReceivedOk, insuranceReceivedOk, tpReceivedOk, contractsEmailSentOk]);
 
   useEffect(() => {
     setSearchParams(queryParams, { replace: true });
@@ -145,6 +172,7 @@ export default function LeasesAdministration() {
       };
 
       if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (periodFilterType) params.periodFilterType = periodFilterType;
 
       const tp = boolFromTri(tpSentToClientOk);
       const ks = boolFromTri(ksOrgReceivedOk);
@@ -169,7 +197,7 @@ export default function LeasesAdministration() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, searchQuery, tpSentToClientOk, ksOrgReceivedOk, nsOrgReceivedOk, insuranceReceivedOk, tpReceivedOk, contractsEmailSentOk]);
+  }, [page, limit, searchQuery, periodFilterType, tpSentToClientOk, ksOrgReceivedOk, nsOrgReceivedOk, insuranceReceivedOk, tpReceivedOk, contractsEmailSentOk]);
 
   useEffect(() => {
     fetchRows();
@@ -177,7 +205,7 @@ export default function LeasesAdministration() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, tpSentToClientOk, ksOrgReceivedOk, nsOrgReceivedOk, insuranceReceivedOk, tpReceivedOk, contractsEmailSentOk]);
+  }, [searchQuery, periodFilterType, tpSentToClientOk, ksOrgReceivedOk, nsOrgReceivedOk, insuranceReceivedOk, tpReceivedOk, contractsEmailSentOk]);
 
   const renderTriSelect = (label: string, value: TriState, onChange: (v: TriState) => void) => {
     return (
@@ -230,6 +258,20 @@ export default function LeasesAdministration() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <label className="flex flex-col gap-1 text-sm text-gray-700">
+              <span className="font-medium">Časový filtr</span>
+              <select
+                value={periodFilterType}
+                onChange={(e) => setPeriodFilterType((e.target.value as PeriodFilterType) || '')}
+                className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
+              >
+                {PERIOD_FILTERS.map((p) => (
+                  <option key={p.value || 'ALL'} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             {renderTriSelect('TP byl odeslán klientovi', tpSentToClientOk, setTpSentToClientOk)}
             {renderTriSelect('Přijata KS org', ksOrgReceivedOk, setKsOrgReceivedOk)}
             {renderTriSelect('Přijata NS org', nsOrgReceivedOk, setNsOrgReceivedOk)}
