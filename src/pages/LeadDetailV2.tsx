@@ -32,14 +32,42 @@ interface LeadResponse {
     changedAt?: string;
     changedBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
   }>;
+
   carDetectReportOk?: boolean;
   carDetectReportOkAt?: string;
   carDetectReportOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
   executionOk?: boolean;
   executionOkAt?: string;
   executionOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
+  tpSentToClientOk?: boolean;
+  tpSentToClientOkAt?: string;
+  tpSentToClientOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
+  ksOrgReceivedOk?: boolean;
+  ksOrgReceivedOkAt?: string;
+  ksOrgReceivedOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
+  nsOrgReceivedOk?: boolean;
+  nsOrgReceivedOkAt?: string;
+  nsOrgReceivedOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
+  insuranceReceivedOk?: boolean;
+  insuranceReceivedOkAt?: string;
+  insuranceReceivedOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
+  tpReceivedOk?: boolean;
+  tpReceivedOkAt?: string;
+  tpReceivedOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
+  contractsEmailSentOk?: boolean;
+  contractsEmailSentOkAt?: string;
+  contractsEmailSentOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
   paidOutAt?: string | null;
   paidOutBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+
   documents?: {
     carDetectReport?: LeadDocument | null;
     carVIN?: LeadDocument | null;
@@ -58,6 +86,7 @@ interface LeadResponse {
     sellMandate?: LeadDocument[] | null;
     misc?: LeadDocument[] | null;
   } | null;
+
   note?: Array<{
     message?: string;
     createdAt?: string;
@@ -71,79 +100,89 @@ interface LeadResponse {
       | string
       | null;
   }>;
-  customer?: {
-    customerType?: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-    birthday?: string;
-    birthNumber?: string;
-    companyID?: string;
-    companyName?: string;
-    address?: string;
-    city?: string;
-    postalCode?: string;
-    enableAddress2?: boolean;
-    address2?: string;
-    city2?: string;
-    postalCode2?: string;
-    bankAccount?: string;
-  } | Array<{
-    customerType?: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-    birthday?: string;
-    birthNumber?: string;
-    companyID?: string;
-    companyName?: string;
-    address?: string;
-    city?: string;
-    postalCode?: string;
-    enableAddress2?: boolean;
-    address2?: string;
-    city2?: string;
-    postalCode2?: string;
-    bankAccount?: string;
-  }>;
-  car?: {
-    VIN?: string;
-    brand?: string;
-    model?: string;
-    registration?: number | null;
-    carSPZ?: string;
-    mileage?: number | null;
-    numberMTP?: string;
-    numberVTP?: string;
-  } | Array<{
-    VIN?: string;
-    brand?: string;
-    model?: string;
-    registration?: number | null;
-    carSPZ?: string;
-    mileage?: number | null;
-    numberMTP?: string;
-    numberVTP?: string;
-  }>;
-  lease?: {
-    leaseAmount?: number | null;
-    rentDuration?: number | null;
-    monthlyPayment?: number | null;
-    rentOffer?: number | null;
-    yearlyInterestRate?: number | null;
-    yearlyInsuranceFee?: number | null;
-    payoutInCash?: boolean;
-    adminFee?: number | null;
-  } | Array<{
-    leaseAmount?: number | null;
-    rentDuration?: number | null;
-    monthlyPayment?: number | null;
-    rentOffer?: number | null;
-    yearlyInterestRate?: number | null;
-    yearlyInsuranceFee?: number | null;
-    payoutInCash?: boolean;
-    adminFee?: number | null;
-  }>;
+
+  customer?:
+    | {
+        customerType?: string;
+        name?: string;
+        email?: string;
+        phone?: string;
+        birthday?: string;
+        birthNumber?: string;
+        companyID?: string;
+        companyName?: string;
+        address?: string;
+        city?: string;
+        postalCode?: string;
+        enableAddress2?: boolean;
+        address2?: string;
+        city2?: string;
+        postalCode2?: string;
+        bankAccount?: string;
+      }
+    | Array<{
+        customerType?: string;
+        name?: string;
+        email?: string;
+        phone?: string;
+        birthday?: string;
+        birthNumber?: string;
+        companyID?: string;
+        companyName?: string;
+        address?: string;
+        city?: string;
+        postalCode?: string;
+        enableAddress2?: boolean;
+        address2?: string;
+        city2?: string;
+        postalCode2?: string;
+        bankAccount?: string;
+      }>;
+
+  car?:
+    | {
+        VIN?: string;
+        brand?: string;
+        model?: string;
+        registration?: number | null;
+        carSPZ?: string;
+        mileage?: number | null;
+        numberMTP?: string;
+        numberVTP?: string;
+      }
+    | Array<{
+        VIN?: string;
+        brand?: string;
+        model?: string;
+        registration?: number | null;
+        carSPZ?: string;
+        mileage?: number | null;
+        numberMTP?: string;
+        numberVTP?: string;
+      }>;
+
+  lease?:
+    | {
+        leaseAmount?: number | null;
+        rentDuration?: number | null;
+        monthlyPayment?: number | null;
+        rentOffer?: number | null;
+        yearlyInterestRate?: number | null;
+        yearlyInsuranceFee?: number | null;
+        payoutInCash?: boolean;
+        adminFee?: number | null;
+      }
+    | Array<{
+        leaseAmount?: number | null;
+        rentDuration?: number | null;
+        monthlyPayment?: number | null;
+        rentOffer?: number | null;
+        yearlyInterestRate?: number | null;
+        yearlyInsuranceFee?: number | null;
+        payoutInCash?: boolean;
+        adminFee?: number | null;
+      }>;
+
   assignedSalesManager?: { id?: string; _id?: string; name?: string } | string;
   salesVisitAt?: string;
 }
@@ -1998,6 +2037,31 @@ export default function LeadDetailV2() {
     }
   };
 
+  const setLeadCheckOnce = async (
+    field:
+      | 'tpSentToClientOk'
+      | 'ksOrgReceivedOk'
+      | 'nsOrgReceivedOk'
+      | 'insuranceReceivedOk'
+      | 'tpReceivedOk'
+      | 'contractsEmailSentOk'
+  ) => {
+    if (!id) return;
+    if ((lead as any)?.[field]) return;
+    setSavingLeadChecks(true);
+    try {
+      await axiosClient.patch(`/leads/${id}`, {
+        [field]: true,
+      });
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to update lead check:', e);
+      alert('Nepodařilo se uložit změnu');
+    } finally {
+      setSavingLeadChecks(false);
+    }
+  };
+
   const formatDealerName = (value: any): string => {
     if (!value) return '-';
     if (typeof value === 'string') return value;
@@ -2535,6 +2599,136 @@ export default function LeadDetailV2() {
                   </div>
                 )}
               </div>
+
+              {lead?.status === 'CONVERTED' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={Boolean(lead?.tpSentToClientOk)}
+                        disabled={savingLeadChecks || Boolean(lead?.tpSentToClientOk)}
+                        onChange={(e) => {
+                          if (!e.target.checked) return;
+                          setLeadCheckOnce('tpSentToClientOk');
+                        }}
+                      />
+                      <span className="text-sm">TP byl odeslán klientovi</span>
+                    </label>
+                    {Boolean(lead?.tpSentToClientOk) && (lead?.tpSentToClientOkBy || lead?.tpSentToClientOkAt) && (
+                      <div className="ml-6 text-[11px] text-gray-500">
+                        {formatDealerName(lead?.tpSentToClientOkBy)} · {formatNoteDateTime(lead?.tpSentToClientOkAt)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={Boolean(lead?.ksOrgReceivedOk)}
+                        disabled={savingLeadChecks || Boolean(lead?.ksOrgReceivedOk)}
+                        onChange={(e) => {
+                          if (!e.target.checked) return;
+                          setLeadCheckOnce('ksOrgReceivedOk');
+                        }}
+                      />
+                      <span className="text-sm">Přijata KS org</span>
+                    </label>
+                    {Boolean(lead?.ksOrgReceivedOk) && (lead?.ksOrgReceivedOkBy || lead?.ksOrgReceivedOkAt) && (
+                      <div className="ml-6 text-[11px] text-gray-500">
+                        {formatDealerName(lead?.ksOrgReceivedOkBy)} · {formatNoteDateTime(lead?.ksOrgReceivedOkAt)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={Boolean(lead?.nsOrgReceivedOk)}
+                        disabled={savingLeadChecks || Boolean(lead?.nsOrgReceivedOk)}
+                        onChange={(e) => {
+                          if (!e.target.checked) return;
+                          setLeadCheckOnce('nsOrgReceivedOk');
+                        }}
+                      />
+                      <span className="text-sm">Přijata NS org</span>
+                    </label>
+                    {Boolean(lead?.nsOrgReceivedOk) && (lead?.nsOrgReceivedOkBy || lead?.nsOrgReceivedOkAt) && (
+                      <div className="ml-6 text-[11px] text-gray-500">
+                        {formatDealerName(lead?.nsOrgReceivedOkBy)} · {formatNoteDateTime(lead?.nsOrgReceivedOkAt)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={Boolean(lead?.insuranceReceivedOk)}
+                        disabled={savingLeadChecks || Boolean(lead?.insuranceReceivedOk)}
+                        onChange={(e) => {
+                          if (!e.target.checked) return;
+                          setLeadCheckOnce('insuranceReceivedOk');
+                        }}
+                      />
+                      <span className="text-sm">Přijata pojistka</span>
+                    </label>
+                    {Boolean(lead?.insuranceReceivedOk) && (lead?.insuranceReceivedOkBy || lead?.insuranceReceivedOkAt) && (
+                      <div className="ml-6 text-[11px] text-gray-500">
+                        {formatDealerName(lead?.insuranceReceivedOkBy)} · {formatNoteDateTime(lead?.insuranceReceivedOkAt)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={Boolean(lead?.tpReceivedOk)}
+                        disabled={savingLeadChecks || Boolean(lead?.tpReceivedOk)}
+                        onChange={(e) => {
+                          if (!e.target.checked) return;
+                          setLeadCheckOnce('tpReceivedOk');
+                        }}
+                      />
+                      <span className="text-sm">Přijat TP</span>
+                    </label>
+                    {Boolean(lead?.tpReceivedOk) && (lead?.tpReceivedOkBy || lead?.tpReceivedOkAt) && (
+                      <div className="ml-6 text-[11px] text-gray-500">
+                        {formatDealerName(lead?.tpReceivedOkBy)} · {formatNoteDateTime(lead?.tpReceivedOkAt)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={Boolean(lead?.contractsEmailSentOk)}
+                        disabled={savingLeadChecks || Boolean(lead?.contractsEmailSentOk)}
+                        onChange={(e) => {
+                          if (!e.target.checked) return;
+                          setLeadCheckOnce('contractsEmailSentOk');
+                        }}
+                      />
+                      <span className="text-sm">Odeslán email se smlouvami kl.</span>
+                    </label>
+                    {Boolean(lead?.contractsEmailSentOk) && (lead?.contractsEmailSentOkBy || lead?.contractsEmailSentOkAt) && (
+                      <div className="ml-6 text-[11px] text-gray-500">
+                        {formatDealerName(lead?.contractsEmailSentOkBy)} · {formatNoteDateTime(lead?.contractsEmailSentOkAt)}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {savingLeadChecks && <div className="text-xs text-gray-500">Ukládám...</div>}
             </div>
