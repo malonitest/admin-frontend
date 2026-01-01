@@ -185,6 +185,7 @@ interface LeadResponse {
 
   assignedSalesManager?: { id?: string; _id?: string; name?: string } | string;
   salesVisitAt?: string;
+  callAt?: string | null;
 }
 
 function PhotoUploadModal({
@@ -746,6 +747,7 @@ export default function LeadDetailV2() {
   const [showDebtCollectionPicker, setShowDebtCollectionPicker] = useState(false);
   const [debtCollectionDraft, setDebtCollectionDraft] = useState<string>('');
   const [statusDraft, setStatusDraft] = useState<string>('');
+  const [debtPromiseAtDraft, setDebtPromiseAtDraft] = useState<string>('');
   const [settingDebtCollection, setSettingDebtCollection] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
@@ -2195,6 +2197,7 @@ export default function LeadDetailV2() {
   const handleOpenDebtCollection = () => {
     setDebtCollectionDraft(String(lead?.debtCollectionStatus || ''));
     setStatusDraft(String(lead?.status || ''));
+    setDebtPromiseAtDraft('');
     setShowDebtCollectionPicker(true);
   };
 
@@ -2202,12 +2205,82 @@ export default function LeadDetailV2() {
     if (!id) return;
     setSettingDebtCollection(true);
     try {
-      await axiosClient.patch(`/leads/${id}`, {
-        debtCollectionStatus: debtCollectionDraft.trim() ? debtCollectionDraft.trim() : null,
-        status: statusDraft.trim() ? statusDraft.trim() : undefined,
-      });
+      const nextDebt = debtCollectionDraft.trim() ? debtCollectionDraft.trim() : null;
+
+      const payload: Record<string, any> = {
+        debtCollectionStatus: nextDebt,
+      };
+
+      // In Konvertováno: allow changing only debt-collection substatus (no status changes)
+      if (lead?.status !== 'CONVERTED') {
+        payload.status = statusDraft.trim() ? statusDraft.trim() : undefined;
+      }
+
+      // Special case: PAYMENT_PROMISE -> require call datetime, store to notes + callAt, and schedule reminder.
+      let promiseCallAt: Date | null = null;
+      if (nextDebt === 'PAYMENT_PROMISE') {
+        if (!debtPromiseAtDraft.trim()) {
+          alert('Vyberte prosím datum a čas volání');
+          return;
+        }
+
+        const parsed = parsePragueDateTimeLocal(debtPromiseAtDraft.trim());
+        if (!parsed) {
+          alert('Neplatný formát data/času');
+          return;
+        }
+
+        promiseCallAt = parsed;
+        const callAtLabel = formatDateTimePrague(parsed);
+        payload.callAt = parsed.toISOString();
+        payload.noteMessage = `Volat ${callAtLabel}`;
+      }
+
+      await axiosClient.patch(`/leads/${id}`, payload);
+
       await refreshLead();
       setShowDebtCollectionPicker(false);
+
+      // Best-effort reminder in the browser (1 minute before).
+      if (promiseCallAt) {
+        try {
+          if (typeof window !== 'undefined' && 'Notification' in window) {
+            const reminderAtMs = promiseCallAt.getTime() - 60_000;
+            const delayMs = reminderAtMs - Date.now();
+            if (delayMs > 0) {
+              const uniqueId = lead?.uniqueId;
+              const key = `debtPromiseReminder:${id}:${promiseCallAt.toISOString()}`;
+              if (!localStorage.getItem(key)) {
+                const permission = Notification.permission;
+                if (permission === 'default') {
+                  await Notification.requestPermission();
+                }
+
+                if (Notification.permission === 'granted') {
+                  window.setTimeout(() => {
+                    try {
+                      const title = uniqueId ? `Volat ${uniqueId}` : 'Volat';
+                      const notification = new Notification(title, {
+                        body: uniqueId ? `Lead ${uniqueId}` : 'Lead',
+                      });
+                      notification.onclick = () => {
+                        window.focus();
+                        navigate(`/leads/${id}/v2`);
+                        notification.close();
+                      };
+                      localStorage.setItem(key, '1');
+                    } catch {
+                      // ignore
+                    }
+                  }, delayMs);
+                }
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
     } catch (e) {
       console.error('Failed to update debt collection:', e);
       alert('Nepodařilo se uložit vymáhání');
@@ -2979,32 +3052,49 @@ export default function LeadDetailV2() {
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <select
                 value={debtCollectionDraft}
-                onChange={(e) => setDebtCollectionDraft(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setDebtCollectionDraft(next);
+                  if (next !== 'PAYMENT_PROMISE') {
+                    setDebtPromiseAtDraft('');
+                  }
+                }}
                 className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="">Bez vymáhání</option>
-                <option value="SOFT_LATE">Soft late</option>
-                <option value="NON_CONTACT">Non contact</option>
-                <option value="PAYMENT_PROMISE">Payment promise</option>
-                <option value="CAR_DETAINED">Car detained</option>
-                <option value="AUCTION">Auction</option>
-                <option value="SELL">Sell</option>
+                <option value="SOFT_LATE">DPD 1-7</option>
+                <option value="NON_CONTACT">Nekontaktní</option>
+                <option value="PAYMENT_PROMISE">Slíbil platbu</option>
+                <option value="CAR_DETAINED">Předáno k zajištění APS</option>
+                <option value="AUCTION">Zajištěno APS, botička</option>
+                <option value="SELL">Na sklade</option>
               </select>
 
-              <select
-                value={statusDraft}
-                onChange={(e) => setStatusDraft(e.target.value)}
-                className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Status beze změny</option>
-                <option value="CONVERTED">Konvertován</option>
-                <option value="DECLINED">Zamítnuto</option>
-                <option value="RETURNED_TO_SALES">Vráceno do obchodu</option>
-                <option value="FINAL_APPROVAL">Finální schválení</option>
-                <option value="UPLOAD_DOCUMENTS">Dokumenty</option>
-                <option value="SUPERVISOR_APPROVED">Schválen AM</option>
-                <option value="NEW">Nový</option>
-              </select>
+              {debtCollectionDraft === 'PAYMENT_PROMISE' ? (
+                <input
+                  type="datetime-local"
+                  value={debtPromiseAtDraft}
+                  onChange={(e) => setDebtPromiseAtDraft(e.target.value)}
+                  className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              ) : null}
+
+              {lead?.status !== 'CONVERTED' ? (
+                <select
+                  value={statusDraft}
+                  onChange={(e) => setStatusDraft(e.target.value)}
+                  className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Status beze změny</option>
+                  <option value="CONVERTED">Konvertován</option>
+                  <option value="DECLINED">Zamítnuto</option>
+                  <option value="RETURNED_TO_SALES">Vráceno do obchodu</option>
+                  <option value="FINAL_APPROVAL">Finální schválení</option>
+                  <option value="UPLOAD_DOCUMENTS">Dokumenty</option>
+                  <option value="SUPERVISOR_APPROVED">Schválen AM</option>
+                  <option value="NEW">Nový</option>
+                </select>
+              ) : null}
 
               <div className="flex gap-2">
                 <button
@@ -3018,7 +3108,10 @@ export default function LeadDetailV2() {
                 <button
                   type="button"
                   onClick={handleConfirmDebtCollection}
-                  disabled={settingDebtCollection}
+                  disabled={
+                    settingDebtCollection ||
+                    (debtCollectionDraft === 'PAYMENT_PROMISE' && !debtPromiseAtDraft.trim())
+                  }
                   className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
                 >
                   {settingDebtCollection ? 'Ukládám...' : 'Potvrdit'}
