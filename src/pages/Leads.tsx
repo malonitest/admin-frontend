@@ -234,7 +234,10 @@ const getLeadTechnicianSubStatus = (lead: Lead): string | null => {
   if (!technicianAtMs) return null;
 
   const history = lead.subStatusHistory;
-  if (!history || history.length === 0) return null;
+  // List endpoints may not include `subStatusHistory`.
+  // In that case, fall back to the current `subStatus` so the technician queue
+  // still reflects the latest saved value.
+  if (!history || history.length === 0) return lead.subStatus || null;
 
   // Only keep substatus changes that happened after the lead entered TECHNICIAN stage.
   const filtered = history
@@ -242,7 +245,7 @@ const getLeadTechnicianSubStatus = (lead: Lead): string | null => {
     .map((h) => ({ subStatus: h.subStatus, changedAt: h.changedAt as string, ms: parseApiDate(h.changedAt as string).getTime() }))
     .filter((h) => !Number.isNaN(h.ms) && h.ms >= technicianAtMs);
 
-  if (filtered.length === 0) return null;
+  if (filtered.length === 0) return lead.subStatus || null;
 
   filtered.sort((a, b) => b.ms - a.ms);
 
