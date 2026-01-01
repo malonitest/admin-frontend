@@ -27,6 +27,7 @@ const navigation: NavItem[] = [
       { name: 'Všechny leady', href: '/leads?reset=1' },
       { name: 'Schválen AM', href: '/leads/am-approved' },
       { name: 'Technik', href: '/leads/technician' },
+      { name: 'FŘ - k vyplacení', href: '/leads/finance-payout' },
     ],
   },
   { name: 'Obchodníci', href: '/dealers', icon: DealersIcon },

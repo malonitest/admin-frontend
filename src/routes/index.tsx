@@ -115,6 +115,10 @@ export const router = createBrowserRouter([
         element: <Leads forcedLeadState="UPLOAD_DOCUMENTS" variant="TECHNICIAN" />,
       },
       {
+        path: 'leads/finance-payout',
+        element: <Leads forcedLeadState="FINAL_APPROVAL" />,
+      },
+      {
         path: 'leads/:id',
         element: <LeadDetail />,
       },
