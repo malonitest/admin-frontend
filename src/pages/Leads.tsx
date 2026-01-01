@@ -460,7 +460,7 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const isAmApprovedPage = forcedLeadState === 'SUPERVISOR_APPROVED';
+  const isAmApprovedPage = forcedLeadState === 'SUPERVISOR_APPROVED' || forcedLeadState === 'CONVERTED';
   const isTechnicianPage = variant === 'TECHNICIAN';
   const isFinancePayoutPage = forcedLeadState === 'FINAL_APPROVAL';
   const tableColSpan = isAmApprovedPage ? 10 : isTechnicianPage ? 10 : isFinancePayoutPage ? 12 : 13;

@@ -107,7 +107,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'leases',
-        element: <PlaceholderPage title="Pronájmy" />,
+        element: <Leads forcedLeadState="CONVERTED" title="Pronájmy" />,
       },
       {
         path: 'leads',
