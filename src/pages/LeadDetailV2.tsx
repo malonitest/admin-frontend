@@ -3,7 +3,8 @@ import { jsPDF } from 'jspdf';
 import heic2any from 'heic2any';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
-import { tryFormatDateTimePrague } from '@/utils/dateTime';
+import { formatDateTimePrague, PRAGUE_TIME_ZONE, tryFormatDateTimePrague } from '@/utils/dateTime';
+import { useAuth } from '@/contexts/AuthContext';
 
 type LeadDocument = {
   _id?: string;
@@ -392,21 +393,87 @@ const LEAD_SUBSTATES: Array<{ value: string; label: string }> = [
   { value: 'NOT_REACHED_3', label: 'Nedovoláno 3x' },
   { value: 'NOT_REACHED_4', label: 'Nedovoláno 4x' },
   { value: 'NOT_REACHED_X', label: 'Nedovoláno opakovaně' },
-  { value: 'CAR_LOW_VALUE', label: 'Nízká hodnota auta' },
-  { value: 'CAR_OLD', label: 'Stáří vozu' },
-  { value: 'CAR_BAD_TECHNICAL_STATE', label: 'Zlý technický stav' },
-  { value: 'CAR_HIGH_MILEAGE', label: 'Vysoký nájezd' },
-  { value: 'CAR_DENIED_BY_TECHNICIAN', label: 'Zamítnuto technikem' },
-  { value: 'CUSTOMER_NOT_INTERESTED_BUY', label: 'Nechce řešit' },
-  { value: 'CUSTOMER_PRICE_DISADVANTAGEOUS', label: 'Nevýhodná cena' },
-  { value: 'IN_PROGRESS', label: 'V řešení' },
-  { value: 'AWAITING_FEEDBACK', label: 'Zpětný kontakt' },
-  { value: 'ASSIGNED_TO_TECHNICIAN', label: 'Předáno technikovi' },
+  { value: 'NEEDS_1_DAY_TO_THINK', label: 'Potřebuje 1 den na rozmyšlenou' },
+  { value: 'NEEDS_2_3_DAYS_TO_THINK', label: 'Potřebuje 2–3 dny na rozmyšlenou' },
+  { value: 'CHECKING_CONTRACT', label: 'Kontroluje si smlouvu' },
+  { value: 'WAITING_FOR_VIN', label: 'Čekáme na VIN' },
+  { value: 'WAITING_FOR_EXTERIOR_PHOTO', label: 'Čekáme na fotografii exteriéru' },
+  { value: 'CALL_AT_SPECIFIC_TIME', label: 'Zavolat v určitý čas' },
 ];
+
+const LEGACY_SUBSTATUS_LABELS: Record<string, string> = {
+  CAR_LOW_VALUE: 'Nízká hodnota auta',
+  CAR_OLD: 'Stáří vozu',
+  CAR_BAD_TECHNICAL_STATE: 'Zlý technický stav',
+  CAR_HIGH_MILEAGE: 'Vysoký nájezd',
+  CAR_DENIED_BY_TECHNICIAN: 'Zamítnuto technikem',
+  CUSTOMER_NOT_INTERESTED_BUY: 'Nechce řešit',
+  CUSTOMER_PRICE_DISADVANTAGEOUS: 'Nevýhodná cena',
+  ASSIGNED_TO_TECHNICIAN: 'Předáno technikovi',
+  IN_PROGRESS: 'V řešení',
+  AWAITING_FEEDBACK: 'Zpětný kontakt',
+};
 
 const normalizeSubstatus = (type: string | undefined | null): string => {
   if (!type) return '-';
-  return LEAD_SUBSTATES.find((s) => s.value === type)?.label || type;
+  return LEAD_SUBSTATES.find((s) => s.value === type)?.label || LEGACY_SUBSTATUS_LABELS[type] || type;
+};
+
+const parsePragueDateTimeLocal = (value: string): Date | null => {
+  // Expected input: YYYY-MM-DDTHH:mm
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+  if (!m) return null;
+
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const hour = Number(m[4]);
+  const minute = Number(m[5]);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute)
+  ) {
+    return null;
+  }
+
+  const desiredAsUTC = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  const guess = new Date(desiredAsUTC);
+
+  const dtf = new Intl.DateTimeFormat('en-CA', {
+    timeZone: PRAGUE_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+
+  const getParts = (d: Date) => {
+    const parts = dtf.formatToParts(d);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value;
+    return {
+      year: Number(get('year')),
+      month: Number(get('month')),
+      day: Number(get('day')),
+      hour: Number(get('hour')),
+      minute: Number(get('minute')),
+    };
+  };
+
+  const actual = getParts(guess);
+  if ([actual.year, actual.month, actual.day, actual.hour, actual.minute].some((n) => !Number.isFinite(n))) {
+    return null;
+  }
+
+  const actualAsUTC = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute, 0, 0);
+  const deltaMs = desiredAsUTC - actualAsUTC;
+  const corrected = new Date(guess.getTime() + deltaMs);
+  return Number.isNaN(corrected.getTime()) ? null : corrected;
 };
 
 type FormState = {
@@ -610,6 +677,7 @@ const leadToForm = (lead: LeadResponse): FormState => {
 export default function LeadDetailV2() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -629,6 +697,7 @@ export default function LeadDetailV2() {
 
   const [showSubStatusPicker, setShowSubStatusPicker] = useState(false);
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
+  const [callAtDraft, setCallAtDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
@@ -1928,6 +1997,7 @@ export default function LeadDetailV2() {
 
   const handleOpenSubStatus = () => {
     setSubStatusDraft(String(lead?.subStatus || ''));
+    setCallAtDraft('');
     setShowSubStatusPicker(true);
   };
 
@@ -1936,9 +2006,26 @@ export default function LeadDetailV2() {
     const next = subStatusDraft.trim();
     if (!next) return;
 
+    let noteMessage: string | undefined;
+    if (next === 'CALL_AT_SPECIFIC_TIME') {
+      if (!callAtDraft.trim()) {
+        alert('Vyberte prosím datum a čas volání');
+        return;
+      }
+      const callAtDate = parsePragueDateTimeLocal(callAtDraft.trim());
+      if (!callAtDate) {
+        alert('Neplatný formát data/času');
+        return;
+      }
+      const callAtLabel = formatDateTimePrague(callAtDate);
+      const changedAtLabel = formatDateTimePrague(new Date());
+      const dealerName = user?.name || user?.email || 'Neznámý';
+      noteMessage = `Volat datum + čas: ${callAtLabel} — ${dealerName} (${changedAtLabel})`;
+    }
+
     try {
       setSettingSubStatus(true);
-      await axiosClient.patch(`/leads/${id}`, { subStatus: next });
+      await axiosClient.patch(`/leads/${id}`, noteMessage ? { subStatus: next, noteMessage } : { subStatus: next });
       await refreshLead();
       setShowSubStatusPicker(false);
     } catch (e) {
@@ -2569,6 +2656,15 @@ export default function LeadDetailV2() {
                 ))}
               </select>
 
+              {subStatusDraft === 'CALL_AT_SPECIFIC_TIME' ? (
+                <input
+                  type="datetime-local"
+                  value={callAtDraft}
+                  onChange={(e) => setCallAtDraft(e.target.value)}
+                  className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              ) : null}
+
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -2581,7 +2677,11 @@ export default function LeadDetailV2() {
                 <button
                   type="button"
                   onClick={handleConfirmSubStatus}
-                  disabled={settingSubStatus || !subStatusDraft.trim()}
+                  disabled={
+                    settingSubStatus ||
+                    !subStatusDraft.trim() ||
+                    (subStatusDraft.trim() === 'CALL_AT_SPECIFIC_TIME' && !callAtDraft.trim())
+                  }
                   className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
                 >
                   {settingSubStatus ? 'Ukládám...' : 'Potvrdit'}
