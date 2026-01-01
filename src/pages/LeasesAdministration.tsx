@@ -141,7 +141,7 @@ export default function LeasesAdministration() {
         page,
         limit,
         sortBy: 'createdAt:desc',
-        leadState: 'CONVERTED',
+        leadStates: 'CONVERTED,CLOSED',
       };
 
       if (searchQuery.trim()) params.search = searchQuery.trim();
