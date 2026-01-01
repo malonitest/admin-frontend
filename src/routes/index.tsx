@@ -116,6 +116,10 @@ export const router = createBrowserRouter([
         element: <Leads forcedLeadState="SUPERVISOR_APPROVED" />,
       },
       {
+        path: 'leads/call-plan',
+        element: <Leads forcedLeadState="SUPERVISOR_APPROVED" forcedSubStatus="CALL_AT_SPECIFIC_TIME" title="Plán hovoru" enableCallPlanReminders />,
+      },
+      {
         path: 'leads/technician',
         element: <Leads forcedLeadState="UPLOAD_DOCUMENTS" variant="TECHNICIAN" />,
       },

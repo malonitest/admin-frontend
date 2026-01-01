@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components';
 import { axiosClient } from '@/api/axiosClient';
@@ -11,6 +11,7 @@ interface Lead {
   updatedAt?: string;
   statusUpdatedAt?: string;
   uploadDocumentsAt?: string | null;
+  callAt?: string | null;
   subStatus?: string | null;
   requestedAmount?: number | null;
   subStatusHistory?: Array<{
@@ -449,10 +450,13 @@ function PlusIcon({ className }: { className?: string }) {
 
 type LeadsProps = {
   forcedLeadState?: string;
+  forcedSubStatus?: string;
   variant?: 'DEFAULT' | 'TECHNICIAN';
+  title?: string;
+  enableCallPlanReminders?: boolean;
 };
 
-export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {}) {
+export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', title = 'Leady', enableCallPlanReminders = false }: LeadsProps = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -592,6 +596,7 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
       if (appliedFilters.leadSubState) params.leadSubState = appliedFilters.leadSubState;
       if (appliedFilters.periodFilterType) params.periodFilterType = appliedFilters.periodFilterType;
       if (appliedFilters.dealerId) params.dealerId = appliedFilters.dealerId;
+      if (forcedSubStatus) params.subStatus = forcedSubStatus;
       
       const response = await axiosClient.get<LeadsResponse>('/leads', { params });
       setLeads(response.data.results);
@@ -602,7 +607,104 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId]);
+  }, [page, limit, debouncedSearch, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId, forcedSubStatus]);
+
+  const reminderTimersRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (!enableCallPlanReminders) return;
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'default') return;
+    // Best-effort permission request; some browsers require a user gesture.
+    Notification.requestPermission().catch(() => undefined);
+  }, [enableCallPlanReminders]);
+
+  useEffect(() => {
+    if (!enableCallPlanReminders) return;
+
+    const timers = reminderTimersRef.current;
+    const desiredKeys = new Set<string>();
+    const nowMs = Date.now();
+
+    const fireReminder = (lead: Lead, callAtIso: string) => {
+      const key = `${lead.id}:${callAtIso}`;
+      const storageKey = `callReminderFired:${key}`;
+      if (localStorage.getItem(storageKey) === '1') return;
+      localStorage.setItem(storageKey, '1');
+
+      const uniqueId = lead.uniqueId ?? '-';
+      const leadUrl = `/leads/${lead.id}/v2`;
+      const customer = getFirst(lead.customer);
+      const customerName = cleanString(customer?.name);
+      const titleText = `Plán hovoru – #${uniqueId}`;
+      const bodyText = `${customerName} – zavolat za 1 min`;
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const n = new Notification(titleText, { body: bodyText });
+        n.onclick = () => {
+          try {
+            window.focus();
+            window.location.href = leadUrl;
+          } finally {
+            n.close();
+          }
+        };
+      }
+    };
+
+    for (const lead of leads) {
+      if (!lead.callAt) continue;
+      const callAtIso = String(lead.callAt);
+      const callAtMs = parseApiDate(callAtIso).getTime();
+      if (Number.isNaN(callAtMs)) continue;
+
+      const key = `${lead.id}:${callAtIso}`;
+      desiredKeys.add(key);
+
+      if (localStorage.getItem(`callReminderFired:${key}`) === '1') continue;
+      if (timers.has(key)) continue;
+
+      const fireAtMs = callAtMs - 60_000;
+      const delayMs = fireAtMs - nowMs;
+
+      // If we're already inside the 1-minute window, fire immediately.
+      if (delayMs <= 0) {
+        if (nowMs - fireAtMs <= 60_000) {
+          fireReminder(lead, callAtIso);
+        }
+        continue;
+      }
+
+      // Avoid extremely long timers; the list auto-refresh will reschedule.
+      if (delayMs > 7 * 24 * 60 * 60 * 1000) {
+        continue;
+      }
+
+      const timerId = window.setTimeout(() => {
+        fireReminder(lead, callAtIso);
+        timers.delete(key);
+      }, delayMs);
+
+      timers.set(key, timerId);
+    }
+
+    // Cleanup timers for leads that are no longer present or whose callAt changed.
+    for (const [key, timerId] of timers.entries()) {
+      if (desiredKeys.has(key)) continue;
+      window.clearTimeout(timerId);
+      timers.delete(key);
+    }
+  }, [enableCallPlanReminders, leads]);
+
+  useEffect(() => {
+    return () => {
+      const timers = reminderTimersRef.current;
+      for (const timerId of timers.values()) {
+        window.clearTimeout(timerId);
+      }
+      timers.clear();
+    };
+  }, []);
 
   useEffect(() => {
     fetchLeads();
@@ -734,7 +836,7 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Leady</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
       </div>
 
       {/* Search and Filter row */}

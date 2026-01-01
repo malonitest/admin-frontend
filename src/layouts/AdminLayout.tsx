@@ -26,6 +26,7 @@ const navigation: NavItem[] = [
     children: [
       { name: 'Všechny leady', href: '/leads?reset=1' },
       { name: 'Schválen AM', href: '/leads/am-approved' },
+      { name: 'Plán hovoru', href: '/leads/call-plan' },
       { name: 'Technik', href: '/leads/technician' },
       { name: 'FŘ - k vyplacení', href: '/leads/finance-payout' },
     ],

@@ -2009,6 +2009,8 @@ export default function LeadDetailV2() {
     const next = subStatusDraft.trim();
     if (!next) return;
 
+    let callAtIso: string | null | undefined;
+
     let noteMessage: string | undefined;
     if (next === 'CALL_AT_SPECIFIC_TIME') {
       if (!callAtDraft.trim()) {
@@ -2020,15 +2022,23 @@ export default function LeadDetailV2() {
         alert('Neplatný formát data/času');
         return;
       }
+      callAtIso = callAtDate.toISOString();
       const callAtLabel = formatDateTimePrague(callAtDate);
       const changedAtLabel = formatDateTimePrague(new Date());
       const dealerName = user?.name || user?.email || 'Neznámý';
       noteMessage = `Volat datum + čas: ${callAtLabel} — ${dealerName} (${changedAtLabel})`;
+    } else {
+      // When leaving scheduled-call subStatus, clear the stored call time.
+      callAtIso = null;
     }
 
     try {
       setSettingSubStatus(true);
-      await axiosClient.patch(`/leads/${id}`, noteMessage ? { subStatus: next, noteMessage } : { subStatus: next });
+      const payload: Record<string, any> = noteMessage ? { subStatus: next, noteMessage } : { subStatus: next };
+      if (callAtIso !== undefined) {
+        payload.callAt = callAtIso;
+      }
+      await axiosClient.patch(`/leads/${id}`, payload);
       await refreshLead();
       setShowSubStatusPicker(false);
     } catch (e) {
