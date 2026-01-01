@@ -18,7 +18,15 @@ interface NavItem {
 // Menu položky podle vzoru
 const navigation: NavItem[] = [
   { name: 'Statistiky', href: '/', icon: StatsIcon },
-  { name: 'Pronájmy', href: '/leases', icon: LeaseIcon },
+  {
+    name: 'Pronájmy',
+    href: '/leases',
+    icon: LeaseIcon,
+    children: [
+      { name: 'Přehled', href: '/leases' },
+      { name: 'Administrace', href: '/leases/administration' },
+    ],
+  },
   {
     name: 'Leady',
     href: '/leads',

@@ -25,6 +25,7 @@ import {
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
 import Leads from '@/pages/Leads';
+import LeasesAdministration from '@/pages/LeasesAdministration';
 import NewLeadV2 from '@/pages/NewLeadV2';
 import LeadDetail from '@/pages/LeadDetail';
 import LeadDetailV2 from '@/pages/LeadDetailV2';
@@ -108,6 +109,10 @@ export const router = createBrowserRouter([
       {
         path: 'leases',
         element: <Leads forcedLeadState="CONVERTED" title="Pronájmy" />,
+      },
+      {
+        path: 'leases/administration',
+        element: <LeasesAdministration />,
       },
       {
         path: 'leads',
