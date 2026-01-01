@@ -1702,26 +1702,49 @@ export default function LeadDetailV2() {
     }
   };
 
-  const declineReasonOptions: Array<{ value: string; label: string }> = [
+  const baseDeclineReasonOptions: Array<{ value: string; label: string }> = [
     { value: 'CAR_NOT_OWNED', label: 'Vozidlo není ve vlastnictví' },
     { value: 'CAR_LEASED', label: 'Vozidlo je na leasing' },
     { value: 'CAR_LOW_VALUE', label: 'Nízká hodnota vozu' },
     { value: 'CAR_OLD', label: 'Vozidlo je příliš staré' },
     { value: 'CAR_BAD_TECHNICAL_STATE', label: 'Špatný technický stav' },
     { value: 'CAR_HIGH_MILEAGE', label: 'Vysoký nájezd' },
-    { value: 'CAR_DENIED_BY_TECHNICIAN', label: 'Zamítnuto technikem' },
-    { value: 'CAR_BURDENED', label: 'Vozidlo je zatížené (břemeno/zástava)' },
-    { value: 'CUSTOMER_NOT_INTERESTED_BUY', label: 'Klient nemá zájem' },
-    { value: 'CUSTOMER_NOT_ELIGIBLE', label: 'Klient nesplňuje podmínky' },
+    { value: 'CAR_BURDENED', label: 'Vozidlo je již pod zástavou (CarDetect)' },
     { value: 'CUSTOMER_PRICE_DISADVANTAGEOUS', label: 'Cena je pro klienta nevýhodná' },
     { value: 'CUSTOMER_SOLVED_ELSEWHERE', label: 'Klient to vyřešil jinde' },
     { value: 'CAR_LOSS_RISK', label: 'Vysoké riziko ztráty' },
     { value: 'HIGH_INSTALLMENTS', label: 'Příliš vysoké splátky' },
+    { value: 'EXECUTION', label: 'Exekuce' },
+    { value: 'DUPLICATE', label: 'Duplicita' },
+    { value: 'WANTS_SHORTER_CONTRACT_DURATION', label: 'Chce kratší dobu smlouvy' },
+    { value: 'DISAGREES_PURCHASE_CONTRACT', label: 'Nesouhlasí s kupní smlouvou' },
+    { value: 'DISAGREES_RENT_CONTRACT', label: 'Nesouhlasí s nájemní smlouvou' },
+    { value: 'PARTNER_DISAGREES', label: 'Nesouhlasí partner' },
+    { value: 'TEST', label: 'Test' },
     { value: 'OTHER', label: 'Jiný důvod' },
   ];
 
+  const legacyDeclineReasonLabels: Record<string, string> = {
+    CAR_DENIED_BY_TECHNICIAN: 'Zamítnuto technikem',
+    CUSTOMER_NOT_ELIGIBLE: 'Klient nesplňuje podmínky',
+    CUSTOMER_NOT_INTERESTED_BUY: 'Klient nemá zájem',
+  };
+
+  const declineReasonOptions: Array<{ value: string; label: string }> = (() => {
+    if (!declineType) return baseDeclineReasonOptions;
+    if (baseDeclineReasonOptions.some((o) => o.value === declineType)) return baseDeclineReasonOptions;
+    return [
+      { value: declineType, label: legacyDeclineReasonLabels[declineType] ?? declineType },
+      ...baseDeclineReasonOptions,
+    ];
+  })();
+
   const getDeclineReasonLabel = (value: string): string => {
-    return declineReasonOptions.find((o) => o.value === value)?.label || value;
+    return (
+      baseDeclineReasonOptions.find((o) => o.value === value)?.label ||
+      legacyDeclineReasonLabels[value] ||
+      value
+    );
   };
 
   const handleAddNote = async () => {
