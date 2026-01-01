@@ -37,6 +37,8 @@ interface LeadResponse {
   executionOk?: boolean;
   executionOkAt?: string;
   executionOkBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
+  paidOutAt?: string | null;
+  paidOutBy?: { id?: string; _id?: string; name?: string; user?: { name?: string } } | string | null;
   documents?: {
     carDetectReport?: LeadDocument | null;
     carVIN?: LeadDocument | null;
@@ -691,6 +693,7 @@ export default function LeadDetailV2() {
   const [settingAmApproved, setSettingAmApproved] = useState(false);
   const [settingTechnician, setSettingTechnician] = useState(false);
   const [settingFinance, setSettingFinance] = useState(false);
+  const [settingPaidOut, setSettingPaidOut] = useState(false);
   const [settingDeclined, setSettingDeclined] = useState(false);
   const [showDeclineReasons, setShowDeclineReasons] = useState(false);
   const [declineType, setDeclineType] = useState<string>('OTHER');
@@ -2080,6 +2083,21 @@ export default function LeadDetailV2() {
     }
   };
 
+  const handleSetPaidOut = async () => {
+    if (!id) return;
+    setSettingPaidOut(true);
+    try {
+      // Mark lead as CONVERTED (Vyplaceno)
+      await axiosClient.patch(`/leads/${id}`, { status: 'CONVERTED' });
+      await refreshLead();
+    } catch (e) {
+      console.error('Failed to set paid out:', e);
+      alert('Nepodařilo se nastavit status "Vyplaceno"');
+    } finally {
+      setSettingPaidOut(false);
+    }
+  };
+
   const handleSetDeclined = async () => {
     setShowDeclineReasons(true);
   };
@@ -2456,6 +2474,18 @@ export default function LeadDetailV2() {
                 )}
               </div>
 
+              <div className="space-y-1">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="w-4 h-4" checked={Boolean(lead?.paidOutAt)} disabled />
+                  <span className="text-sm">Vyplaceno</span>
+                </label>
+                {Boolean(lead?.paidOutAt) && (lead?.paidOutBy || lead?.paidOutAt) && (
+                  <div className="ml-6 text-[11px] text-gray-500">
+                    {formatDealerName(lead?.paidOutBy)} · {formatNoteDateTime(lead?.paidOutAt ?? undefined)}
+                  </div>
+                )}
+              </div>
+
               {savingLeadChecks && <div className="text-xs text-gray-500">Ukládám...</div>}
             </div>
 
@@ -2597,7 +2627,7 @@ export default function LeadDetailV2() {
           <div className="flex justify-end gap-3">
             <button
               onClick={handleSetDeclined}
-              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance || settingPaidOut}
               className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
             >
               Zamítnout
@@ -2605,7 +2635,7 @@ export default function LeadDetailV2() {
 
             <button
               onClick={handleOpenSubStatus}
-              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance || settingPaidOut}
               className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
             >
               SubStatus update
@@ -2617,16 +2647,20 @@ export default function LeadDetailV2() {
                   ? handleHandToTechnician
                   : lead?.status === 'UPLOAD_DOCUMENTS'
                     ? handleHandToFinance
+                    : lead?.status === 'FINAL_APPROVAL'
+                      ? handleSetPaidOut
                     : handleSetAmApproved
               }
-              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance}
+              disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance || settingPaidOut}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
             >
               {lead?.status === 'SUPERVISOR_APPROVED'
                 ? (settingTechnician ? 'Předávám...' : 'Předat technikovi')
                 : lead?.status === 'UPLOAD_DOCUMENTS'
                   ? (settingFinance ? 'Předávám...' : 'Předat FŘ')
-                  : (settingAmApproved ? 'Nastavuji...' : 'Schválen AM')}
+                  : lead?.status === 'FINAL_APPROVAL'
+                    ? (settingPaidOut ? 'Nastavuji...' : 'Vyplaceno')
+                    : (settingAmApproved ? 'Nastavuji...' : 'Schválen AM')}
             </button>
 
             <button
