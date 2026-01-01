@@ -2600,7 +2600,7 @@ export default function LeadDetailV2() {
                 )}
               </div>
 
-              {lead?.status === 'CONVERTED' && (
+              {(lead?.status === 'CONVERTED' || lead?.status === 'CLOSED') && (
                 <>
                   <div className="space-y-1">
                     <label className="flex items-center gap-2">
