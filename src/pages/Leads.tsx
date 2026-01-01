@@ -12,6 +12,7 @@ interface Lead {
   statusUpdatedAt?: string;
   uploadDocumentsAt?: string | null;
   subStatus?: string | null;
+  requestedAmount?: number | null;
   subStatusHistory?: Array<{
     subStatus?: string;
     changedAt?: string;
@@ -35,10 +36,17 @@ interface Lead {
   car?: {
     brand?: string;
     model?: string;
+    registration?: number | null;
+    registrationForm?: string | null;
   } | Array<{
     brand?: string;
     model?: string;
+    registration?: number | null;
+    registrationForm?: string | null;
   }>;
+  lease?: {
+    leaseAmount?: number | null;
+  };
   status: string;
   declinedType?: string;
   notInterestedStatus?: string;
@@ -179,6 +187,30 @@ const formatHHMM = (totalMinutes: number): string => {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+};
+
+const formatCzkAmount = (amount: number | null | undefined): string => {
+  if (amount == null) return '-';
+  if (!Number.isFinite(amount)) return '-';
+  if (amount === 0) return '-';
+  return `${new Intl.NumberFormat('cs-CZ').format(amount)} Kč`;
+};
+
+const getLeadRequestedAmount = (lead: Lead): number | null => {
+  if (typeof lead.requestedAmount === 'number') return lead.requestedAmount;
+  const leaseAmount = lead.lease?.leaseAmount;
+  return typeof leaseAmount === 'number' ? leaseAmount : null;
+};
+
+const getLeadCarYear = (lead: Lead): string => {
+  const car = getFirst(lead.car);
+  const reg = car?.registration;
+  if (typeof reg === 'number' && Number.isFinite(reg) && reg > 1900) return String(reg);
+
+  const regForm = car?.registrationForm;
+  if (typeof regForm === 'string' && regForm.trim()) return regForm;
+
+  return '-';
 };
 
 const getLeadLastContactMs = (lead: Lead): number | null => {
@@ -426,7 +458,8 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
 
   const isAmApprovedPage = forcedLeadState === 'SUPERVISOR_APPROVED';
   const isTechnicianPage = variant === 'TECHNICIAN';
-  const tableColSpan = isAmApprovedPage ? 10 : isTechnicianPage ? 10 : 13;
+  const isFinancePayoutPage = forcedLeadState === 'FINAL_APPROVAL';
+  const tableColSpan = isAmApprovedPage ? 10 : isTechnicianPage ? 10 : isFinancePayoutPage ? 12 : 13;
   
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
@@ -874,15 +907,21 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                 <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zákazník</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Telefon</th>
                 <th className="w-[100px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Auto</th>
+                {isFinancePayoutPage && (
+                  <th className="w-[80px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rok výroby auta</th>
+                )}
+                {isFinancePayoutPage && (
+                  <th className="w-[110px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Žádaná částka</th>
+                )}
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Substatus</th>
-                {!isAmApprovedPage && !isTechnicianPage && (
+                {!isAmApprovedPage && !isTechnicianPage && !isFinancePayoutPage && (
                   <th className="w-[70px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zdroj</th>
                 )}
-                {!isAmApprovedPage && !isTechnicianPage && (
+                {!isAmApprovedPage && !isTechnicianPage && !isFinancePayoutPage && (
                   <th className="w-[120px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Obchodník</th>
                 )}
-                {!isAmApprovedPage && !isTechnicianPage && (
+                {!isAmApprovedPage && !isTechnicianPage && !isFinancePayoutPage && (
                   <th className="w-[90px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Zadal</th>
                 )}
                 <th className="w-[80px] px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kontakt</th>
@@ -923,6 +962,12 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                     <td className="px-2 py-2 text-xs text-gray-900 break-words">
                       {getCarDisplay(lead)}
                     </td>
+                    {isFinancePayoutPage && (
+                      <td className="px-2 py-2 text-xs text-gray-500 break-words">{getLeadCarYear(lead)}</td>
+                    )}
+                    {isFinancePayoutPage && (
+                      <td className="px-2 py-2 text-xs text-gray-500 break-words">{formatCzkAmount(getLeadRequestedAmount(lead))}</td>
+                    )}
                     <td className="px-2 py-2">
                       <span className={`px-1.5 py-0.5 text-xs rounded ${getStatusStyle(lead.status)}`}>
                         {normalizeLeadState(lead.status)}
@@ -936,12 +981,12 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                         ? normalizeSubstatus(getLeadTechnicianSubStatus(lead) || '')
                         : normalizeSubstatus(lead.subStatus || lead.declinedType || lead.notInterestedStatus)}
                     </td>
-                    {!isAmApprovedPage && !isTechnicianPage && (
+                    {!isAmApprovedPage && !isTechnicianPage && !isFinancePayoutPage && (
                       <td className="px-2 py-2 text-xs text-gray-500 break-words">
                         {getSourceDisplay(lead)}
                       </td>
                     )}
-                    {!isAmApprovedPage && !isTechnicianPage && (
+                    {!isAmApprovedPage && !isTechnicianPage && !isFinancePayoutPage && (
                       <td className="px-2 py-2 text-xs">
                         <div className="text-gray-900 break-words">{getDealerName(lead)}</div>
                         {lead.updatedAt && (
@@ -951,7 +996,7 @@ export function Leads({ forcedLeadState, variant = 'DEFAULT' }: LeadsProps = {})
                         )}
                       </td>
                     )}
-                    {!isAmApprovedPage && !isTechnicianPage && (
+                    {!isAmApprovedPage && !isTechnicianPage && !isFinancePayoutPage && (
                       <td className="px-2 py-2 text-xs text-gray-500 break-words">
                         {getAuthorName(lead)}
                       </td>
