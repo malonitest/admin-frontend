@@ -21,6 +21,7 @@ interface LeadResponse {
   id: string;
   uniqueId?: number;
   status?: string;
+  debtCollectionStatus?: string | null;
   estimatedValue?: number | null;
   decidedAt?: string;
   amApprovedAt?: string;
@@ -702,6 +703,11 @@ export default function LeadDetailV2() {
   const [subStatusDraft, setSubStatusDraft] = useState<string>('');
   const [callAtDraft, setCallAtDraft] = useState<string>('');
   const [settingSubStatus, setSettingSubStatus] = useState(false);
+
+  const [showDebtCollectionPicker, setShowDebtCollectionPicker] = useState(false);
+  const [debtCollectionDraft, setDebtCollectionDraft] = useState<string>('');
+  const [statusDraft, setStatusDraft] = useState<string>('');
+  const [settingDebtCollection, setSettingDebtCollection] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
   const [documentsView, setDocumentsView] = useState<
@@ -2112,6 +2118,40 @@ export default function LeadDetailV2() {
     setShowDeclineReasons(true);
   };
 
+  const handleOpenInfo = () => {
+    if (!id) return;
+    navigate(`/leads/${id}/info`);
+  };
+
+  const handleOpenFinanceDetail = () => {
+    if (!id) return;
+    navigate(`/leads/${id}/finance`);
+  };
+
+  const handleOpenDebtCollection = () => {
+    setDebtCollectionDraft(String(lead?.debtCollectionStatus || ''));
+    setStatusDraft(String(lead?.status || ''));
+    setShowDebtCollectionPicker(true);
+  };
+
+  const handleConfirmDebtCollection = async () => {
+    if (!id) return;
+    setSettingDebtCollection(true);
+    try {
+      await axiosClient.patch(`/leads/${id}`, {
+        debtCollectionStatus: debtCollectionDraft.trim() ? debtCollectionDraft.trim() : null,
+        status: statusDraft.trim() ? statusDraft.trim() : undefined,
+      });
+      await refreshLead();
+      setShowDebtCollectionPicker(false);
+    } catch (e) {
+      console.error('Failed to update debt collection:', e);
+      alert('Nepodařilo se uložit vymáhání');
+    } finally {
+      setSettingDebtCollection(false);
+    }
+  };
+
   const handleConfirmDecline = async () => {
     if (!id) return;
     setSettingDeclined(true);
@@ -2636,24 +2676,26 @@ export default function LeadDetailV2() {
 
           <div className="flex justify-end gap-3">
             <button
-              onClick={handleSetDeclined}
+              onClick={lead?.status === 'CONVERTED' ? handleOpenInfo : handleSetDeclined}
               disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance || settingPaidOut}
               className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
             >
-              Zamítnout
+              {lead?.status === 'CONVERTED' ? 'Informace' : 'Zamítnout'}
             </button>
 
             <button
-              onClick={handleOpenSubStatus}
+              onClick={lead?.status === 'CONVERTED' ? handleOpenDebtCollection : handleOpenSubStatus}
               disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance || settingPaidOut}
               className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
             >
-              SubStatus update
+              {lead?.status === 'CONVERTED' ? 'Vymáhání' : 'SubStatus update'}
             </button>
 
             <button
               onClick={
-                lead?.status === 'SUPERVISOR_APPROVED'
+                lead?.status === 'CONVERTED'
+                  ? handleOpenFinanceDetail
+                  : lead?.status === 'SUPERVISOR_APPROVED'
                   ? handleHandToTechnician
                   : lead?.status === 'UPLOAD_DOCUMENTS'
                     ? handleHandToFinance
@@ -2664,7 +2706,9 @@ export default function LeadDetailV2() {
               disabled={saving || settingDeclined || settingAmApproved || settingTechnician || settingFinance || settingPaidOut}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
             >
-              {lead?.status === 'SUPERVISOR_APPROVED'
+              {lead?.status === 'CONVERTED'
+                ? 'Finance'
+                : lead?.status === 'SUPERVISOR_APPROVED'
                 ? (settingTechnician ? 'Předávám...' : 'Předat technikovi')
                 : lead?.status === 'UPLOAD_DOCUMENTS'
                   ? (settingFinance ? 'Předávám...' : 'Předat FŘ')
@@ -2729,6 +2773,61 @@ export default function LeadDetailV2() {
                   className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
                 >
                   {settingSubStatus ? 'Ukládám...' : 'Potvrdit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {showDebtCollectionPicker ? (
+          <div className="mt-3 bg-white rounded-lg p-4 shadow border border-gray-200">
+            <div className="text-sm font-medium text-gray-800 mb-2">Vymáhání</div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <select
+                value={debtCollectionDraft}
+                onChange={(e) => setDebtCollectionDraft(e.target.value)}
+                className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Bez vymáhání</option>
+                <option value="SOFT_LATE">Soft late</option>
+                <option value="NON_CONTACT">Non contact</option>
+                <option value="PAYMENT_PROMISE">Payment promise</option>
+                <option value="CAR_DETAINED">Car detained</option>
+                <option value="AUCTION">Auction</option>
+                <option value="SELL">Sell</option>
+              </select>
+
+              <select
+                value={statusDraft}
+                onChange={(e) => setStatusDraft(e.target.value)}
+                className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Status beze změny</option>
+                <option value="CONVERTED">Konvertován</option>
+                <option value="DECLINED">Zamítnuto</option>
+                <option value="RETURNED_TO_SALES">Vráceno do obchodu</option>
+                <option value="FINAL_APPROVAL">Finální schválení</option>
+                <option value="UPLOAD_DOCUMENTS">Dokumenty</option>
+                <option value="SUPERVISOR_APPROVED">Schválen AM</option>
+                <option value="NEW">Nový</option>
+              </select>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDebtCollectionPicker(false)}
+                  disabled={settingDebtCollection}
+                  className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDebtCollection}
+                  disabled={settingDebtCollection}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {settingDebtCollection ? 'Ukládám...' : 'Potvrdit'}
                 </button>
               </div>
             </div>

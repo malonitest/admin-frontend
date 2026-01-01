@@ -28,6 +28,8 @@ import Leads from '@/pages/Leads';
 import NewLeadV2 from '@/pages/NewLeadV2';
 import LeadDetail from '@/pages/LeadDetail';
 import LeadDetailV2 from '@/pages/LeadDetailV2';
+import InfoDetailLead from '@/pages/InfoDetailLead';
+import FinanceDetailLead from '@/pages/FinanceDetailLead';
 import ReportsCCFunnel1 from '@/pages/ReportsCCFunnel1';
 import ReportsTechnik from '@/pages/ReportsTechnik';
 import ReportsCCFunnelTechnik from '@/pages/ReportsCCFunnelTechnik';
@@ -134,6 +136,14 @@ export const router = createBrowserRouter([
       {
         path: 'leads/:id/v2',
         element: <LeadDetailV2 />,
+      },
+      {
+        path: 'leads/:id/info',
+        element: <InfoDetailLead />,
+      },
+      {
+        path: 'leads/:id/finance',
+        element: <FinanceDetailLead />,
       },
       {
         path: 'dealers',
