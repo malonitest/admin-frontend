@@ -13,6 +13,7 @@ interface Lead {
   uploadDocumentsAt?: string | null;
   callAt?: string | null;
   subStatus?: string | null;
+  debtCollectionStatus?: string | null;
   requestedAmount?: number | null;
   subStatusHistory?: Array<{
     subStatus?: string;
@@ -386,9 +387,27 @@ const normalizeSubstatus = (type: string | undefined): string => {
     WAITING_FOR_VIN: 'Čekáme na VIN',
     WAITING_FOR_EXTERIOR_PHOTO: 'Čekáme na foto exteriéru',
     CALL_AT_SPECIFIC_TIME: 'Zavolat v určitý čas',
+
+    // Debt collection (Vymáhání)
+    SOFT_LATE: 'DPD 1-7',
+    NON_CONTACT: 'Nekontaktní',
+    PAYMENT_PROMISE: 'Slíbil platbu',
+    CAR_DETAINED: 'Předáno k zajištění APS',
+    AUCTION: 'Zajištěno APS, botička',
+    SELL: 'Na sklade',
   };
   return typeMap[type] || type;
 };
+
+const DEBT_COLLECTION_SUBSTATUSES = [
+  { value: '', label: 'Všechny' },
+  { value: 'SOFT_LATE', label: 'DPD 1-7' },
+  { value: 'NON_CONTACT', label: 'Nekontaktní' },
+  { value: 'PAYMENT_PROMISE', label: 'Slíbil platbu' },
+  { value: 'CAR_DETAINED', label: 'Předáno k zajištění APS' },
+  { value: 'AUCTION', label: 'Zajištěno APS, botička' },
+  { value: 'SELL', label: 'Na sklade' },
+];
 
 const normalizeSource = (source: string | undefined): string => {
   if (!source) return '-';
@@ -477,12 +496,14 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterState, setFilterState] = useState(() => forcedLeadState ?? (searchParams.get('leadState') || ''));
   const [filterSubstate, setFilterSubstate] = useState(() => searchParams.get('leadSubState') || '');
+  const [filterDebtCollection, setFilterDebtCollection] = useState(() => searchParams.get('debtCollectionStatus') || '');
   const [filterPeriod, setFilterPeriod] = useState(() => searchParams.get('periodFilterType') || '');
   const [filterDealer, setFilterDealer] = useState(() => searchParams.get('dealerId') || '');
   
   const [appliedFilters, setAppliedFilters] = useState({
     leadState: forcedLeadState ?? (searchParams.get('leadState') || ''),
     leadSubState: searchParams.get('leadSubState') || '',
+    debtCollectionStatus: searchParams.get('debtCollectionStatus') || '',
     periodFilterType: searchParams.get('periodFilterType') || '',
     dealerId: searchParams.get('dealerId') || '',
   });
@@ -499,11 +520,13 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
     setSearchQuery('');
     setFilterState('');
     setFilterSubstate('');
+    setFilterDebtCollection('');
     setFilterPeriod('');
     setFilterDealer('');
     setAppliedFilters({
       leadState: '',
       leadSubState: '',
+      debtCollectionStatus: '',
       periodFilterType: '',
       dealerId: '',
     });
@@ -560,10 +583,11 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
     if (searchQuery) params.set('search', searchQuery);
     if (effectiveLeadState) params.set('leadState', effectiveLeadState);
     if (appliedFilters.leadSubState) params.set('leadSubState', appliedFilters.leadSubState);
+    if (appliedFilters.debtCollectionStatus) params.set('debtCollectionStatus', appliedFilters.debtCollectionStatus);
     if (appliedFilters.periodFilterType) params.set('periodFilterType', appliedFilters.periodFilterType);
     if (appliedFilters.dealerId) params.set('dealerId', appliedFilters.dealerId);
     setSearchParams(params, { replace: true });
-  }, [page, limit, searchQuery, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId, setSearchParams]);
+  }, [page, limit, searchQuery, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.debtCollectionStatus, appliedFilters.periodFilterType, appliedFilters.dealerId, setSearchParams]);
 
   const debouncedSearch = useDebounce(searchQuery, 400);
 
@@ -594,6 +618,7 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
       
       if (effectiveLeadState) params.leadState = effectiveLeadState;
       if (appliedFilters.leadSubState) params.leadSubState = appliedFilters.leadSubState;
+      if (appliedFilters.debtCollectionStatus) params.debtCollectionStatus = appliedFilters.debtCollectionStatus;
       if (appliedFilters.periodFilterType) params.periodFilterType = appliedFilters.periodFilterType;
       if (appliedFilters.dealerId) params.dealerId = appliedFilters.dealerId;
       if (forcedSubStatus) params.subStatus = forcedSubStatus;
@@ -607,7 +632,7 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId, forcedSubStatus]);
+  }, [page, limit, debouncedSearch, effectiveLeadState, appliedFilters.leadSubState, appliedFilters.debtCollectionStatus, appliedFilters.periodFilterType, appliedFilters.dealerId, forcedSubStatus]);
 
   const reminderTimersRef = useRef<Map<string, number>>(new Map());
 
@@ -725,6 +750,7 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
     setAppliedFilters({
       leadState: forcedLeadState ?? filterState,
       leadSubState: filterSubstate,
+      debtCollectionStatus: filterDebtCollection,
       periodFilterType: filterPeriod,
       dealerId: filterDealer,
     });
@@ -734,18 +760,25 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
   const handleResetFilter = () => {
     setFilterState(forcedLeadState ?? '');
     setFilterSubstate('');
+    setFilterDebtCollection('');
     setFilterPeriod('');
     setFilterDealer('');
     setAppliedFilters({
       leadState: forcedLeadState ?? '',
       leadSubState: '',
+      debtCollectionStatus: '',
       periodFilterType: '',
       dealerId: '',
     });
     setFilterOpen(false);
   };
 
-  const hasActiveFilters = effectiveLeadState || appliedFilters.leadSubState || appliedFilters.periodFilterType || appliedFilters.dealerId;
+  const hasActiveFilters =
+    effectiveLeadState ||
+    appliedFilters.leadSubState ||
+    appliedFilters.debtCollectionStatus ||
+    appliedFilters.periodFilterType ||
+    appliedFilters.dealerId;
 
   const formatDateTime = (dateStr: string) => {
     return formatDateTimePrague(dateStr);
@@ -881,7 +914,7 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
           <span>Filtr</span>
           {hasActiveFilters && (
             <span className="bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {[appliedFilters.leadState, appliedFilters.leadSubState, appliedFilters.periodFilterType, appliedFilters.dealerId].filter(Boolean).length}
+              {[appliedFilters.leadState, appliedFilters.leadSubState, appliedFilters.debtCollectionStatus, appliedFilters.periodFilterType, appliedFilters.dealerId].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -948,6 +981,19 @@ export function Leads({ forcedLeadState, forcedSubStatus, variant = 'DEFAULT', t
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   {LEAD_SUBSTATES.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm text-gray-600 mb-1">Substatus vymáhání</label>
+                <select
+                  value={filterDebtCollection}
+                  onChange={(e) => setFilterDebtCollection(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  {DEBT_COLLECTION_SUBSTATUSES.map(s => (
                     <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
                 </select>

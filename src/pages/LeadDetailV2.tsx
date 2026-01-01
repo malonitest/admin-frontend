@@ -455,6 +455,14 @@ const LEGACY_SUBSTATUS_LABELS: Record<string, string> = {
   ASSIGNED_TO_TECHNICIAN: 'Předáno technikovi',
   IN_PROGRESS: 'V řešení',
   AWAITING_FEEDBACK: 'Zpětný kontakt',
+
+  // Debt collection (Vymáhání)
+  SOFT_LATE: 'DPD 1-7',
+  NON_CONTACT: 'Nekontaktní',
+  PAYMENT_PROMISE: 'Slíbil platbu',
+  CAR_DETAINED: 'Předáno k zajištění APS',
+  AUCTION: 'Zajištěno APS, botička',
+  SELL: 'Na sklade',
 };
 
 const normalizeSubstatus = (type: string | undefined | null): string => {
@@ -2833,7 +2841,9 @@ export default function LeadDetailV2() {
 
             <div className="pt-2 border-t border-gray-200">
               <div className="text-xs text-gray-500">Aktuální substatus</div>
-              <div className="text-sm text-gray-800 mb-2">{normalizeSubstatus(lead?.subStatus)}</div>
+              <div className="text-sm text-gray-800 mb-2">
+                {normalizeSubstatus(lead?.debtCollectionStatus ?? lead?.subStatus)}
+              </div>
 
               <div className="text-xs text-gray-500 mb-1">Historie substatusů</div>
               <div className="border border-gray-200 rounded-lg p-2 max-h-64 overflow-auto bg-gray-50">
@@ -2951,7 +2961,8 @@ export default function LeadDetailV2() {
             ) : null}
             {lead?.subStatus ? (
               <div>
-                Substatus: <span className="font-medium">{normalizeSubstatus(lead.subStatus)}</span>
+                Substatus:{' '}
+                <span className="font-medium">{normalizeSubstatus(lead.debtCollectionStatus ?? lead.subStatus)}</span>
               </div>
             ) : null}
             {lead?.amApprovedAt ? (
