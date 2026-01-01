@@ -287,6 +287,12 @@ const LEAD_SUBSTATES = [
   { value: 'IN_PROGRESS', label: 'V řešení' },
   { value: 'AWAITING_FEEDBACK', label: 'Zpětný kontakt' },
   { value: 'ASSIGNED_TO_TECHNICIAN', label: 'Předáno technikovi' },
+  { value: 'NEEDS_1_DAY_TO_THINK', label: 'Potřebuje 1 den na rozmyšlenou' },
+  { value: 'NEEDS_2_3_DAYS_TO_THINK', label: 'Potřebuje 2–3 dny na rozmyšlenou' },
+  { value: 'CHECKING_CONTRACT', label: 'Kontroluje si smlouvu' },
+  { value: 'WAITING_FOR_VIN', label: 'Čekáme na VIN' },
+  { value: 'WAITING_FOR_EXTERIOR_PHOTO', label: 'Čekáme na fotografii exteriéru' },
+  { value: 'CALL_AT_SPECIFIC_TIME', label: 'Zavolat v určitý čas' },
 ];
 
 const PERIOD_FILTERS = [
@@ -338,6 +344,12 @@ const normalizeSubstatus = (type: string | undefined): string => {
     IN_PROGRESS: 'V řešení',
     AWAITING_FEEDBACK: 'Zpětný kontakt',
     ASSIGNED_TO_TECHNICIAN: 'Předáno tech.',
+    NEEDS_1_DAY_TO_THINK: '1 den na rozmyšlenou',
+    NEEDS_2_3_DAYS_TO_THINK: '2–3 dny na rozmyšlenou',
+    CHECKING_CONTRACT: 'Kontroluje smlouvu',
+    WAITING_FOR_VIN: 'Čekáme na VIN',
+    WAITING_FOR_EXTERIOR_PHOTO: 'Čekáme na foto exteriéru',
+    CALL_AT_SPECIFIC_TIME: 'Zavolat v určitý čas',
   };
   return typeMap[type] || type;
 };
