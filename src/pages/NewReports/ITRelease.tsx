@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { axiosClient } from '@/api/axiosClient';
 import { Table } from '@/components/Table';
 import { formatDateTimePrague } from '@/utils/dateTime';
+import * as XLSX from 'xlsx';
 
 type PeriodType = 'day' | 'month' | 'year' | 'custom';
 type RepoFilter = 'all' | 'car-backrent-monorepo' | 'admin-frontend';
@@ -98,16 +99,47 @@ export default function NewReportsITRelease() {
     return commits.reduce((count, c) => count + (c.estimatedHours == null ? 0 : 1), 0);
   }, [data]);
 
+  const handleExportExcel = () => {
+    const rows = tableRows.map((c) => ({
+      Datum: formatDateTimePrague(c.date),
+      Repo: formatRepoLabel(c.repo),
+      Popisek: c.message,
+      'Odhad (h)': c.estimatedHours ?? '',
+      SHA: c.sha,
+      URL: c.url,
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Commits');
+
+    const from = (data?.dateFrom ?? '').slice(0, 10);
+    const to = (data?.dateTo ?? '').slice(0, 10);
+    const fileRepo = repo === 'all' ? 'all' : repo;
+    const filename = `IT_release_${fileRepo}_${from || 'from'}_${to || 'to'}.xlsx`;
+
+    XLSX.writeFile(wb, filename);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">IT release</h1>
-        <button
-          onClick={fetchReport}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Obnovit
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportExcel}
+            disabled={loading || !data || tableRows.length === 0}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Excel
+          </button>
+          <button
+            onClick={fetchReport}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Obnovit
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow p-4 space-y-4">
@@ -132,6 +164,16 @@ export default function NewReportsITRelease() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="min-w-[180px]">
+            <span className="block text-sm font-medium text-gray-700 mb-1">Celkem hodin</span>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900">
+              {loading || error || !data ? '-' : `${totalEstimatedHours.toFixed(2)} h`}
+            </div>
+            {!loading && !error && data && (
+              <div className="text-xs text-gray-500 mt-1">z {estimatedHoursCount} commitů s odhadem</div>
+            )}
           </div>
 
           <div className="min-w-[220px]">
@@ -185,11 +227,6 @@ export default function NewReportsITRelease() {
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Commity</h2>
           <p className="text-sm text-gray-500">Časová zóna zobrazení: Europe/Prague</p>
-          {!loading && !error && (
-            <p className="text-sm text-gray-500">
-              Odhad celkem: {totalEstimatedHours.toFixed(2)} h (z {estimatedHoursCount} commitů s odhadem)
-            </p>
-          )}
         </div>
 
         <div className="p-4">
