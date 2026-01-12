@@ -50,6 +50,7 @@ export const Marketing = () => {
   const [timeSeries, setTimeSeries] = useState<TimeSeries[]>([]);
   const [funnel, setFunnel] = useState<FunnelAnalysis[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>({
     from: format(subMonths(new Date(), 1), 'yyyy-MM-dd'),
     to: format(new Date(), 'yyyy-MM-dd'),
@@ -63,9 +64,13 @@ export const Marketing = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setErrorMessage(null);
+
+      const dateFrom = dateRange.from ? `${dateRange.from}T00:00:00.000Z` : undefined;
+      const dateTo = dateRange.to ? `${dateRange.to}T23:59:59.999Z` : undefined;
       const params = {
-        dateFrom: dateRange.from,
-        dateTo: dateRange.to,
+        dateFrom,
+        dateTo,
         sources: selectedSources.length > 0 ? selectedSources : undefined,
       };
 
@@ -79,6 +84,17 @@ export const Marketing = () => {
       setTimeSeries(timeSeriesData);
       setFunnel(funnelData);
     } catch (error) {
+      const message =
+        typeof error === 'object' &&
+        error &&
+        'response' in error &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error as any).response?.data?.message
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            String((error as any).response.data.message)
+          : 'Request failed';
+
+      setErrorMessage(message);
       console.error('Failed to fetch marketing data:', error);
     } finally {
       setLoading(false);
@@ -134,7 +150,9 @@ export const Marketing = () => {
   if (!overview) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-lg">No data available</div>
+        <div className="text-lg">
+          {errorMessage ? `Error: ${errorMessage}` : 'No data available'}
+        </div>
       </div>
     );
   }
