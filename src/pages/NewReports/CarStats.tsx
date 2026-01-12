@@ -28,7 +28,7 @@ export function NewReportsCarStats() {
       const response = await axiosClient.get(`/stats/car-stats?${params.toString()}`);
       setData(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data');
+      setError(err instanceof Error ? err.message : 'Nepodarilo se nacist data');
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export function NewReportsCarStats() {
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">Obdobi:</span>
           <div className="flex gap-2">
             <button
               onClick={() => setPeriod('day')}
@@ -73,7 +73,7 @@ export function NewReportsCarStats() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Týden
+              Tyden
             </button>
             <button
               onClick={() => setPeriod('month')}
@@ -83,7 +83,7 @@ export function NewReportsCarStats() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Mìsíc
+              Mesic
             </button>
             <button
               onClick={() => setPeriod('year')}
@@ -103,7 +103,7 @@ export function NewReportsCarStats() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Vlastní
+              Vlastni
             </button>
           </div>
 
@@ -136,13 +136,13 @@ export function NewReportsCarStats() {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-          <p className="mt-2 text-gray-600">Naèítání...</p>
+          <p className="mt-2 text-gray-600">Nacitam...</p>
         </div>
       )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          <p className="font-medium">Chyba pøi naèítání dat:</p>
+          <p className="font-medium">Chyba pri nacitani dat:</p>
           <p>{error}</p>
         </div>
       )}
