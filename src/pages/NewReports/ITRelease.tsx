@@ -88,6 +88,16 @@ export default function NewReportsITRelease() {
     return [...commits].sort((a, b) => b.date.localeCompare(a.date));
   }, [data]);
 
+  const totalEstimatedHours = useMemo(() => {
+    const commits = data?.commits ?? [];
+    return commits.reduce((sum, c) => sum + (c.estimatedHours ?? 0), 0);
+  }, [data]);
+
+  const estimatedHoursCount = useMemo(() => {
+    const commits = data?.commits ?? [];
+    return commits.reduce((count, c) => count + (c.estimatedHours == null ? 0 : 1), 0);
+  }, [data]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -175,6 +185,11 @@ export default function NewReportsITRelease() {
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Commity</h2>
           <p className="text-sm text-gray-500">Časová zóna zobrazení: Europe/Prague</p>
+          {!loading && !error && (
+            <p className="text-sm text-gray-500">
+              Odhad celkem: {totalEstimatedHours.toFixed(2)} h (z {estimatedHoursCount} commitů s odhadem)
+            </p>
+          )}
         </div>
 
         <div className="p-4">
