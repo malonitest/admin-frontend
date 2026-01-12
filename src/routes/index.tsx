@@ -22,7 +22,8 @@ import {
   NewReportsCarStats,
   NewReportsMarketingCosts,
   NewReportsCCReport,
-  NewReportsITRelease
+  NewReportsITRelease,
+  Calculator
 } from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
@@ -298,7 +299,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'calculator',
-        element: <PlaceholderPage title="Kalkulátor splátek" />,
+        element: <Calculator />,
       },
       {
         path: 'contacts',
