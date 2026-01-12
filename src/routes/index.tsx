@@ -280,13 +280,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'new-reports/marketing',
-        element: (
-          <ProtectedRoute>
-            <AdminLayout>
-              <Marketing />
-            </AdminLayout>
-          </ProtectedRoute>
-        ),
+        element: <Marketing />,
       },
       {
         path: 'new-reports/funnel',
