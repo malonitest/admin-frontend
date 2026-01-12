@@ -199,7 +199,7 @@ export function NewReportsFinancial() {
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          <p className="font-medium">Chyba p�i na��t�n� dat:</p>
+          <p className="font-medium">Chyba pri nacitani dat:</p>
           <p>{error}</p>
         </div>
       )}
@@ -211,7 +211,7 @@ export function NewReportsFinancial() {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Celkov� p��jmy</p>
+                  <p className="text-sm font-medium text-gray-600">Celkove prijmy</p>
                   <p className="text-2xl font-bold text-green-600 mt-1">
                     {formatCurrency(data.stats.totalRevenue)}
                   </p>
@@ -223,14 +223,14 @@ export function NewReportsFinancial() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                ? m�s��n�: {formatCurrency(data.stats.averageMonthlyRevenue)}
+                Prumer mesicne: {formatCurrency(data.stats.averageMonthlyRevenue)}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Celkov� n�klady</p>
+                  <p className="text-sm font-medium text-gray-600">Celkove naklady</p>
                   <p className="text-2xl font-bold text-red-600 mt-1">
                     {formatCurrency(data.stats.totalCosts)}
                   </p>
@@ -249,7 +249,7 @@ export function NewReportsFinancial() {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">�ist� zisk</p>
+                  <p className="text-sm font-medium text-gray-600">Cisty zisk</p>
                   <p className={`text-2xl font-bold mt-1 ${data.stats.totalProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                     {formatCurrency(data.stats.totalProfit)}
                   </p>
@@ -261,14 +261,14 @@ export function NewReportsFinancial() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Mar�e: {formatPercent(data.stats.profitMargin)}
+                Marze: {formatPercent(data.stats.profitMargin)}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Aktivn� leasingy</p>
+                  <p className="text-sm font-medium text-gray-600">Aktivni leasingy</p>
                   <p className="text-2xl font-bold text-indigo-600 mt-1">
                     {data.stats.activeLeases}
                   </p>
@@ -287,7 +287,7 @@ export function NewReportsFinancial() {
 
           {/* Revenue vs Costs Trend */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">V�voj p��jm� a n�klad�</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vyvoj prijmu a nakladu</h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={data.monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -303,7 +303,7 @@ export function NewReportsFinancial() {
                   dataKey="totalRevenue" 
                   stroke={COLORS.revenue} 
                   strokeWidth={2}
-                  name="P��jmy"
+                  name="Prijmy"
                   dot={{ r: 4 }}
                 />
                 <Line 
@@ -311,7 +311,7 @@ export function NewReportsFinancial() {
                   dataKey="totalCosts" 
                   stroke={COLORS.costs} 
                   strokeWidth={2}
-                  name="N�klady"
+                  name="Naklady"
                   dot={{ r: 4 }}
                 />
                 <Line 
@@ -330,7 +330,7 @@ export function NewReportsFinancial() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Revenue Breakdown */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura p��jm�</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura prijmu</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -372,7 +372,7 @@ export function NewReportsFinancial() {
 
             {/* Cost Breakdown */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura n�klad�</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura nakladu</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -415,37 +415,37 @@ export function NewReportsFinancial() {
 
           {/* Monthly Breakdown */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">M�s��n� p�ehled</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Mesicni prehled</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      M�s�c
+                      Mesic
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      N�jem
+                      Najem
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Admin. poplatky
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Celkem p��jmy
+                      Celkem prijmy
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Odkup aut
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Celkem n�klady
+                      Celkem naklady
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Zisk
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mar�e
+                      Marze
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Aktivn�
+                      Aktivni
                     </th>
                   </tr>
                 </thead>
@@ -525,7 +525,7 @@ export function NewReportsFinancial() {
 
           {/* Active Leases Bar Chart */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">V�voj aktivn�ch leasing�</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vyvoj aktivnich leasingu</h2>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={data.monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -533,8 +533,8 @@ export function NewReportsFinancial() {
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="activeLeases" fill={COLORS.info} name="Aktivn� leasingy" />
-                <Bar dataKey="newLeases" fill={COLORS.revenue} name="Nov�" />
+                <Bar dataKey="activeLeases" fill={COLORS.info} name="Aktivni leasingy" />
+                <Bar dataKey="newLeases" fill={COLORS.revenue} name="Nove" />
               </BarChart>
             </ResponsiveContainer>
           </div>
