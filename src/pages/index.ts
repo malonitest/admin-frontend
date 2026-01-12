@@ -18,5 +18,6 @@ export {
   NewReportsFinancial, 
   NewReportsFunnelTechnik, 
   NewReportsCarStats,
-  NewReportsMarketingCosts 
+  NewReportsMarketingCosts,
+  NewReportsCCReport
 } from './NewReports';

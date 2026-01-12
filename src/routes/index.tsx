@@ -20,7 +20,8 @@ import {
   NewReportsFinancial,
   NewReportsFunnelTechnik,
   NewReportsCarStats,
-  NewReportsMarketingCosts
+  NewReportsMarketingCosts,
+  NewReportsCCReport
 } from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
@@ -270,7 +271,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'new-reports/cc',
-        element: <PlaceholderPage title="CC Report" />,
+        element: <NewReportsCCReport />,
       },
       {
         path: 'new-reports/marketing',
