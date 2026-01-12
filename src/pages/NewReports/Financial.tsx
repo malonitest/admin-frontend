@@ -95,7 +95,7 @@ export function NewReportsFinancial() {
       const response = await axiosClient.get(`/stats/financial-report?${params.toString()}`);
       setData(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nepodaøilo se naèíst data');
+      setError(err instanceof Error ? err.message : 'Nepodarilo se nacist data');
     } finally {
       setLoading(false);
     }
@@ -129,26 +129,26 @@ export function NewReportsFinancial() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Finanèní Report (P/L)</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Financni Report (P/L)</h1>
         <button
           onClick={fetchData}
           className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          ?? Obnovit
+          Obnovit
         </button>
       </div>
 
       {/* Period Filter */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Období:</span>
+          <span className="text-sm font-medium text-gray-700">Obdobi:</span>
           <div className="flex gap-2">
             {[
               { value: 'day', label: 'Den' },
-              { value: 'week', label: 'Týden' },
-              { value: 'month', label: 'Mìsíc' },
+              { value: 'week', label: 'Tyden' },
+              { value: 'month', label: 'Mesic' },
               { value: 'year', label: 'Rok' },
-              { value: 'custom', label: 'Vlastní' }
+              { value: 'custom', label: 'Vlastni' }
             ].map((p) => (
               <button
                 key={p.value}
@@ -193,13 +193,13 @@ export function NewReportsFinancial() {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-          <p className="mt-2 text-gray-600">Naèítání finanèních dat...</p>
+          <p className="mt-2 text-gray-600">Nacitam financni data...</p>
         </div>
       )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          <p className="font-medium">Chyba pøi naèítání dat:</p>
+          <p className="font-medium">Chyba pï¿½i naï¿½ï¿½tï¿½nï¿½ dat:</p>
           <p>{error}</p>
         </div>
       )}
@@ -211,7 +211,7 @@ export function NewReportsFinancial() {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Celkové pøíjmy</p>
+                  <p className="text-sm font-medium text-gray-600">Celkovï¿½ pï¿½ï¿½jmy</p>
                   <p className="text-2xl font-bold text-green-600 mt-1">
                     {formatCurrency(data.stats.totalRevenue)}
                   </p>
@@ -223,14 +223,14 @@ export function NewReportsFinancial() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                ? mìsíènì: {formatCurrency(data.stats.averageMonthlyRevenue)}
+                ? mï¿½sï¿½ï¿½nï¿½: {formatCurrency(data.stats.averageMonthlyRevenue)}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Celkové náklady</p>
+                  <p className="text-sm font-medium text-gray-600">Celkovï¿½ nï¿½klady</p>
                   <p className="text-2xl font-bold text-red-600 mt-1">
                     {formatCurrency(data.stats.totalCosts)}
                   </p>
@@ -249,7 +249,7 @@ export function NewReportsFinancial() {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Èistý zisk</p>
+                  <p className="text-sm font-medium text-gray-600">ï¿½istï¿½ zisk</p>
                   <p className={`text-2xl font-bold mt-1 ${data.stats.totalProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                     {formatCurrency(data.stats.totalProfit)}
                   </p>
@@ -261,14 +261,14 @@ export function NewReportsFinancial() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Marže: {formatPercent(data.stats.profitMargin)}
+                Marï¿½e: {formatPercent(data.stats.profitMargin)}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Aktivní leasingy</p>
+                  <p className="text-sm font-medium text-gray-600">Aktivnï¿½ leasingy</p>
                   <p className="text-2xl font-bold text-indigo-600 mt-1">
                     {data.stats.activeLeases}
                   </p>
@@ -287,7 +287,7 @@ export function NewReportsFinancial() {
 
           {/* Revenue vs Costs Trend */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vývoj pøíjmù a nákladù</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vï¿½voj pï¿½ï¿½jmï¿½ a nï¿½kladï¿½</h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={data.monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -303,7 +303,7 @@ export function NewReportsFinancial() {
                   dataKey="totalRevenue" 
                   stroke={COLORS.revenue} 
                   strokeWidth={2}
-                  name="Pøíjmy"
+                  name="Pï¿½ï¿½jmy"
                   dot={{ r: 4 }}
                 />
                 <Line 
@@ -311,7 +311,7 @@ export function NewReportsFinancial() {
                   dataKey="totalCosts" 
                   stroke={COLORS.costs} 
                   strokeWidth={2}
-                  name="Náklady"
+                  name="Nï¿½klady"
                   dot={{ r: 4 }}
                 />
                 <Line 
@@ -330,7 +330,7 @@ export function NewReportsFinancial() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Revenue Breakdown */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura pøíjmù</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura pï¿½ï¿½jmï¿½</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -372,7 +372,7 @@ export function NewReportsFinancial() {
 
             {/* Cost Breakdown */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura nákladù</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Struktura nï¿½kladï¿½</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -415,37 +415,37 @@ export function NewReportsFinancial() {
 
           {/* Monthly Breakdown */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Mìsíèní pøehled</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Mï¿½sï¿½ï¿½nï¿½ pï¿½ehled</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mìsíc
+                      Mï¿½sï¿½c
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nájem
+                      Nï¿½jem
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Admin. poplatky
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Celkem pøíjmy
+                      Celkem pï¿½ï¿½jmy
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Odkup aut
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Celkem náklady
+                      Celkem nï¿½klady
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Zisk
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Marže
+                      Marï¿½e
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Aktivní
+                      Aktivnï¿½
                     </th>
                   </tr>
                 </thead>
@@ -525,7 +525,7 @@ export function NewReportsFinancial() {
 
           {/* Active Leases Bar Chart */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vývoj aktivních leasingù</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vï¿½voj aktivnï¿½ch leasingï¿½</h2>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={data.monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -533,8 +533,8 @@ export function NewReportsFinancial() {
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="activeLeases" fill={COLORS.info} name="Aktivní leasingy" />
-                <Bar dataKey="newLeases" fill={COLORS.revenue} name="Nové" />
+                <Bar dataKey="activeLeases" fill={COLORS.info} name="Aktivnï¿½ leasingy" />
+                <Bar dataKey="newLeases" fill={COLORS.revenue} name="Novï¿½" />
               </BarChart>
             </ResponsiveContainer>
           </div>
