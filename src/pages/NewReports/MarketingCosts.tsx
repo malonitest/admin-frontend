@@ -52,7 +52,7 @@ const MarketingCosts: React.FC = () => {
   };
 
   const handleDelete = async (costId: string) => {
-    if (window.confirm('Opravdu chcete smazat tento záznam?')) {
+    if (window.confirm('Opravdu chcete smazat tento zaznam?')) {
       await deleteMutation.mutateAsync(costId);
     }
   };
@@ -64,7 +64,7 @@ const MarketingCosts: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['marketing-roi'] });
   };
 
-  const sources = ['Google Ads', 'Facebook', 'Instagram', 'Seznam', 'Ostatní'];
+  const sources = ['Google Ads', 'Facebook', 'Instagram', 'Seznam', 'Ostatni'];
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' }).format(amount);
@@ -86,9 +86,9 @@ const MarketingCosts: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Marketingové náklady</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Marketingovï¿½ nï¿½klady</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Správa mìsíèních výdajù za marketing a výpoèet ROI
+            Sprava mesicnich vydaju za marketing a vypocet ROI
           </p>
         </div>
         <button
@@ -98,7 +98,7 @@ const MarketingCosts: React.FC = () => {
           }}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          + Pøidat náklad
+          + Pridat naklad
         </button>
       </div>
 
@@ -130,7 +130,7 @@ const MarketingCosts: React.FC = () => {
               onChange={(e) => setSelectedSource(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="">Všechny zdroje</option>
+              <option value="">Vsechny zdroje</option>
               {sources.map((source) => (
                 <option key={source} value={source}>
                   {source}
@@ -144,14 +144,14 @@ const MarketingCosts: React.FC = () => {
       {/* ROI Overview */}
       {roiData && !roiLoading && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">ROI pøehled</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">ROI prehled</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Zdroj</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Náklady</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Pøíjmy</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Naklady</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Prijmy</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700">ROI</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700">ROAS</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700">CPL</th>
@@ -193,19 +193,19 @@ const MarketingCosts: React.FC = () => {
       {/* Costs Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Mìsíèní náklady</h2>
+          <h2 className="text-xl font-bold text-gray-900">Mesicni naklady</h2>
         </div>
         <div className="overflow-x-auto">
           {costsLoading ? (
-            <div className="p-6 text-center text-gray-500">Naèítání...</div>
+            <div className="p-6 text-center text-gray-500">Nacitani...</div>
           ) : costsData && costsData.results.length > 0 ? (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Mìsíc</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Mesic</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Zdroj</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Náklad</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Poznámka</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Naklad</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Poznamka</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700">Akce</th>
                 </tr>
               </thead>
@@ -240,7 +240,7 @@ const MarketingCosts: React.FC = () => {
             </table>
           ) : (
             <div className="p-6 text-center text-gray-500">
-              Žádné náklady pro vybrané období
+              Zadna data pro vybrane obdobi
             </div>
           )}
         </div>
