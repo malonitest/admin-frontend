@@ -36,7 +36,7 @@ const Financial: React.FC = () => {
         dateFrom = new Date(now.getFullYear() - 5, 0, 1, 0, 0, 0, 0);
       }
       
-      const response = await axiosClient.get('/v1/stats/financial-report', {
+      const response = await axiosClient.get('/stats/financial-report', {
         params: { 
           dateFrom: dateFrom.toISOString(),
           dateTo: dateTo.toISOString()
