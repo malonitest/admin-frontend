@@ -33,7 +33,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
       if (error.response?.data?.message) {
         setErrors({ general: error.response.data.message });
       } else {
-        setErrors({ general: 'Nepodaøilo se uložit náklad' });
+        setErrors({ general: 'Nepodarilo se ulozit naklad' });
       }
     },
   });
@@ -48,7 +48,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
       if (error.response?.data?.message) {
         setErrors({ general: error.response.data.message });
       } else {
-        setErrors({ general: 'Nepodaøilo se aktualizovat náklad' });
+        setErrors({ general: 'Nepodarilo se aktualizovat naklad' });
       }
     },
   });
@@ -60,8 +60,8 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
     // Validation
     const newErrors: Record<string, string> = {};
     if (!formData.source) newErrors.source = 'Vyberte zdroj';
-    if (!formData.month) newErrors.month = 'Zadejte mìsíc';
-    if (formData.cost < 0) newErrors.cost = 'Náklad musí být kladné èíslo';
+    if (!formData.month) newErrors.month = 'Zadejte mesic';
+    if (formData.cost < 0) newErrors.cost = 'Naklad musi byt kladne cislo';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -95,7 +95,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
     }
   };
 
-  const sources = ['Google Ads', 'Facebook', 'Instagram', 'Seznam', 'Ostatní'];
+  const sources = ['Google Ads', 'Facebook', 'Instagram', 'Seznam', 'Ostatni'];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -103,7 +103,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
-            {cost ? 'Upravit náklad' : 'Pøidat náklad'}
+            {cost ? 'Upravit naklad' : 'Pridat naklad'}
           </h2>
         </div>
 
@@ -138,7 +138,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
           {/* Month */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mìsíc <span className="text-red-500">*</span>
+              Mesic <span className="text-red-500">*</span>
             </label>
             <input
               type="month"
@@ -153,7 +153,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
           {/* Cost */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Náklad (Kè) <span className="text-red-500">*</span>
+              Naklad (Kc) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -162,7 +162,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
               value={formData.cost}
               onChange={(e) => handleChange('cost', parseFloat(e.target.value) || 0)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="napø. 50000"
+              placeholder="napr. 50000"
             />
             {errors.cost && <p className="mt-1 text-sm text-red-600">{errors.cost}</p>}
           </div>
@@ -170,14 +170,14 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
           {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Poznámka (volitelné)
+              Poznamka (volitelne)
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => handleChange('notes', e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="napø. Kampaò zimní výprodej"
+              placeholder="napr. Kampan zimni vyprodej"
             />
           </div>
 
@@ -188,7 +188,7 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
               onClick={onCancel}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Zrušit
+              Zrusit
             </button>
             <button
               type="submit"
@@ -196,10 +196,10 @@ const MarketingCostForm: React.FC<Props> = ({ cost, onSuccess, onCancel }) => {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
             >
               {createMutation.isPending || updateMutation.isPending
-                ? 'Ukládání...'
+                ? 'Ukladani...'
                 : cost
-                ? 'Uložit'
-                : 'Pøidat'}
+                ? 'Ulozit'
+                : 'Pridat'}
             </button>
           </div>
         </form>
