@@ -66,6 +66,7 @@ const navigation: NavItem[] = [
       { name: 'Car Stats', href: '/new-reports/car-stats' },
       { name: 'Admin Dashboard', href: '/new-reports/admin-dashboard' },
       { name: 'CC Report', href: '/new-reports/cc' },
+      { name: 'IT release', href: '/new-reports/it-release' },
       { name: 'Marketing Report', href: '/new-reports/marketing' },
       { name: 'Funnel General', href: '/new-reports/funnel' },
     ]

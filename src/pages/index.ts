@@ -19,5 +19,6 @@ export {
   NewReportsFunnelTechnik, 
   NewReportsCarStats,
   NewReportsMarketingCosts,
-  NewReportsCCReport
+  NewReportsCCReport,
+  NewReportsITRelease
 } from './NewReports';

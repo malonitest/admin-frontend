@@ -21,7 +21,8 @@ import {
   NewReportsFunnelTechnik,
   NewReportsCarStats,
   NewReportsMarketingCosts,
-  NewReportsCCReport
+  NewReportsCCReport,
+  NewReportsITRelease
 } from '@/pages';
 import { ProtectedRoute } from './ProtectedRoute';
 import Dealers from '@/pages/Dealers';
@@ -272,6 +273,10 @@ export const router = createBrowserRouter([
       {
         path: 'new-reports/cc',
         element: <NewReportsCCReport />,
+      },
+      {
+        path: 'new-reports/it-release',
+        element: <NewReportsITRelease />,
       },
       {
         path: 'new-reports/marketing',
