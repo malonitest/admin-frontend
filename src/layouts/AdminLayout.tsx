@@ -18,6 +18,7 @@ interface NavItem {
 // Menu položky podle vzoru
 const navigation: NavItem[] = [
   { name: 'Statistiky', href: '/', icon: StatsIcon },
+  { name: 'Collection', href: '/collection', icon: CollectionIcon },
   {
     name: 'Pronájmy',
     href: '/leases',
@@ -96,6 +97,18 @@ function LeadIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    </svg>
+  );
+}
+
+function CollectionIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"
+      />
     </svg>
   );
 }

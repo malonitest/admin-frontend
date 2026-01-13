@@ -35,6 +35,7 @@ import LeadDetail from '@/pages/LeadDetail';
 import LeadDetailV2 from '@/pages/LeadDetailV2';
 import InfoDetailLead from '@/pages/InfoDetailLead';
 import FinanceDetailLead from '@/pages/FinanceDetailLead';
+import Collection from '@/pages/Collection';
 import ReportsCCFunnel1 from '@/pages/ReportsCCFunnel1';
 import ReportsTechnik from '@/pages/ReportsTechnik';
 import ReportsCCFunnelTechnik from '@/pages/ReportsCCFunnelTechnik';
@@ -161,6 +162,10 @@ export const router = createBrowserRouter([
         path: 'leases',
         element: <Leads forcedLeadState="CONVERTED" title="Pronájmy" />,
       },
+        {
+          path: 'collection',
+          element: <Collection />,
+        },
       {
         path: 'leases/administration',
         element: <LeasesAdministration />,
