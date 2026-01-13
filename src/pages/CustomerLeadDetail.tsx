@@ -219,6 +219,64 @@ export function CustomerLeadDetail() {
                 className="w-full border rounded-md px-3 py-2 text-sm"
               />
             </label>
+
+            <div className="border-t pt-3">
+              <div className="text-sm font-semibold text-gray-900 mb-2">Adresa</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="text-sm md:col-span-2">
+                  <div className="text-gray-600 mb-1">Ulice a číslo</div>
+                  <input value={form.address} onChange={updateField('address')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                </label>
+                <label className="text-sm">
+                  <div className="text-gray-600 mb-1">Město</div>
+                  <input value={form.city} onChange={updateField('city')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                </label>
+                <label className="text-sm">
+                  <div className="text-gray-600 mb-1">PSČ</div>
+                  <input value={form.postalCode} onChange={updateField('postalCode')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                </label>
+                <label className="text-sm md:col-span-2">
+                  <div className="text-gray-600 mb-1">Země</div>
+                  <input value={form.country} onChange={updateField('country')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t pt-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="text-sm font-semibold text-gray-900">Korespondenční adresa</div>
+                <button
+                  type="button"
+                  onClick={toggleCorrespondence}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    form.enableAddress2 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {form.enableAddress2 ? 'Aktivní' : 'Není'}
+                </button>
+              </div>
+
+              {form.enableAddress2 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  <label className="text-sm md:col-span-2">
+                    <div className="text-gray-600 mb-1">Ulice a číslo</div>
+                    <input value={form.address2} onChange={updateField('address2')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                  </label>
+                  <label className="text-sm">
+                    <div className="text-gray-600 mb-1">Město</div>
+                    <input value={form.city2} onChange={updateField('city2')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                  </label>
+                  <label className="text-sm">
+                    <div className="text-gray-600 mb-1">PSČ</div>
+                    <input value={form.postalCode2} onChange={updateField('postalCode2')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                  </label>
+                  <label className="text-sm md:col-span-2">
+                    <div className="text-gray-600 mb-1">Země</div>
+                    <input value={form.country2} onChange={updateField('country2')} className="w-full border rounded-md px-3 py-2 text-sm" />
+                  </label>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -231,61 +289,6 @@ export function CustomerLeadDetail() {
         </div>
       </div>
 
-      <div className="bg-white border rounded-lg p-4 space-y-4">
-        <div className="text-sm font-semibold text-gray-900">Adresa</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <label className="text-sm md:col-span-2">
-            <div className="text-gray-600 mb-1">Ulice a číslo</div>
-            <input value={form.address} onChange={updateField('address')} className="w-full border rounded-md px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm">
-            <div className="text-gray-600 mb-1">Město</div>
-            <input value={form.city} onChange={updateField('city')} className="w-full border rounded-md px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm">
-            <div className="text-gray-600 mb-1">PSČ</div>
-            <input value={form.postalCode} onChange={updateField('postalCode')} className="w-full border rounded-md px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm md:col-span-2">
-            <div className="text-gray-600 mb-1">Země</div>
-            <input value={form.country} onChange={updateField('country')} className="w-full border rounded-md px-3 py-2 text-sm" />
-          </label>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="text-sm font-semibold text-gray-900">Korespondenční adresa</div>
-          <button
-            type="button"
-            onClick={toggleCorrespondence}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              form.enableAddress2 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {form.enableAddress2 ? 'Aktivní' : 'Není'}
-          </button>
-        </div>
-
-        {form.enableAddress2 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <label className="text-sm md:col-span-2">
-              <div className="text-gray-600 mb-1">Ulice a číslo</div>
-              <input value={form.address2} onChange={updateField('address2')} className="w-full border rounded-md px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm">
-              <div className="text-gray-600 mb-1">Město</div>
-              <input value={form.city2} onChange={updateField('city2')} className="w-full border rounded-md px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm">
-              <div className="text-gray-600 mb-1">PSČ</div>
-              <input value={form.postalCode2} onChange={updateField('postalCode2')} className="w-full border rounded-md px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm md:col-span-2">
-              <div className="text-gray-600 mb-1">Země</div>
-              <input value={form.country2} onChange={updateField('country2')} className="w-full border rounded-md px-3 py-2 text-sm" />
-            </label>
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
