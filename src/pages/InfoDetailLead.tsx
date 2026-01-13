@@ -176,7 +176,7 @@ export default function InfoDetailLead() {
       const received = receivedPayments[idx];
       const diff =
         expected && typeof expected.amount === 'number' && received && typeof received.amount === 'number'
-          ? expected.amount - received.amount
+          ? received.amount - expected.amount
           : null;
       return {
         i: idx + 1,
@@ -185,6 +185,24 @@ export default function InfoDetailLead() {
         diff,
       };
     });
+  }, [expectedPayments, receivedPayments]);
+
+  const debtSummary = useMemo(() => {
+    const now = new Date();
+
+    const expectedToDate = expectedPayments
+      .filter((p) => p && typeof p.amount === 'number' && p.due.getTime() <= now.getTime())
+      .reduce((sum, p) => sum + (p.amount as number), 0);
+
+    const receivedToDate = receivedPayments
+      .filter((p) => p?.date && typeof p.amount === 'number' && (p.date as Date).getTime() <= now.getTime())
+      .reduce((sum, p) => sum + (p.amount as number), 0);
+
+    const rawDebt = expectedToDate - receivedToDate;
+    const debt = Math.max(0, rawDebt);
+    const credit = Math.max(0, -rawDebt);
+
+    return { expectedToDate, receivedToDate, debt, credit };
   }, [expectedPayments, receivedPayments]);
 
   const downloadInvoiceBlob = async (externalToken: string) => {
@@ -280,6 +298,18 @@ export default function InfoDetailLead() {
       <div className="mt-4 bg-white rounded-lg border border-gray-200 p-4 shadow">
         <div className="text-base font-semibold text-gray-900 mb-2">Splátkový kalendář</div>
 
+        <div className="mb-3 flex flex-wrap gap-4">
+          <div className="text-sm text-gray-700">
+            Dluh k dnešnímu dni: <span className="font-semibold">{formatMoneyCz(debtSummary.debt)}</span>
+            {debtSummary.credit > 0 ? (
+              <span className="text-xs text-gray-500 ml-2">(přeplatek: {formatMoneyCz(debtSummary.credit)})</span>
+            ) : null}
+          </div>
+          <div className="text-xs text-gray-500">
+            Očekáváno do dneška: {formatMoneyCz(debtSummary.expectedToDate)} · Přijato do dneška: {formatMoneyCz(debtSummary.receivedToDate)}
+          </div>
+        </div>
+
         {expectedPayments.length === 0 && receivedPayments.length === 0 ? (
           <div className="text-sm text-gray-600">Zatím není k dispozici (chybí smlouva / platby).</div>
         ) : (
@@ -292,7 +322,7 @@ export default function InfoDetailLead() {
                   <th className="py-2 pr-4">Očekávaná částka</th>
                   <th className="py-2 pr-4">Přijaté datum</th>
                   <th className="py-2 pr-4">Přijatá částka</th>
-                  <th className="py-2 pr-4">Rozdíl (oček. - přijatá)</th>
+                  <th className="py-2 pr-4">Rozdíl (přijatá - oček.)</th>
                 </tr>
               </thead>
               <tbody>
