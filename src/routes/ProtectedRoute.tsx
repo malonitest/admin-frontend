@@ -3,10 +3,18 @@ import { useAuth } from '@/contexts';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: string[];
+  redirectTo?: string;
+  unauthorizedRedirectTo?: string;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function ProtectedRoute({
+  children,
+  allowedRoles,
+  redirectTo = '/login',
+  unauthorizedRedirectTo = '/',
+}: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -18,7 +26,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && allowedRoles.length && user?.role && !allowedRoles.includes(user.role)) {
+    return <Navigate to={unauthorizedRedirectTo} replace />;
   }
 
   return <>{children}</>;

@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AdminLayout } from '@/layouts';
+import CustomerLayout from '@/layouts/CustomerLayout';
 import { 
   Login, 
   Dashboard, 
@@ -50,7 +51,11 @@ import { InvestorReport } from '@/reports/investor';
 import { FunnelReportPage } from '@/reports/funnel';
 import FinancialPL from '@/pages/NewReports/FinancialPL';
 import { Marketing } from '../pages/NewReports/Marketing';
-import { MarketingCosts } from '../pages/NewReports/MarketingCosts';
+import CustomerLogin from '@/pages/CustomerLogin';
+import CustomerLeadDetail from '@/pages/CustomerLeadDetail';
+import CustomerGallery from '@/pages/CustomerGallery';
+import CustomerLeadInfo from '@/pages/CustomerLeadInfo';
+import CustomerInvoices from '@/pages/CustomerInvoices';
 
 // Placeholder komponenty pro chybějící stránky
 // eslint-disable-next-line react-refresh/only-export-components
@@ -64,6 +69,40 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 );
 
 export const router = createBrowserRouter([
+  {
+    path: '/customer/login',
+    element: <CustomerLogin />,
+  },
+  {
+    path: '/customer',
+    element: (
+      <ProtectedRoute allowedRoles={['CUSTOMER']} redirectTo="/customer/login" unauthorizedRedirectTo="/">
+        <CustomerLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/customer/lead" replace />,
+      },
+      {
+        path: 'lead',
+        element: <CustomerLeadDetail />,
+      },
+      {
+        path: 'gallery',
+        element: <CustomerGallery />,
+      },
+      {
+        path: 'info',
+        element: <CustomerLeadInfo />,
+      },
+      {
+        path: 'invoices',
+        element: <CustomerInvoices />,
+      },
+    ],
+  },
   {
     path: '/login',
     element: <Login />,
@@ -80,7 +119,7 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['ADMIN', 'FINANCE_DIRECTOR', 'SUPERVISOR', 'SALES', 'OS']} redirectTo="/login" unauthorizedRedirectTo="/customer/lead">
         <AdminLayout />
       </ProtectedRoute>
     ),
