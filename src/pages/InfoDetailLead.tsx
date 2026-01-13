@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { axiosClient } from '@/api/axiosClient';
 import { formatDateTimePrague, parseApiDate } from '@/utils/dateTime';
@@ -14,12 +14,16 @@ type LeadDetail = {
         rentDuration?: number | null;
         monthlyPayment?: number | null;
         yearlyInsuranceFee?: number | null;
+        currentDebt?: number | null;
+        currentDebtUpdatedAt?: string | null;
       }
     | Array<{
         start?: string | null;
         rentDuration?: number | null;
         monthlyPayment?: number | null;
         yearlyInsuranceFee?: number | null;
+        currentDebt?: number | null;
+        currentDebtUpdatedAt?: string | null;
       }>;
 };
 
@@ -63,6 +67,8 @@ export default function InfoDetailLead() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const debtRecalcOnceRef = useRef<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<LeadDetail | null>(null);
@@ -87,6 +93,25 @@ export default function InfoDetailLead() {
         setLoading(false);
       }
     };
+    run();
+  }, [id]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!id) return;
+      if (debtRecalcOnceRef.current === id) return;
+      debtRecalcOnceRef.current = id;
+
+      try {
+        await axiosClient.post(`/leads/${encodeURIComponent(id)}/recalculateCurrentDebt`);
+        const res = await axiosClient.get(`/leads/${id}`);
+        setLead(res.data);
+      } catch (e) {
+        // Non-blocking: debt recalculation is a background persistence task.
+        console.warn('Failed to recalculate current debt:', e);
+      }
+    };
+
     run();
   }, [id]);
 
@@ -308,6 +333,18 @@ export default function InfoDetailLead() {
           <div className="text-xs text-gray-500">
             Očekáváno do dneška: {formatMoneyCz(debtSummary.expectedToDate)} · Přijato do dneška: {formatMoneyCz(debtSummary.receivedToDate)}
           </div>
+          {typeof (lease as any)?.currentDebt === 'number' ? (
+            <div className="text-xs text-gray-500">
+              Uloženo v DB: {formatMoneyCz((lease as any).currentDebt)}
+              {(() => {
+                const raw = (lease as any)?.currentDebtUpdatedAt;
+                if (!raw) return null;
+                const d = parseApiDate(String(raw));
+                if (Number.isNaN(d.getTime())) return null;
+                return <span className="ml-2">(aktualizováno: {formatDateTimePrague(d)})</span>;
+              })()}
+            </div>
+          ) : null}
         </div>
 
         {expectedPayments.length === 0 && receivedPayments.length === 0 ? (
