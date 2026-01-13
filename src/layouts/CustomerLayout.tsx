@@ -30,7 +30,7 @@ export function CustomerLayout() {
         <nav className="border-t bg-white">
           <div className="mx-auto max-w-5xl px-4 py-3 flex gap-2 flex-wrap">
             <NavLink to="/customer/lead" className={navLinkClass}>
-              Detail leadu
+              Osobní informace
             </NavLink>
             <NavLink to="/customer/gallery" className={navLinkClass}>
               Fotogalerie

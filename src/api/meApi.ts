@@ -28,9 +28,17 @@ export type PortalLead = {
     name?: string;
     phone?: string;
     email?: string;
+    companyID?: string;
     address?: string;
     city?: string;
     postalCode?: string;
+    country?: string;
+    enableAddress2?: boolean;
+    address2?: string;
+    city2?: string;
+    postalCode2?: string;
+    country2?: string;
+    birthday?: string;
   };
   car?: {
     brand?: string;
@@ -69,6 +77,25 @@ export type Invoice = {
 export const meApi = {
   getMyLead: async (): Promise<PortalLead> => {
     const res = await axiosClient.get<PortalLead>('/me/lead');
+    return res.data;
+  },
+
+  updateMyProfile: async (payload: {
+    name?: string;
+    email?: string;
+    companyID?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+    enableAddress2?: boolean;
+    address2?: string;
+    city2?: string;
+    postalCode2?: string;
+    country2?: string;
+    birthday?: string;
+  }): Promise<PortalLead> => {
+    const res = await axiosClient.patch<PortalLead>('/me/profile', payload);
     return res.data;
   },
 
