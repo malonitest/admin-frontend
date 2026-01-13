@@ -35,8 +35,11 @@ export function CustomerLayout() {
             <NavLink to="/customer/gallery" className={navLinkClass}>
               Fotogalerie
             </NavLink>
-            <NavLink to="/customer/info" className={navLinkClass}>
-              Lead informace
+            <NavLink to="/customer/contracts" className={navLinkClass}>
+              Smlouvy
+            </NavLink>
+            <NavLink to="/customer/schedule" className={navLinkClass}>
+              Splátkový kalendář
             </NavLink>
             <NavLink to="/customer/invoices" className={navLinkClass}>
               Faktury

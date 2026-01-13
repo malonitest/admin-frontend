@@ -54,7 +54,8 @@ import { Marketing } from '../pages/NewReports/Marketing';
 import CustomerLogin from '@/pages/CustomerLogin';
 import CustomerLeadDetail from '@/pages/CustomerLeadDetail';
 import CustomerGallery from '@/pages/CustomerGallery';
-import CustomerLeadInfo from '@/pages/CustomerLeadInfo';
+import CustomerContracts from '@/pages/CustomerContracts';
+import CustomerPaymentSchedule from '@/pages/CustomerPaymentSchedule';
 import CustomerInvoices from '@/pages/CustomerInvoices';
 
 // Placeholder komponenty pro chybějící stránky
@@ -94,8 +95,16 @@ export const router = createBrowserRouter([
         element: <CustomerGallery />,
       },
       {
+        path: 'contracts',
+        element: <CustomerContracts />,
+      },
+      {
+        path: 'schedule',
+        element: <CustomerPaymentSchedule />,
+      },
+      {
         path: 'info',
-        element: <CustomerLeadInfo />,
+        element: <Navigate to="/customer/schedule" replace />,
       },
       {
         path: 'invoices',

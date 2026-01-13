@@ -16,8 +16,12 @@ export type PortalLeadDocuments = {
   carMTP?: PortalDocument[];
   buyAgreement?: PortalDocument[];
   rentAgreement?: PortalDocument[];
+  powerOfAttorney?: PortalDocument[];
   buyMandate?: PortalDocument[];
   sellMandate?: PortalDocument[];
+  insurance?: PortalDocument[];
+  greenCard?: PortalDocument;
+  sell?: PortalDocument[];
   [key: string]: unknown;
 };
 
@@ -51,6 +55,11 @@ export type PortalLead = {
     leaseAmount?: number;
     monthlyPayment?: number;
     rentDuration?: number;
+    nextPayment?: string;
+    start?: string;
+    yearlyInsuranceFee?: number;
+    yearlyInterestRate?: number;
+    adminFee?: number;
   };
   documents?: PortalLeadDocuments;
   createdAt?: string;
