@@ -13,6 +13,7 @@ interface Dealer {
 interface TimeFunnelRow {
   leadId: string;
   uniqueId: number;
+  createdAt: string;
   amApprovedAt: string;
   technicianAt?: string | null;
   approvedBy?: { _id: string; name?: string; email?: string } | null;
@@ -192,6 +193,7 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unikátní ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schválil AM</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vytvořeno</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schválen AM</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Předáno technikovi</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doba</th>
@@ -206,6 +208,7 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{row.approvedBy?.name || row.approvedBy?.email || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.createdAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.amApprovedAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.technicianAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-900 font-medium">{formatDuration(row.durationMinutes ?? row.ageMinutes)}</td>
@@ -214,7 +217,7 @@ export default function TimeFunnelAmApprovedToTechnicianPage() {
 
                 {(data?.results?.length ?? 0) === 0 && (
                   <tr>
-                    <td className="px-4 py-6 text-sm text-gray-600" colSpan={5}>
+                    <td className="px-4 py-6 text-sm text-gray-600" colSpan={6}>
                       V tomto období nejsou žádné leady s přechodem na Technik.
                     </td>
                   </tr>

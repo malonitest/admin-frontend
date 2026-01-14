@@ -13,6 +13,7 @@ interface Dealer {
 interface TimeFunnelRow {
   leadId: string;
   uniqueId: number;
+  createdAt: string;
   financeAt: string;
   paidOutAt?: string | null;
   paidOutBy?: { _id: string; name?: string; email?: string } | null;
@@ -192,6 +193,7 @@ export default function TimeFunnelFinanceToPaidOutPage() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unikátní ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vyplatil</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vytvořeno</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Předáno k vyplacení</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vyplaceno</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doba</th>
@@ -206,6 +208,7 @@ export default function TimeFunnelFinanceToPaidOutPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{row.paidOutBy?.name || row.paidOutBy?.email || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.createdAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.financeAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDateTime(row.paidOutAt)}</td>
                     <td className="px-4 py-3 text-sm text-gray-900 font-medium">{formatDuration(row.durationMinutes ?? row.ageMinutes)}</td>
@@ -214,7 +217,7 @@ export default function TimeFunnelFinanceToPaidOutPage() {
 
                 {(data?.results?.length ?? 0) === 0 && (
                   <tr>
-                    <td className="px-4 py-6 text-sm text-gray-600" colSpan={5}>
+                    <td className="px-4 py-6 text-sm text-gray-600" colSpan={6}>
                       V tomto období nejsou žádné leady pro funnel FŘ → Vyplaceno.
                     </td>
                   </tr>
